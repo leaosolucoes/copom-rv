@@ -47,9 +47,9 @@ export const FormFieldsConfig = () => {
         .from('system_settings')
         .select('value')
         .eq('key', 'form_fields_config')
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       
       if (data?.value) {
         setFields(data.value as unknown as FormField[]);
