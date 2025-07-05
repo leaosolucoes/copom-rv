@@ -55,12 +55,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
           role,
           is_active,
           created_at,
-          last_login,
-          user_roles (
-            role,
-            is_active,
-            expires_at
-          )
+          last_login
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
@@ -350,42 +345,51 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.full_name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell>
-                    <Badge variant={user.is_active ? "default" : "secondary"}>
-                      {user.is_active ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {user.last_login 
-                      ? new Date(user.last_login).toLocaleDateString('pt-BR')
-                      : 'Nunca'
-                    }
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(user)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={user.is_active ? "destructive" : "default"}
-                        onClick={() => handleToggleActive(user.id, user.is_active)}
-                      >
-                        {user.is_active ? 'Desativar' : 'Ativar'}
-                      </Button>
-                    </div>
+              {users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    Nenhum usuário encontrado. 
+                    {userRole === 'admin' ? ' Crie o primeiro atendente clicando em "Novo Usuário".' : ' Clique em "Novo Usuário" para começar.'}
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.full_name}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{getRoleBadge(user.role)}</TableCell>
+                    <TableCell>
+                      <Badge variant={user.is_active ? "default" : "secondary"}>
+                        {user.is_active ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {user.last_login 
+                        ? new Date(user.last_login).toLocaleDateString('pt-BR')
+                        : 'Nunca'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(user)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={user.is_active ? "destructive" : "default"}
+                          onClick={() => handleToggleActive(user.id, user.is_active)}
+                        >
+                          {user.is_active ? 'Desativar' : 'Ativar'}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
