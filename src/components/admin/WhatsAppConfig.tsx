@@ -201,8 +201,7 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
 
       const payload = { 
         phoneNumber: config.phone_number,
-        message: 'Teste de integração WhatsApp - Sistema Posturas Rio Verde',
-        instanceName: config.instance_name
+        message: 'Template será usado pela edge function' // Placeholder - template vem do banco
       }
 
       console.log('Payload para edge function:', payload)

@@ -39,7 +39,7 @@ serve(async (req) => {
     const { data: settings, error: settingsError } = await supabaseClient
       .from('system_settings')
       .select('key, value')
-      .in('key', ['whatsapp_api_key', 'whatsapp_api_url', 'whatsapp_instance_name'])
+      .in('key', ['whatsapp_api_key', 'whatsapp_api_url', 'whatsapp_instance_name', 'whatsapp_message_template'])
 
     if (settingsError) {
       console.error('❌ Erro settings:', settingsError)
@@ -62,6 +62,7 @@ serve(async (req) => {
       hasApiKey: !!config.api_key,
       hasApiUrl: !!config.api_url,  
       hasInstanceName: !!config.instance_name,
+      hasMessageTemplate: !!config.message_template,
       apiUrl: config.api_url
     })
 
@@ -69,14 +70,53 @@ serve(async (req) => {
       throw new Error('Configurações incompletas. Verifique API Key, URL e Nome da Instância.')
     }
 
-    // 4. Prepare payload
-    console.log('4. Preparando envio...')
+    // 4. Prepare test message using template
+    console.log('4. Preparando mensagem de teste com template...')
+    
+    let testMessage = config.message_template || `🚨 *TESTE - NOVA DENÚNCIA REGISTRADA*
+
+📋 *Sistema de Posturas - Rio Verde*
+
+👤 *DENUNCIANTE:*
+• Nome: João da Silva (TESTE)
+• Telefone: (62) 99999-9999
+• Tipo: Pessoa Física
+
+📍 *LOCAL DA OCORRÊNCIA:*
+• Endereço: Rua das Flores, 123
+• Bairro: Centro
+• Data: ${new Date().toLocaleDateString('pt-BR')}
+• Horário: ${new Date().toLocaleTimeString('pt-BR')}
+
+⚠️ *TIPO DE OCORRÊNCIA:*
+Teste de Integração WhatsApp
+
+📝 *RELATO:*
+Esta é uma mensagem de teste do sistema de posturas de Rio Verde para verificar a integração com WhatsApp.
+
+🏛️ *Secretaria Municipal de Posturas*
+_Este é um teste - sistema funcionando corretamente!_`
+
+    // Replace template variables with test data
+    testMessage = testMessage
+      .replace(/\{complainant_name\}/g, 'João da Silva (TESTE)')
+      .replace(/\{complainant_phone\}/g, '(62) 99999-9999')
+      .replace(/\{complainant_type\}/g, 'Pessoa Física')
+      .replace(/\{occurrence_address\}/g, 'Rua das Flores, 123')
+      .replace(/\{occurrence_neighborhood\}/g, 'Centro')
+      .replace(/\{occurrence_date\}/g, new Date().toLocaleDateString('pt-BR'))
+      .replace(/\{occurrence_time\}/g, new Date().toLocaleTimeString('pt-BR'))
+      .replace(/\{occurrence_type\}/g, 'Teste de Integração WhatsApp')
+      .replace(/\{narrative\}/g, 'Esta é uma mensagem de teste do sistema de posturas de Rio Verde para verificar a integração com WhatsApp.')
+
+    console.log('📝 Mensagem de teste preparada (100 primeiros chars):', testMessage.substring(0, 100))
+
     const cleanPhone = phoneNumber.replace(/\D/g, '')
     console.log('📱 Número limpo:', cleanPhone)
 
     const whatsappPayload = {
-      number: cleanPhone + '@c.us', // Formato correto para Evolution API
-      text: message
+      number: cleanPhone + '@c.us',
+      text: testMessage
     }
 
     const apiUrl = `${config.api_url.replace(/\/$/, '')}/message/sendText/${config.instance_name}`
