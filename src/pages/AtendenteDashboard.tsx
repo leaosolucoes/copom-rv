@@ -66,11 +66,6 @@ export default function AtendenteDashboard() {
       return;
     }
 
-    if (!isLoading && profile && profile.role !== 'atendente') {
-      navigate('/admin');
-      return;
-    }
-
     if (profile) {
       loadComplaints();
     }
