@@ -176,6 +176,16 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
   };
 
   const testWhatsApp = async () => {
+    // Validar se as configurações estão completas
+    if (!config.api_key || !config.api_url || !config.phone_number) {
+      toast({
+        title: "Configurações Incompletas",
+        description: "Por favor, preencha a API Key, URL da API e número do telefone antes de testar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('test-whatsapp', {
         body: { 
@@ -186,15 +196,19 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
 
       if (error) throw error;
 
-      toast({
-        title: "Sucesso",
-        description: "Mensagem de teste enviada com sucesso!",
-      });
+      if (data?.success) {
+        toast({
+          title: "Sucesso",
+          description: "Mensagem de teste enviada com sucesso!",
+        });
+      } else {
+        throw new Error(data?.error || 'Erro desconhecido');
+      }
     } catch (error: any) {
       console.error('Erro ao testar WhatsApp:', error);
       toast({
         title: "Erro",
-        description: "Erro ao enviar mensagem de teste",
+        description: error.message || "Erro ao enviar mensagem de teste",
         variant: "destructive",
       });
     }
