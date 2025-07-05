@@ -1,92 +1,81 @@
-
-import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/layout/Header';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LogIn, AlertCircle } from 'lucide-react';
 
 const Login = () => {
+  const navigate = useNavigate();
+  const { signIn, isAuthenticated, profile, isLoading: authLoading } = useSupabaseAuth();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && profile) {
+      switch (profile.role) {
+        case 'super_admin':
+          navigate('/super-admin', { replace: true });
+          break;
+        case 'admin':
+          navigate('/admin', { replace: true });
+          break;
+        case 'atendente':
+          navigate('/atendente', { replace: true });
+          break;
+        default:
+          navigate('/', { replace: true });
+      }
+    }
+  }, [isAuthenticated, profile, navigate, authLoading]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+    
     setLoading(true);
     setError('');
 
     try {
-      console.log('Tentando fazer login com:', { email });
-
-      // Usar função de autenticação que contorna RLS
-      const { data: authResult, error: authError } = await supabase
-        .rpc('authenticate_user', {
-          p_email: email,
-          p_password: password
-        });
-
-      if (authError) {
-        console.error('Erro ao autenticar usuário:', authError);
-        throw new Error('Erro interno do sistema');
-      }
-
-      if (!authResult || authResult.length === 0) {
-        console.log('Usuário não encontrado ou inativo');
-        throw new Error('Usuário não encontrado ou inativo');
-      }
-
-      const user = authResult[0];
-      console.log('Usuário encontrado:', { id: user.user_id, email: user.email, role: user.role });
-
-      if (!user.password_valid) {
-        console.log('Senha inválida');
-        throw new Error('Senha incorreta');
-      }
-
-      console.log('Login bem-sucedido');
-
-      // Atualizar último login
-      await supabase
-        .from('users')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', user.user_id);
-
-      // Salvar usuário no localStorage
-      const userData = {
-        id: user.user_id,
-        email: user.email,
-        full_name: user.full_name,
-        role: user.role
-      };
+      const { error } = await signIn(email.toLowerCase().trim(), password);
       
-      localStorage.setItem('user', JSON.stringify(userData));
-
-      // Redirecionar baseado no papel
-      switch (user.role) {
-        case 'super_admin':
-          window.location.href = '/super-admin';
-          break;
-        case 'admin':
-          window.location.href = '/admin';
-          break;
-        case 'atendente':
-          window.location.href = '/atendente';
-          break;
-        default:
-          window.location.href = '/atendente';
+      if (!error) {
+        toast({
+          title: "Login realizado",
+          description: "Bem-vindo ao sistema!",
+        });
+        // Navigation will be handled by useEffect above
+      } else {
+        setError('Email ou senha incorretos');
       }
     } catch (error: any) {
       console.error('Erro no login:', error);
-      setError(error.message || 'Erro ao fazer login');
+      setError('Erro ao fazer login');
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

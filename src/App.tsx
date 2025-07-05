@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import AtendenteDashboard from "./pages/AtendenteDashboard";
@@ -22,9 +23,30 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/acesso" element={<Login />} />
-          <Route path="/atendente" element={<AtendenteDashboard />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/super-admin" element={<SuperAdminDashboard />} />
+          <Route 
+            path="/atendente" 
+            element={
+              <ProtectedRoute allowedRoles={['atendente', 'admin', 'super_admin']}>
+                <AtendenteDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/super-admin" 
+            element={
+              <ProtectedRoute allowedRoles={['super_admin']}>
+                <SuperAdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

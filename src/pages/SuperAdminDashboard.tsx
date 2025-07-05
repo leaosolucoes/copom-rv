@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,20 +14,15 @@ import { LogoUpload } from '@/components/admin/LogoUpload';
 import { Users, FileText, Settings, MessageSquare, Layout, Image } from 'lucide-react';
 
 const SuperAdminDashboard = () => {
-  const { user, logout, hasRole, isLoading } = useAuth();
+  const { profile, signOut, hasRole, isLoading } = useSupabaseAuth();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
   useEffect(() => {
-    console.log('SuperAdmin - User:', user);
-    console.log('SuperAdmin - HasRole super_admin:', hasRole(['super_admin']));
-    console.log('SuperAdmin - IsLoading:', isLoading);
-    
     // Só redirecionar se não estiver carregando e realmente não tiver permissão
-    if (!isLoading && (!user || !hasRole(['super_admin']))) {
-      console.log('Redirecionando para login - usuário sem permissão');
+    if (!isLoading && (!profile || !hasRole(['super_admin']))) {
       window.location.href = '/acesso';
     }
-  }, [user, hasRole, isLoading]);
+  }, [profile, hasRole, isLoading]);
 
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {
@@ -41,7 +36,7 @@ const SuperAdminDashboard = () => {
     );
   }
 
-  if (!user || !hasRole(['super_admin'])) {
+  if (!profile || !hasRole(['super_admin'])) {
     return null;
   }
 
@@ -61,13 +56,13 @@ const SuperAdminDashboard = () => {
                 Super Administrador
               </h1>
               <p className="text-sm text-gray-600">
-                Bem-vindo, {user.full_name}
+                Bem-vindo, {profile.full_name}
               </p>
             </div>
             <Button 
               variant="outline" 
               size="sm"
-              onClick={logout}
+              onClick={signOut}
             >
               Sair
             </Button>
