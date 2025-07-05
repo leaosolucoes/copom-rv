@@ -225,6 +225,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      authenticate_user: {
+        Args: { p_email: string; p_password: string }
+        Returns: {
+          user_id: string
+          email: string
+          full_name: string
+          role: string
+          is_active: boolean
+          password_valid: boolean
+        }[]
+      }
       hash_password: {
         Args: { password: string }
         Returns: string

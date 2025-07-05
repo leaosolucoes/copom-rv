@@ -23,39 +23,27 @@ const Login = () => {
     try {
       console.log('Tentando fazer login com:', { email });
 
-      // Buscar usuário e verificar senha
-      const { data: users, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .eq('is_active', true);
+      // Usar função de autenticação que contorna RLS
+      const { data: authResult, error: authError } = await supabase
+        .rpc('authenticate_user', {
+          p_email: email,
+          p_password: password
+        });
 
-      if (userError) {
-        console.error('Erro ao buscar usuário:', userError);
+      if (authError) {
+        console.error('Erro ao autenticar usuário:', authError);
         throw new Error('Erro interno do sistema');
       }
 
-      if (!users || users.length === 0) {
+      if (!authResult || authResult.length === 0) {
         console.log('Usuário não encontrado ou inativo');
         throw new Error('Usuário não encontrado ou inativo');
       }
 
-      const user = users[0];
-      console.log('Usuário encontrado:', { id: user.id, email: user.email, role: user.role });
+      const user = authResult[0];
+      console.log('Usuário encontrado:', { id: user.user_id, email: user.email, role: user.role });
 
-      // Verificar senha
-      const { data: passwordValid, error: passwordError } = await supabase
-        .rpc('verify_password', {
-          password: password,
-          hash: user.password_hash
-        });
-
-      if (passwordError) {
-        console.error('Erro ao verificar senha:', passwordError);
-        throw new Error('Erro interno do sistema');
-      }
-
-      if (!passwordValid) {
+      if (!user.password_valid) {
         console.log('Senha inválida');
         throw new Error('Senha incorreta');
       }
@@ -66,11 +54,11 @@ const Login = () => {
       await supabase
         .from('users')
         .update({ last_login: new Date().toISOString() })
-        .eq('id', user.id);
+        .eq('id', user.user_id);
 
       // Salvar usuário no localStorage
       const userData = {
-        id: user.id,
+        id: user.user_id,
         email: user.email,
         full_name: user.full_name,
         role: user.role
