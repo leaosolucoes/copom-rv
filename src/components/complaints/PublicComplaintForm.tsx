@@ -335,29 +335,36 @@ export const PublicComplaintForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Preparar dados sanitizando campos vazios
-      const sanitizedData = {
-        ...formData,
-        // Converter strings vazias para null para campos de data/time
+      // Preparar dados para inserção
+      const dataToInsert = {
+        complainant_name: formData.complainant_name.trim(),
+        complainant_phone: formData.complainant_phone.trim(),
+        complainant_type: formData.complainant_type,
+        complainant_address: formData.complainant_address.trim(),
+        complainant_number: formData.complainant_number?.trim() || null,
+        complainant_block: formData.complainant_block?.trim() || null,
+        complainant_lot: formData.complainant_lot?.trim() || null,
+        complainant_neighborhood: formData.complainant_neighborhood,
+        occurrence_type: formData.occurrence_type,
+        occurrence_address: formData.occurrence_address.trim(),
+        occurrence_number: formData.occurrence_number?.trim() || null,
+        occurrence_block: formData.occurrence_block?.trim() || null,
+        occurrence_lot: formData.occurrence_lot?.trim() || null,
+        occurrence_neighborhood: formData.occurrence_neighborhood,
+        occurrence_reference: formData.occurrence_reference?.trim() || null,
+        narrative: formData.narrative.trim(),
         occurrence_date: formData.occurrence_date || null,
         occurrence_time: formData.occurrence_time || null,
-        // Converter strings vazias para null para campos opcionais
-        complainant_number: formData.complainant_number || null,
-        complainant_block: formData.complainant_block || null,
-        complainant_lot: formData.complainant_lot || null,
-        occurrence_number: formData.occurrence_number || null,
-        occurrence_block: formData.occurrence_block || null,
-        occurrence_lot: formData.occurrence_lot || null,
-        occurrence_reference: formData.occurrence_reference || null,
-        assigned_to: formData.assigned_to || null
+        classification: formData.classification,
+        assigned_to: formData.assigned_to?.trim() || null
       };
       
-      console.log('🔄 Dados sanitizados que serão enviados:', sanitizedData);
+      console.log('🔄 Dados que serão enviados:', dataToInsert);
       console.log('📡 Fazendo requisição para Supabase...');
       
       const { data, error } = await supabase
         .from('complaints')
-        .insert([sanitizedData])
+        .insert([dataToInsert])
         .select();
 
       if (error) {

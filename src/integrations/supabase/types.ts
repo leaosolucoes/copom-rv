@@ -74,12 +74,12 @@ export type Database = {
           narrative: string
           occurrence_address: string
           occurrence_block: string | null
-          occurrence_date: string
+          occurrence_date: string | null
           occurrence_lot: string | null
           occurrence_neighborhood: string
           occurrence_number: string | null
           occurrence_reference: string | null
-          occurrence_time: string
+          occurrence_time: string | null
           occurrence_type: string
           processed_at: string | null
           status: Database["public"]["Enums"]["complaint_status"]
@@ -104,12 +104,12 @@ export type Database = {
           narrative: string
           occurrence_address: string
           occurrence_block?: string | null
-          occurrence_date: string
+          occurrence_date?: string | null
           occurrence_lot?: string | null
           occurrence_neighborhood: string
           occurrence_number?: string | null
           occurrence_reference?: string | null
-          occurrence_time: string
+          occurrence_time?: string | null
           occurrence_type: string
           processed_at?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
@@ -134,12 +134,12 @@ export type Database = {
           narrative?: string
           occurrence_address?: string
           occurrence_block?: string | null
-          occurrence_date?: string
+          occurrence_date?: string | null
           occurrence_lot?: string | null
           occurrence_neighborhood?: string
           occurrence_number?: string | null
           occurrence_reference?: string | null
-          occurrence_time?: string
+          occurrence_time?: string | null
           occurrence_type?: string
           processed_at?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
