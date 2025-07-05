@@ -21,7 +21,7 @@ export const ProtectedRoute = ({
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Verificando acesso...</p>
+          <p className="text-muted-foreground">Verificando acesso...</p>
         </div>
       </div>
     );
@@ -38,16 +38,16 @@ export const ProtectedRoute = ({
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <div className="text-6xl mb-4">🚫</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
             Acesso Negado
           </h1>
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted-foreground mb-4">
             Você não tem permissão para acessar esta página.
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Seu nível de acesso: <strong>{profile?.role}</strong>
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Níveis requeridos: <strong>{allowedRoles.join(', ')}</strong>
           </p>
         </div>
@@ -58,7 +58,7 @@ export const ProtectedRoute = ({
   return <>{children}</>;
 };
 
-// Validar domínio no código
+// Domain validation for additional security
 const validateDomain = () => {
   const allowedDomains = [
     'posturas.conectarioverde.com.br',
@@ -66,7 +66,7 @@ const validateDomain = () => {
     '127.0.0.1'
   ];
   
-  // Permitir domínios do Lovable (lovableproject.com)
+  // Allow Lovable domains for development
   const hostname = window.location.hostname;
   const isLovableDomain = hostname.includes('lovableproject.com') || hostname.includes('lovable.app');
   

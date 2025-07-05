@@ -45,18 +45,27 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
     try {
       setLoading(true);
       
-      // Use the secure function to get users
-      const { data, error } = await supabase.rpc('get_users_secure');
+      // Use Supabase Auth with proper RLS policies
+      const { data: allUsers, error } = await supabase
+        .from('users')
+        .select(`
+          id,
+          email,
+          full_name,
+          role,
+          is_active,
+          created_at,
+          last_login,
+          user_roles (
+            role,
+            is_active,
+            expires_at
+          )
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      const result = data as { success: boolean; error?: string; users?: any[] };
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch users');
-      }
-      
-      const allUsers = result.users || [];
       
       // Filter users based on role permissions
       const filteredUsers = userRole === 'admin' 
@@ -68,7 +77,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
       console.error('Erro ao carregar usuários:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar usuários",
+        description: "Erro ao carregar usuários. Verifique suas permissões.",
         variant: "destructive",
       });
     } finally {

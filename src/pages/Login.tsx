@@ -22,7 +22,14 @@ const Login = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated && profile) {
-      switch (profile.role) {
+      const userRole = profile.role;
+      const activeUserRole = profile.user_roles?.find(
+        role => role.is_active && (!role.expires_at || new Date(role.expires_at) > new Date())
+      );
+      
+      const currentRole = activeUserRole?.role || userRole;
+      
+      switch (currentRole) {
         case 'super_admin':
           navigate('/super-admin', { replace: true });
           break;
@@ -48,15 +55,10 @@ const Login = () => {
     try {
       const { error } = await signIn(email.toLowerCase().trim(), password);
       
-      if (!error) {
-        toast({
-          title: "Login realizado",
-          description: "Bem-vindo ao sistema!",
-        });
-        // Navigation will be handled by useEffect above
-      } else {
+      if (error) {
         setError('Email ou senha incorretos');
       }
+      // Navigation will be handled by useEffect above
     } catch (error: any) {
       console.error('Erro no login:', error);
       setError('Erro ao fazer login');
@@ -84,7 +86,7 @@ const Login = () => {
       <main className="flex items-center justify-center py-12 px-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-900">
+            <CardTitle className="text-2xl font-bold text-foreground">
               Acesso Interno
             </CardTitle>
             <CardDescription>
@@ -111,6 +113,7 @@ const Login = () => {
                   placeholder="Digite seu e-mail"
                   required
                   disabled={loading}
+                  autoComplete="email"
                 />
               </div>
               
@@ -124,6 +127,7 @@ const Login = () => {
                   placeholder="Digite sua senha"
                   required
                   disabled={loading}
+                  autoComplete="current-password"
                 />
               </div>
               

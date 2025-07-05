@@ -1,21 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface CustomUser {
-  id: string;
-  email: string;
-  user_metadata: {
-    full_name: string;
-    role: string;
-  };
-}
-
-interface CustomSession {
-  user: CustomUser;
-  access_token: string;
-  refresh_token: string;
-}
+import type { User, Session } from '@supabase/supabase-js';
 
 interface UserProfile {
   id: string;
@@ -23,110 +9,125 @@ interface UserProfile {
   full_name: string;
   role: 'super_admin' | 'admin' | 'atendente';
   is_active: boolean;
+  user_roles?: Array<{
+    role: string;
+    is_active: boolean;
+    expires_at: string | null;
+  }>;
 }
 
 export const useSupabaseAuth = () => {
-  const [user, setUser] = useState<CustomUser | null>(null);
-  const [session, setSession] = useState<CustomSession | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Fetch user profile and roles
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select(`
+          id,
+          email,
+          full_name,
+          role,
+          is_active,
+          user_roles!inner (
+            role,
+            is_active,
+            expires_at
+          )
+        `)
+        .eq('id', userId)
+        .eq('is_active', true)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user profile:', userError);
+        return null;
+      }
+
+      return userData as UserProfile;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    // Check for existing custom session first
-    const checkExistingSession = () => {
-      try {
-        const storedSession = localStorage.getItem('custom_session');
-        const storedProfile = localStorage.getItem('custom_profile');
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
         
-        if (storedSession && storedProfile) {
-          const session = JSON.parse(storedSession);
-          const profile = JSON.parse(storedProfile);
-          
-          setSession(session);
-          setUser(session.user);
-          setProfile(profile);
+        if (session?.user) {
+          // Fetch user profile with roles
+          setTimeout(async () => {
+            const userProfile = await fetchUserProfile(session.user.id);
+            setProfile(userProfile);
+            setIsLoading(false);
+          }, 0);
+        } else {
+          setProfile(null);
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error('Error loading stored session:', error);
-        localStorage.removeItem('custom_session');
-        localStorage.removeItem('custom_profile');
-      } finally {
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        setTimeout(async () => {
+          const userProfile = await fetchUserProfile(session.user.id);
+          setProfile(userProfile);
+          setIsLoading(false);
+        }, 0);
+      } else {
         setIsLoading(false);
       }
-    };
+    });
 
-    checkExistingSession();
+    return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Use custom authentication function
-      const { data, error } = await supabase
-        .rpc('authenticate_user', {
-          p_email: email,
-          p_password: password
-        });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.toLowerCase().trim(),
+        password: password
+      });
 
       if (error) {
         toast({
           title: "Erro no login",
-          description: "Erro interno do servidor",
+          description: error.message,
           variant: "destructive",
         });
         return { error };
       }
 
-      if (!data || data.length === 0 || !data[0].password_valid) {
+      if (data.user) {
+        // Update last login
+        await supabase
+          .from('users')
+          .update({ last_login: new Date().toISOString() })
+          .eq('id', data.user.id);
+
         toast({
-          title: "Erro no login",
-          description: "Email ou senha incorretos",
-          variant: "destructive",
+          title: "Login realizado",
+          description: "Bem-vindo ao sistema!",
         });
-        return { error: new Error('Invalid credentials') };
       }
-
-      const userData = data[0];
-      
-      // Create a mock session for our custom auth
-      const mockUser = {
-        id: userData.user_id,
-        email: userData.email,
-        user_metadata: {
-          full_name: userData.full_name,
-          role: userData.role
-        }
-      };
-
-      const mockSession = {
-        user: mockUser,
-        access_token: 'custom_token',
-        refresh_token: 'custom_refresh'
-      };
-
-      // Set user and profile data
-      setUser(mockUser);
-      setSession(mockSession);
-      setProfile({
-        id: userData.user_id,
-        email: userData.email,
-        full_name: userData.full_name,
-        role: userData.role as 'super_admin' | 'admin' | 'atendente',
-        is_active: userData.is_active
-      });
-
-      // Store in localStorage for persistence
-      localStorage.setItem('custom_session', JSON.stringify(mockSession));
-      localStorage.setItem('custom_profile', JSON.stringify({
-        id: userData.user_id,
-        email: userData.email,
-        full_name: userData.full_name,
-        role: userData.role as 'super_admin' | 'admin' | 'atendente',
-        is_active: userData.is_active
-      }));
 
       return { error: null };
     } catch (error: any) {
+      console.error('Error in signIn:', error);
       toast({
         title: "Erro no login",
         description: "Erro interno do servidor",
@@ -138,14 +139,16 @@ export const useSupabaseAuth = () => {
 
   const signOut = async () => {
     try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Error signing out:', error);
+        return { error };
+      }
+
       setUser(null);
       setSession(null);
       setProfile(null);
-      
-      // Clear custom session data
-      localStorage.removeItem('custom_session');
-      localStorage.removeItem('custom_profile');
-      localStorage.removeItem('user');
       
       return { error: null };
     } catch (error: any) {
@@ -156,11 +159,42 @@ export const useSupabaseAuth = () => {
 
   const hasRole = (allowedRoles: string[]) => {
     if (!profile) return false;
-    return allowedRoles.includes(profile.role);
+    
+    // Check both legacy role and new user_roles
+    const legacyRoleMatch = allowedRoles.includes(profile.role);
+    const userRolesMatch = profile.user_roles?.some(
+      userRole => allowedRoles.includes(userRole.role) && 
+                  userRole.is_active && 
+                  (!userRole.expires_at || new Date(userRole.expires_at) > new Date())
+    );
+    
+    return legacyRoleMatch || userRolesMatch || false;
   };
 
   const isSuperAdmin = () => {
-    return profile?.role === 'super_admin';
+    if (!profile) return false;
+    
+    // Check both legacy role and new user_roles
+    const legacyCheck = profile.role === 'super_admin';
+    const userRolesCheck = profile.user_roles?.some(
+      userRole => userRole.role === 'super_admin' && 
+                  userRole.is_active && 
+                  (!userRole.expires_at || new Date(userRole.expires_at) > new Date())
+    );
+    
+    return legacyCheck || userRolesCheck || false;
+  };
+
+  const getUserRole = () => {
+    if (!profile) return null;
+    
+    // Check user_roles first for most current role
+    const activeRole = profile.user_roles?.find(
+      userRole => userRole.is_active && 
+                  (!userRole.expires_at || new Date(userRole.expires_at) > new Date())
+    );
+    
+    return activeRole?.role || profile.role;
   };
 
   return {
@@ -172,6 +206,7 @@ export const useSupabaseAuth = () => {
     signOut,
     hasRole,
     isSuperAdmin,
-    isAuthenticated: !!user && !!profile
+    getUserRole,
+    isAuthenticated: !!user && !!session && !!profile && profile.is_active
   };
 };
