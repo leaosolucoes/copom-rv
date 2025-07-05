@@ -50,7 +50,29 @@ export const WhatsAppConfig = () => {
         api_key: settings.api_key || '',
         api_url: settings.api_url || '',
         phone_number: settings.phone_number || '',
-        message_template: settings.message_template || 'Nova denúncia recebida no sistema Posturas Rio Verde.\n\nDenunciante: {complainant_name}\nTelefone: {complainant_phone}\nTipo: {occurrence_type}\nEndereço: {occurrence_address}\nData: {occurrence_date}\n\nAcesse o sistema para mais detalhes.',
+        message_template: settings.message_template || `🚨 *NOVA DENÚNCIA REGISTRADA*
+
+📋 *Sistema de Posturas - Rio Verde*
+
+👤 *DENUNCIANTE:*
+• Nome: {complainant_name}
+• Telefone: {complainant_phone}
+• Tipo: {complainant_type}
+
+📍 *LOCAL DA OCORRÊNCIA:*
+• Endereço: {occurrence_address}
+• Bairro: {occurrence_neighborhood}
+• Data: {occurrence_date}
+• Horário: {occurrence_time}
+
+⚠️ *TIPO DE OCORRÊNCIA:*
+{occurrence_type}
+
+📝 *RELATO:*
+{narrative}
+
+🏛️ *Secretaria Municipal de Posturas*
+_Acesse o sistema para mais detalhes e acompanhamento._`,
         send_full_complaint: settings.send_full_complaint || false,
         auto_send_enabled: settings.auto_send_enabled !== false
       });
@@ -69,6 +91,46 @@ export const WhatsAppConfig = () => {
   useEffect(() => {
     fetchConfig();
   }, []);
+
+  // Auto-salvar template padrão se não existir
+  useEffect(() => {
+    const autoSaveTemplate = async () => {
+      if (!loading && config.message_template && config.message_template.includes('🚨 *NOVA DENÚNCIA REGISTRADA*')) {
+        // Se o template atual é o padrão e não está salvo no banco, salvar automaticamente
+        try {
+          const { data } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'whatsapp_message_template')
+            .single();
+          
+          if (!data) {
+            // Template não existe no banco, salvar o padrão
+            await supabase
+              .from('system_settings')
+              .upsert({
+                key: 'whatsapp_message_template',
+                value: config.message_template,
+                description: 'Template da mensagem automática'
+              }, {
+                onConflict: 'key'
+              });
+              
+            toast({
+              title: "Template Salvo",
+              description: "Template padrão criado e salvo automaticamente!",
+            });
+          }
+        } catch (error) {
+          console.log('Template já existe ou erro ao salvar automaticamente');
+        }
+      }
+    };
+
+    if (!loading) {
+      autoSaveTemplate();
+    }
+  }, [loading, config.message_template, toast]);
 
   const saveConfig = async () => {
     try {
