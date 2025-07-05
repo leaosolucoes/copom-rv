@@ -322,14 +322,16 @@ export const PublicComplaintForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Formulário submetido!');
+    console.log('🚀 Formulário submetido!');
+    console.log('📋 Estado atual do formData:', formData);
+    console.log('⚙️ Configuração dos campos:', fieldConfig);
     
     if (!validateForm()) {
-      console.log('Validação falhou, formulário não será enviado');
+      console.log('❌ Validação falhou, formulário não será enviado');
       return;
     }
     
-    console.log('Validação passou, iniciando envio...');
+    console.log('✅ Validação passou, iniciando envio...');
     setIsSubmitting(true);
 
     try {
@@ -350,10 +352,13 @@ export const PublicComplaintForm = () => {
         assigned_to: formData.assigned_to || null
       };
       
-      console.log('Dados sanitizados que serão enviados:', sanitizedData);
-      const { error } = await supabase
+      console.log('🔄 Dados sanitizados que serão enviados:', sanitizedData);
+      console.log('📡 Fazendo requisição para Supabase...');
+      
+      const { data, error } = await supabase
         .from('complaints')
-        .insert([sanitizedData]);
+        .insert([sanitizedData])
+        .select();
 
       if (error) {
         console.error('Erro do Supabase:', error);
