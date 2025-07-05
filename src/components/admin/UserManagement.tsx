@@ -44,17 +44,24 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
+      
+      // Use the secure function to get users
+      const { data, error } = await supabase.rpc('get_users_secure');
 
       if (error) throw error;
       
+      const result = data as { success: boolean; error?: string; users?: any[] };
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch users');
+      }
+      
+      const allUsers = result.users || [];
+      
       // Filter users based on role permissions
       const filteredUsers = userRole === 'admin' 
-        ? data?.filter(user => user.role === 'atendente') || []
-        : data || [];
+        ? allUsers.filter((user: any) => user.role === 'atendente')
+        : allUsers;
         
       setUsers(filteredUsers);
     } catch (error) {
@@ -78,49 +85,45 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
     
     try {
       if (editingUser) {
-        // Update user
-        const updateData: any = {
-          email: formData.email,
-          full_name: formData.full_name,
-          role: formData.role,
-          is_active: formData.is_active
-        };
-
-        if (formData.password) {
-          const { data: hashedPassword } = await supabase.rpc('hash_password', {
-            password: formData.password
-          });
-          updateData.password_hash = hashedPassword;
-        }
-
-        const { error } = await supabase
-          .from('users')
-          .update(updateData)
-          .eq('id', editingUser.id);
+        // Update existing user using secure function
+        const { data, error } = await supabase.rpc('update_user_secure', {
+          p_user_id: editingUser.id,
+          p_email: formData.email,
+          p_full_name: formData.full_name,
+          p_password: formData.password || null,
+          p_role: formData.role,
+          p_is_active: formData.is_active
+        });
 
         if (error) throw error;
+        
+        const result = data as { success: boolean; error?: string };
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to update user');
+        }
 
         toast({
           title: "Sucesso",
           description: "Usuário atualizado com sucesso!",
         });
       } else {
-        // Create new user
-        const { data: hashedPassword } = await supabase.rpc('hash_password', {
-          password: formData.password
+        // Create new user using secure function
+        const { data, error } = await supabase.rpc('create_user_secure', {
+          p_email: formData.email,
+          p_full_name: formData.full_name,
+          p_password: formData.password,
+          p_role: formData.role,
+          p_is_active: formData.is_active
         });
 
-        const { error } = await supabase
-          .from('users')
-          .insert([{
-            email: formData.email,
-            full_name: formData.full_name,
-            password_hash: hashedPassword,
-            role: formData.role,
-            is_active: formData.is_active
-          }]);
-
         if (error) throw error;
+        
+        const result = data as { success: boolean; error?: string };
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to create user');
+        }
 
         toast({
           title: "Sucesso",
@@ -162,12 +165,25 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
 
   const handleToggleActive = async (userId: string, isActive: boolean) => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ is_active: !isActive })
-        .eq('id', userId);
+      // Find the user to get their current data
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+      
+      const { data, error } = await supabase.rpc('update_user_secure', {
+        p_user_id: userId,
+        p_email: user.email,
+        p_full_name: user.full_name,
+        p_role: user.role,
+        p_is_active: !isActive
+      });
 
       if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string };
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update user status');
+      }
 
       toast({
         title: "Sucesso",

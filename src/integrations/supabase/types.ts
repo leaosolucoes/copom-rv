@@ -236,6 +236,21 @@ export type Database = {
           password_valid: boolean
         }[]
       }
+      create_user_secure: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_password: string
+          p_role?: string
+          p_is_active?: boolean
+          p_requester_id?: string
+        }
+        Returns: Json
+      }
+      get_users_secure: {
+        Args: { p_requester_id?: string }
+        Returns: Json
+      }
       hash_password: {
         Args: { password: string }
         Returns: string
@@ -251,6 +266,18 @@ export type Database = {
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      update_user_secure: {
+        Args: {
+          p_user_id: string
+          p_email: string
+          p_full_name: string
+          p_password?: string
+          p_role?: string
+          p_is_active?: boolean
+          p_requester_id?: string
+        }
+        Returns: Json
       }
       verify_password: {
         Args: { password: string; hash: string }
