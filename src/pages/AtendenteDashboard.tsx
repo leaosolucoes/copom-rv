@@ -410,18 +410,20 @@ export default function AtendenteDashboard() {
                         </Dialog>
                         
                         {complaint.status === 'nova' && (
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                            onClick={() => {
-                              setSelectedComplaint(complaint);
-                              setSystemIdentifier("");
-                            }}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Processar
-                          </Button>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="default" 
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              onClick={() => {
+                                setSelectedComplaint(complaint);
+                                setSystemIdentifier("");
+                              }}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Processar
+                            </Button>
+                          </DialogTrigger>
                         )}
                       </div>
                     </CardContent>
