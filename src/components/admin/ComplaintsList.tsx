@@ -10,6 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Eye, Download, MessageSquare, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import type { Database } from '@/integrations/supabase/types';
+
+type ComplaintStatus = Database['public']['Enums']['complaint_status'];
 
 interface Complaint {
   id: string;
@@ -19,7 +22,7 @@ interface Complaint {
   occurrence_address: string;
   occurrence_neighborhood: string;
   classification: string;
-  status: 'nova' | 'cadastrada' | 'finalizada';
+  status: ComplaintStatus;
   created_at: string;
   processed_at: string | null;
   attendant_id: string | null;
@@ -75,7 +78,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
     fetchComplaints();
   }, [statusFilter]);
 
-  const updateComplaintStatus = async (complaintId: string, newStatus: 'cadastrada' | 'finalizada', systemIdentifier?: string) => {
+  const updateComplaintStatus = async (complaintId: string, newStatus: ComplaintStatus, systemIdentifier?: string) => {
     try {
       const updateData: any = {
         status: newStatus,
@@ -167,7 +170,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: ComplaintStatus) => {
     const colors = {
       nova: 'bg-yellow-500',
       cadastrada: 'bg-blue-500',
@@ -181,8 +184,8 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
     };
 
     return (
-      <Badge className={`${colors[status as keyof typeof colors]} text-white`}>
-        {labels[status as keyof typeof labels]}
+      <Badge className={`${colors[status]} text-white`}>
+        {labels[status]}
       </Badge>
     );
   };

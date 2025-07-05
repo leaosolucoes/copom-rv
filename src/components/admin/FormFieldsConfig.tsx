@@ -109,7 +109,7 @@ export const FormFieldsConfig = () => {
         .from('system_settings')
         .upsert({
           key: 'form_fields_config',
-          value: fieldsToSave,
+          value: fieldsToSave as any,
           description: 'Configuração dos campos do formulário público'
         }, {
           onConflict: 'key'
