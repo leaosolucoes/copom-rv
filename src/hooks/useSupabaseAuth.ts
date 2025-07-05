@@ -59,46 +59,6 @@ export const useSupabaseAuth = () => {
     checkExistingSession();
   }, []);
 
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, email, full_name, role, is_active')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        // If user doesn't exist in users table, sign them out
-        if (error.code === 'PGRST116') {
-          await signOut();
-          toast({
-            title: "Acesso negado",
-            description: "Usuário não encontrado no sistema",
-            variant: "destructive",
-          });
-        }
-        return;
-      }
-
-      if (!data.is_active) {
-        await signOut();
-        toast({
-          title: "Conta desativada",
-          description: "Sua conta foi desativada. Contate o administrador.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setProfile(data);
-    } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const signIn = async (email: string, password: string) => {
     try {
       // Use custom authentication function
