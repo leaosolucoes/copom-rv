@@ -191,29 +191,61 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
     }
 
     try {
+      console.log('Iniciando teste WhatsApp...')
+      console.log('Configurações:', {
+        hasApiKey: !!config.api_key,
+        hasApiUrl: !!config.api_url,
+        hasInstanceName: !!config.instance_name,
+        hasPhoneNumber: !!config.phone_number
+      })
+
+      const payload = { 
+        phoneNumber: config.phone_number,
+        message: 'Teste de integração WhatsApp - Sistema Posturas Rio Verde',
+        instanceName: config.instance_name
+      }
+
+      console.log('Payload para edge function:', payload)
+
       const { data, error } = await supabase.functions.invoke('test-whatsapp', {
-        body: { 
-          phoneNumber: config.phone_number,
-          message: 'Teste de integração WhatsApp - Sistema Posturas Rio Verde',
-          instanceName: config.instance_name
-        }
+        body: payload
       });
 
-      if (error) throw error;
+      console.log('Resposta da edge function:', { data, error })
+
+      if (error) {
+        console.error('Erro da edge function:', error)
+        throw new Error(`Erro na edge function: ${error.message || JSON.stringify(error)}`)
+      }
 
       if (data?.success) {
         toast({
           title: "Sucesso",
           description: "Mensagem de teste enviada com sucesso!",
         });
+        console.log('Teste concluído com sucesso:', data)
       } else {
-        throw new Error(data?.error || 'Erro desconhecido');
+        const errorMsg = data?.error || 'Erro desconhecido na resposta'
+        console.error('Erro na resposta:', data)
+        throw new Error(errorMsg)
       }
     } catch (error: any) {
-      console.error('Erro ao testar WhatsApp:', error);
+      console.error('Erro completo ao testar WhatsApp:', error)
+      console.error('Stack trace:', error.stack)
+      
+      let errorMessage = 'Erro ao enviar mensagem de teste'
+      
+      if (error.message?.includes('Failed to send a request')) {
+        errorMessage = 'Falha na conexão com o servidor. Verifique sua conexão de internet.'
+      } else if (error.message?.includes('Edge Function')) {
+        errorMessage = 'Erro no servidor. Tente novamente em alguns segundos.'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+
       toast({
         title: "Erro",
-        description: error.message || "Erro ao enviar mensagem de teste",
+        description: errorMessage,
         variant: "destructive",
       });
     }
