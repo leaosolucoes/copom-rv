@@ -60,8 +60,17 @@ export const ProtectedRoute = ({
 
 // Validar domínio no código
 const validateDomain = () => {
-  const allowedDomains = ['posturas.conectarioverde.com.br'];
-  if (!allowedDomains.includes(window.location.hostname)) {
+  const allowedDomains = [
+    'posturas.conectarioverde.com.br',
+    'localhost',
+    '127.0.0.1'
+  ];
+  
+  // Permitir domínios do Lovable (lovableproject.com)
+  const hostname = window.location.hostname;
+  const isLovableDomain = hostname.includes('lovableproject.com') || hostname.includes('lovable.app');
+  
+  if (!allowedDomains.includes(hostname) && !isLovableDomain) {
     throw new Error('Domínio não autorizado');
   }
 };
