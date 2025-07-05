@@ -1,7 +1,21 @@
 import { useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+
+interface CustomUser {
+  id: string;
+  email: string;
+  user_metadata: {
+    full_name: string;
+    role: string;
+  };
+}
+
+interface CustomSession {
+  user: CustomUser;
+  access_token: string;
+  refresh_token: string;
+}
 
 interface UserProfile {
   id: string;
@@ -12,43 +26,37 @@ interface UserProfile {
 }
 
 export const useSupabaseAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<CustomUser | null>(null);
+  const [session, setSession] = useState<CustomSession | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    // Check for existing custom session first
+    const checkExistingSession = () => {
+      try {
+        const storedSession = localStorage.getItem('custom_session');
+        const storedProfile = localStorage.getItem('custom_profile');
         
-        // Fetch user profile when authenticated
-        if (session?.user) {
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
+        if (storedSession && storedProfile) {
+          const session = JSON.parse(storedSession);
+          const profile = JSON.parse(storedProfile);
+          
+          setSession(session);
+          setUser(session.user);
+          setProfile(profile);
         }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
+      } catch (error) {
+        console.error('Error loading stored session:', error);
+        localStorage.removeItem('custom_session');
+        localStorage.removeItem('custom_profile');
+      } finally {
         setIsLoading(false);
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    checkExistingSession();
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
@@ -93,19 +101,69 @@ export const useSupabaseAuth = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Use custom authentication function
+      const { data, error } = await supabase
+        .rpc('authenticate_user', {
+          p_email: email,
+          p_password: password
+        });
 
       if (error) {
         toast({
           title: "Erro no login",
-          description: error.message,
+          description: "Erro interno do servidor",
           variant: "destructive",
         });
         return { error };
       }
+
+      if (!data || data.length === 0 || !data[0].password_valid) {
+        toast({
+          title: "Erro no login",
+          description: "Email ou senha incorretos",
+          variant: "destructive",
+        });
+        return { error: new Error('Invalid credentials') };
+      }
+
+      const userData = data[0];
+      
+      // Create a mock session for our custom auth
+      const mockUser = {
+        id: userData.user_id,
+        email: userData.email,
+        user_metadata: {
+          full_name: userData.full_name,
+          role: userData.role
+        }
+      };
+
+      const mockSession = {
+        user: mockUser,
+        access_token: 'custom_token',
+        refresh_token: 'custom_refresh'
+      };
+
+      // Set user and profile data
+      setUser(mockUser);
+      setSession(mockSession);
+      setProfile({
+        id: userData.user_id,
+        email: userData.email,
+        full_name: userData.full_name,
+        role: userData.role as 'super_admin' | 'admin' | 'atendente',
+        is_active: userData.is_active
+      });
+
+      // Store in localStorage for persistence
+      localStorage.setItem('custom_session', JSON.stringify(mockSession));
+      localStorage.setItem('custom_profile', JSON.stringify({
+        id: userData.user_id,
+        email: userData.email,
+        full_name: userData.full_name,
+        role: userData.role as 'super_admin' | 'admin' | 'atendente',
+        is_active: userData.is_active
+      }));
 
       return { error: null };
     } catch (error: any) {
@@ -120,19 +178,16 @@ export const useSupabaseAuth = () => {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-      }
-      
       setUser(null);
       setSession(null);
       setProfile(null);
       
-      // Clear any localStorage data
+      // Clear custom session data
+      localStorage.removeItem('custom_session');
+      localStorage.removeItem('custom_profile');
       localStorage.removeItem('user');
       
-      return { error };
+      return { error: null };
     } catch (error: any) {
       console.error('Error in signOut:', error);
       return { error };
