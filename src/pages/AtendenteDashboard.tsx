@@ -51,7 +51,11 @@ interface Complaint {
 }
 
 export default function AtendenteDashboard() {
+  console.log('🔍 AtendenteDashboard: Componente iniciado');
+  
   const { profile, signOut, isLoading } = useSupabaseAuth();
+  console.log('🔍 AtendenteDashboard: Dados do hook:', { profile, isLoading });
+  
   const navigate = useNavigate();
   const { toast } = useToast();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
