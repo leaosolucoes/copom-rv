@@ -13,39 +13,57 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log('=== INÍCIO DO TESTE WHATSAPP ===')
+  
   try {
-    console.log('Iniciando teste de WhatsApp...')
+    // Step 1: Initialize Supabase client
+    console.log('1. Inicializando cliente Supabase...')
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    )
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Variáveis de ambiente do Supabase não configuradas')
+    }
+    
+    const supabaseClient = createClient(supabaseUrl, supabaseKey)
+    console.log('✅ Cliente Supabase inicializado')
 
-    // Parse request body
-    const requestBody = await req.json()
+    // Step 2: Parse request body
+    console.log('2. Processando dados da requisição...')
+    let requestBody
+    try {
+      requestBody = await req.json()
+    } catch (parseError) {
+      console.error('❌ Erro ao fazer parse do JSON:', parseError)
+      throw new Error('Dados da requisição inválidos')
+    }
+    
     const { phoneNumber, message } = requestBody
-    console.log('Dados recebidos:', { phoneNumber, message })
+    console.log('📞 Dados recebidos:', { 
+      phoneNumber: phoneNumber ? `${phoneNumber.substring(0, 4)}****${phoneNumber.substring(phoneNumber.length - 4)}` : 'undefined',
+      messageLength: message ? message.length : 0 
+    })
 
     if (!phoneNumber || !message) {
       throw new Error('phoneNumber e message são obrigatórios')
     }
 
-    // Get WhatsApp configuration with better error handling
-    console.log('Buscando configurações do WhatsApp...')
+    // Step 3: Get WhatsApp configuration
+    console.log('3. Buscando configurações do WhatsApp...')
     const { data: settings, error: settingsError } = await supabaseClient
       .from('system_settings')
       .select('key, value')
       .in('key', ['whatsapp_api_key', 'whatsapp_api_url'])
 
     if (settingsError) {
-      console.error('Erro ao buscar configurações:', settingsError)
+      console.error('❌ Erro ao buscar configurações:', settingsError)
       throw new Error(`Erro ao buscar configurações: ${settingsError.message}`)
     }
 
-    console.log('Configurações encontradas:', settings)
+    console.log('📋 Configurações encontradas:', settings?.length || 0, 'itens')
 
     if (!settings || settings.length === 0) {
-      throw new Error('Nenhuma configuração do WhatsApp encontrada')
+      throw new Error('❌ Nenhuma configuração do WhatsApp encontrada. Verifique se as configurações foram salvas.')
     }
 
     const config = settings.reduce((acc: any, setting) => {
@@ -54,22 +72,29 @@ serve(async (req) => {
       return acc
     }, {})
 
-    console.log('Config processada:', config)
+    console.log('⚙️ Config processada:', {
+      hasApiKey: !!config.api_key,
+      hasApiUrl: !!config.api_url,
+      apiUrlPreview: config.api_url ? `${config.api_url.substring(0, 20)}...` : 'undefined'
+    })
 
     if (!config.api_key || !config.api_url) {
-      throw new Error(`Configurações incompletas - API Key: ${!!config.api_key}, API URL: ${!!config.api_url}`)
+      throw new Error(`❌ Configurações incompletas - API Key: ${!!config.api_key}, API URL: ${!!config.api_url}`)
     }
 
-    // Send test message
+    // Step 4: Prepare WhatsApp payload
+    console.log('4. Preparando payload para WhatsApp...')
+    const cleanPhoneNumber = phoneNumber.replace(/\D/g, '')
     const whatsappPayload = {
-      number: phoneNumber.replace(/\D/g, ''), // Remove non-digits
+      number: cleanPhoneNumber,
       text: message
     }
 
-    const apiUrl = `${config.api_url}/message/sendText/${config.api_key}`
-    console.log('Enviando para URL:', apiUrl)
-    console.log('Payload:', whatsappPayload)
+    const apiUrl = `${config.api_url.replace(/\/$/, '')}/message/sendText/${config.api_key}`
+    console.log('🌐 URL da API:', apiUrl.replace(config.api_key, '***API_KEY***'))
 
+    // Step 5: Send to WhatsApp API
+    console.log('5. Enviando mensagem para Evolution API...')
     const whatsappResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -78,25 +103,27 @@ serve(async (req) => {
       body: JSON.stringify(whatsappPayload)
     })
 
-    console.log('Response status:', whatsappResponse.status)
+    console.log('📡 Response status:', whatsappResponse.status, whatsappResponse.statusText)
     
     let whatsappResult
+    const responseText = await whatsappResponse.text()
+    console.log('📄 Response text:', responseText.substring(0, 500))
+    
     try {
-      whatsappResult = await whatsappResponse.json()
-      console.log('Response body:', whatsappResult)
+      whatsappResult = JSON.parse(responseText)
     } catch (parseError) {
-      const textResult = await whatsappResponse.text()
-      console.error('Erro ao fazer parse da resposta JSON:', parseError)
-      console.log('Resposta como texto:', textResult)
-      throw new Error(`Resposta inválida da API: ${textResult}`)
+      console.error('❌ Erro ao fazer parse da resposta JSON:', parseError)
+      throw new Error(`Resposta inválida da Evolution API: ${responseText}`)
     }
 
     if (!whatsappResponse.ok) {
-      const errorMsg = whatsappResult?.message || whatsappResult?.error || `Status: ${whatsappResponse.status}`
+      const errorMsg = whatsappResult?.message || whatsappResult?.error || whatsappResult?.description || `Status: ${whatsappResponse.status}`
+      console.error('❌ Erro da Evolution API:', errorMsg)
       throw new Error(`Erro da Evolution API (${whatsappResponse.status}): ${errorMsg}`)
     }
 
-    console.log('Mensagem enviada com sucesso!')
+    console.log('✅ Mensagem enviada com sucesso!')
+    console.log('=== FIM DO TESTE WHATSAPP - SUCESSO ===')
 
     return new Response(
       JSON.stringify({ 
@@ -111,13 +138,16 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Erro no teste de WhatsApp:', error)
+    console.error('=== ERRO NO TESTE WHATSAPP ===')
+    console.error('❌ Erro:', error.message)
+    console.error('❌ Stack:', error.stack)
+    console.log('=== FIM DO TESTE WHATSAPP - ERRO ===')
     
     return new Response(
       JSON.stringify({ 
         success: false, 
         error: error.message || 'Erro interno do servidor',
-        details: error.toString()
+        timestamp: new Date().toISOString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
