@@ -229,6 +229,14 @@ export type Database = {
         Args: { password: string }
         Returns: string
       }
+      is_admin_or_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       verify_password: {
         Args: { password: string; hash: string }
         Returns: boolean
