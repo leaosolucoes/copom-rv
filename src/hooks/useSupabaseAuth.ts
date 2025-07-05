@@ -26,6 +26,7 @@ export const useSupabaseAuth = () => {
   // Fetch user profile and roles
   const fetchUserProfile = async (userId: string) => {
     try {
+      // Use .maybeSingle() to avoid errors when no data is found
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select(`
@@ -33,19 +34,19 @@ export const useSupabaseAuth = () => {
           email,
           full_name,
           role,
-          is_active,
-          user_roles!inner (
-            role,
-            is_active,
-            expires_at
-          )
+          is_active
         `)
         .eq('id', userId)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (userError) {
         console.error('Error fetching user profile:', userError);
+        return null;
+      }
+
+      if (!userData) {
+        console.log('No user profile found for:', userId);
         return null;
       }
 
@@ -178,21 +179,33 @@ export const useSupabaseAuth = () => {
 
       const userData = customData[0];
       
-      // Criar sessão simulada para compatibilidade
+      // Para o sistema customizado, precisamos criar uma sessão Supabase simulada
+      // mas que funcione com as políticas RLS
       const mockUser = {
         id: userData.user_id,
         email: userData.email,
         user_metadata: {
           full_name: userData.full_name,
           role: userData.role
-        }
+        },
+        aud: 'authenticated',
+        role: 'authenticated'
       } as any;
 
       const mockSession = {
         user: mockUser,
         access_token: 'custom_token_' + userData.user_id,
-        refresh_token: 'custom_refresh_' + userData.user_id
+        refresh_token: 'custom_refresh_' + userData.user_id,
+        expires_in: 3600,
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+        token_type: 'bearer'
       } as any;
+
+      // IMPORTANTE: Definir a sessão no Supabase para que auth.uid() funcione
+      await supabase.auth.setSession({
+        access_token: mockSession.access_token,
+        refresh_token: mockSession.refresh_token
+      });
 
       // Set user and profile data
       setUser(mockUser);
