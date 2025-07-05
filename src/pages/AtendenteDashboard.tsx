@@ -396,10 +396,9 @@ export default function AtendenteDashboard() {
                                       placeholder="Ex: DENUNCIA-2024-001"
                                     />
                                     <Button
-                                      variant="success"
+                                      className="bg-green-600 hover:bg-green-700 text-white w-full"
                                       onClick={() => handleProcessComplaint(selectedComplaint.id)}
                                       disabled={isProcessing}
-                                      className="w-full"
                                     >
                                       {isProcessing ? "Processando..." : "Marcar como Cadastrada"}
                                     </Button>
@@ -412,8 +411,9 @@ export default function AtendenteDashboard() {
                         
                         {complaint.status === 'nova' && (
                           <Button 
-                            variant="success" 
+                            variant="default" 
                             size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
                             onClick={() => {
                               setSelectedComplaint(complaint);
                               setSystemIdentifier("");
