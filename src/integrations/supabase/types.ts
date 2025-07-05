@@ -346,6 +346,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_super_admin_by_id: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
       update_user_secure: {
         Args: {
           p_user_id: string

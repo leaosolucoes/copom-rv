@@ -179,8 +179,7 @@ export const useSupabaseAuth = () => {
 
       const userData = customData[0];
       
-      // Para o sistema customizado, precisamos criar uma sessão Supabase simulada
-      // mas que funcione com as políticas RLS
+      // Para o sistema customizado, criar uma sessão local
       const mockUser = {
         id: userData.user_id,
         email: userData.email,
@@ -200,12 +199,6 @@ export const useSupabaseAuth = () => {
         expires_at: Math.floor(Date.now() / 1000) + 3600,
         token_type: 'bearer'
       } as any;
-
-      // IMPORTANTE: Definir a sessão no Supabase para que auth.uid() funcione
-      await supabase.auth.setSession({
-        access_token: mockSession.access_token,
-        refresh_token: mockSession.refresh_token
-      });
 
       // Set user and profile data
       setUser(mockUser);
