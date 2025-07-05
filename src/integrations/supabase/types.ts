@@ -9,16 +9,234 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          record_id: string | null
+          table_name: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      complaints: {
+        Row: {
+          assigned_to: string | null
+          attendant_id: string | null
+          classification: string
+          complainant_address: string
+          complainant_block: string | null
+          complainant_lot: string | null
+          complainant_name: string
+          complainant_neighborhood: string
+          complainant_number: string | null
+          complainant_phone: string
+          complainant_type: string
+          created_at: string
+          id: string
+          narrative: string
+          occurrence_address: string
+          occurrence_block: string | null
+          occurrence_date: string
+          occurrence_lot: string | null
+          occurrence_neighborhood: string
+          occurrence_number: string | null
+          occurrence_reference: string | null
+          occurrence_time: string
+          occurrence_type: string
+          processed_at: string | null
+          status: Database["public"]["Enums"]["complaint_status"]
+          system_identifier: string | null
+          updated_at: string
+          whatsapp_sent: boolean | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          attendant_id?: string | null
+          classification: string
+          complainant_address: string
+          complainant_block?: string | null
+          complainant_lot?: string | null
+          complainant_name: string
+          complainant_neighborhood: string
+          complainant_number?: string | null
+          complainant_phone: string
+          complainant_type: string
+          created_at?: string
+          id?: string
+          narrative: string
+          occurrence_address: string
+          occurrence_block?: string | null
+          occurrence_date: string
+          occurrence_lot?: string | null
+          occurrence_neighborhood: string
+          occurrence_number?: string | null
+          occurrence_reference?: string | null
+          occurrence_time: string
+          occurrence_type: string
+          processed_at?: string | null
+          status?: Database["public"]["Enums"]["complaint_status"]
+          system_identifier?: string | null
+          updated_at?: string
+          whatsapp_sent?: boolean | null
+        }
+        Update: {
+          assigned_to?: string | null
+          attendant_id?: string | null
+          classification?: string
+          complainant_address?: string
+          complainant_block?: string | null
+          complainant_lot?: string | null
+          complainant_name?: string
+          complainant_neighborhood?: string
+          complainant_number?: string | null
+          complainant_phone?: string
+          complainant_type?: string
+          created_at?: string
+          id?: string
+          narrative?: string
+          occurrence_address?: string
+          occurrence_block?: string | null
+          occurrence_date?: string
+          occurrence_lot?: string | null
+          occurrence_neighborhood?: string
+          occurrence_number?: string | null
+          occurrence_reference?: string | null
+          occurrence_time?: string
+          occurrence_type?: string
+          processed_at?: string | null
+          status?: Database["public"]["Enums"]["complaint_status"]
+          system_identifier?: string | null
+          updated_at?: string
+          whatsapp_sent?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaints_attendant_id_fkey"
+            columns: ["attendant_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          last_login: string | null
+          password_hash: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          is_active?: boolean
+          last_login?: string | null
+          password_hash: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          last_login?: string | null
+          password_hash?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      hash_password: {
+        Args: { password: string }
+        Returns: string
+      }
+      verify_password: {
+        Args: { password: string; hash: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      complaint_status: "nova" | "cadastrada" | "finalizada"
+      user_role: "super_admin" | "admin" | "atendente"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +351,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      complaint_status: ["nova", "cadastrada", "finalizada"],
+      user_role: ["super_admin", "admin", "atendente"],
+    },
   },
 } as const
