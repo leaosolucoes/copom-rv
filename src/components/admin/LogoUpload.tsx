@@ -23,9 +23,9 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
         .from('system_settings')
         .select('value')
         .eq('key', 'public_logo_url')
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       
       if (data?.value) {
         setCurrentLogoUrl(data.value as string);
