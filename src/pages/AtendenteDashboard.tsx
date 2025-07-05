@@ -33,28 +33,35 @@ interface Complaint {
 }
 
 export default function AtendenteDashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [systemIdentifier, setSystemIdentifier] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingComplaints, setIsLoadingComplaints] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    console.log('Atendente - User:', user);
+    console.log('Atendente - IsLoading:', isLoading);
+    
+    // Só redirecionar se não estiver carregando e realmente não tiver usuário
+    if (!isLoading && !user) {
+      console.log('Redirecionando para login - usuário não autenticado');
       navigate('/acesso');
       return;
     }
 
-    if (user.role !== 'atendente') {
+    if (!isLoading && user && user.role !== 'atendente') {
       navigate('/admin');
       return;
     }
 
-    loadComplaints();
-  }, [user, navigate]);
+    if (user) {
+      loadComplaints();
+    }
+  }, [user, navigate, isLoading]);
 
   const loadComplaints = async () => {
     try {
@@ -73,7 +80,7 @@ export default function AtendenteDashboard() {
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsLoadingComplaints(false);
     }
   };
 
@@ -138,7 +145,7 @@ export default function AtendenteDashboard() {
   const newComplaints = complaints.filter(c => c.status === 'nova');
   const processedComplaints = complaints.filter(c => c.status !== 'nova');
 
-  if (isLoading) {
+  if (isLoading || isLoadingComplaints) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
         <Clock className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />

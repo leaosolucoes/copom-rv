@@ -14,14 +14,32 @@ import { LogoUpload } from '@/components/admin/LogoUpload';
 import { Users, FileText, Settings, MessageSquare, Layout, Image } from 'lucide-react';
 
 const SuperAdminDashboard = () => {
-  const { user, logout, hasRole } = useAuth();
+  const { user, logout, hasRole, isLoading } = useAuth();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
   useEffect(() => {
-    if (!user || !hasRole(['super_admin'])) {
+    console.log('SuperAdmin - User:', user);
+    console.log('SuperAdmin - HasRole super_admin:', hasRole(['super_admin']));
+    console.log('SuperAdmin - IsLoading:', isLoading);
+    
+    // Só redirecionar se não estiver carregando e realmente não tiver permissão
+    if (!isLoading && (!user || !hasRole(['super_admin']))) {
+      console.log('Redirecionando para login - usuário sem permissão');
       window.location.href = '/acesso';
     }
-  }, [user, hasRole]);
+  }, [user, hasRole, isLoading]);
+
+  // Mostrar loading enquanto verifica autenticação
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user || !hasRole(['super_admin'])) {
     return null;
