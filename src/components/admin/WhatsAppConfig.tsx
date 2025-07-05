@@ -80,7 +80,6 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
         auto_send_enabled: settings.auto_send_enabled !== false
       });
     } catch (error) {
-      console.error('Erro ao carregar configurações:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar configurações do WhatsApp",
@@ -125,7 +124,7 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
             });
           }
         } catch (error) {
-          console.log('Template já existe ou erro ao salvar automaticamente');
+          // Template já existe ou erro silencioso
         }
       }
     };
@@ -168,7 +167,6 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
         description: "Configurações do WhatsApp salvas com sucesso!",
       });
     } catch (error: any) {
-      console.error('Erro ao salvar configurações:', error);
       toast({
         title: "Erro",
         description: "Erro ao salvar configurações do WhatsApp",
@@ -191,29 +189,16 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
     }
 
     try {
-      console.log('Iniciando teste WhatsApp...')
-      console.log('Configurações:', {
-        hasApiKey: !!config.api_key,
-        hasApiUrl: !!config.api_url,
-        hasInstanceName: !!config.instance_name,
-        hasPhoneNumber: !!config.phone_number
-      })
-
       const payload = { 
         phoneNumber: config.phone_number,
-        message: 'Template será usado pela edge function' // Placeholder - template vem do banco
+        message: 'Template será usado pela edge function'
       }
-
-      console.log('Payload para edge function:', payload)
 
       const { data, error } = await supabase.functions.invoke('test-whatsapp', {
         body: payload
       });
 
-      console.log('Resposta da edge function:', { data, error })
-
       if (error) {
-        console.error('Erro da edge function:', error)
         throw new Error(`Erro na edge function: ${error.message || JSON.stringify(error)}`)
       }
 
@@ -222,15 +207,11 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
           title: "Sucesso",
           description: "Mensagem de teste enviada com sucesso!",
         });
-        console.log('Teste concluído com sucesso:', data)
       } else {
         const errorMsg = data?.error || 'Erro desconhecido na resposta'
-        console.error('Erro na resposta:', data)
         throw new Error(errorMsg)
       }
     } catch (error: any) {
-      console.error('Erro completo ao testar WhatsApp:', error)
-      console.error('Stack trace:', error.stack)
       
       let errorMessage = 'Erro ao enviar mensagem de teste'
       

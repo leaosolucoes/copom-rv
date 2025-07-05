@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,19 +10,13 @@ import { ComplaintsList } from '@/components/admin/ComplaintsList';
 import { Users, FileText } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { user, logout, hasRole, isLoading } = useAuth();
+  const { profile, signOut, hasRole, isLoading } = useSupabaseAuth();
 
   useEffect(() => {
-    console.log('Admin - User:', user);
-    console.log('Admin - HasRole admin/super_admin:', hasRole(['admin', 'super_admin']));
-    console.log('Admin - IsLoading:', isLoading);
-    
-    // Só redirecionar se não estiver carregando e realmente não tiver permissão
-    if (!isLoading && (!user || !hasRole(['admin', 'super_admin']))) {
-      console.log('Redirecionando para login - usuário sem permissão');
+    if (!isLoading && (!profile || !hasRole(['admin', 'super_admin']))) {
       window.location.href = '/acesso';
     }
-  }, [user, hasRole, isLoading]);
+  }, [profile, hasRole, isLoading]);
 
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {
@@ -36,7 +30,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!user || !hasRole(['admin', 'super_admin'])) {
+  if (!profile || !hasRole(['admin', 'super_admin'])) {
     return null;
   }
 
@@ -53,13 +47,13 @@ const AdminDashboard = () => {
                 Administrador
               </h1>
               <p className="text-sm text-gray-600">
-                Bem-vindo, {user.full_name}
+                Bem-vindo, {profile.full_name}
               </p>
             </div>
             <Button 
               variant="outline" 
               size="sm"
-              onClick={logout}
+              onClick={signOut}
             >
               Sair
             </Button>

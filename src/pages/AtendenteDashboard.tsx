@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +33,7 @@ interface Complaint {
 }
 
 export default function AtendenteDashboard() {
-  const { user, logout, isLoading } = useAuth();
+  const { profile, signOut, isLoading } = useSupabaseAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -43,25 +43,20 @@ export default function AtendenteDashboard() {
   const [isLoadingComplaints, setIsLoadingComplaints] = useState(true);
 
   useEffect(() => {
-    console.log('Atendente - User:', user);
-    console.log('Atendente - IsLoading:', isLoading);
-    
-    // Só redirecionar se não estiver carregando e realmente não tiver usuário
-    if (!isLoading && !user) {
-      console.log('Redirecionando para login - usuário não autenticado');
+    if (!isLoading && !profile) {
       navigate('/acesso');
       return;
     }
 
-    if (!isLoading && user && user.role !== 'atendente') {
+    if (!isLoading && profile && profile.role !== 'atendente') {
       navigate('/admin');
       return;
     }
 
-    if (user) {
+    if (profile) {
       loadComplaints();
     }
-  }, [user, navigate, isLoading]);
+  }, [profile, navigate, isLoading]);
 
   const loadComplaints = async () => {
     try {
@@ -103,7 +98,7 @@ export default function AtendenteDashboard() {
           status: 'cadastrada',
           system_identifier: systemIdentifier,
           processed_at: new Date().toISOString(),
-          attendant_id: user?.id
+          attendant_id: profile?.id
         })
         .eq('id', complaintId);
 
@@ -162,9 +157,9 @@ export default function AtendenteDashboard() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-primary">Painel do Atendente</h1>
-            <p className="text-muted-foreground">Bem-vindo, {user?.full_name}</p>
+            <p className="text-muted-foreground">Bem-vindo, {profile?.full_name}</p>
           </div>
-          <Button variant="outline" onClick={logout}>
+          <Button variant="outline" onClick={signOut}>
             <LogOut className="h-4 w-4 mr-2" />
             Sair
           </Button>
