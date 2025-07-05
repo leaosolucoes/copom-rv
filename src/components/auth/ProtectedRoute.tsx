@@ -58,31 +58,10 @@ export const ProtectedRoute = ({
   return <>{children}</>;
 };
 
-// Domain validation for anti-copy protection
+// Validar domínio no código
 const validateDomain = () => {
-  const allowedDomains = [
-    'localhost',
-    '127.0.0.1',
-    '.lovableproject.com',
-    'posturas.rioverde.go.gov.br',
-    '.rioverde.go.gov.br'
-  ];
-  
-  const currentDomain = window.location.hostname;
-  const isValidDomain = allowedDomains.some(domain => 
-    currentDomain === domain || currentDomain.endsWith(domain)
-  );
-  
-  if (!isValidDomain) {
-    document.body.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: Arial, sans-serif;">
-        <div style="text-align: center;">
-          <h1>🚫 Domínio Não Autorizado</h1>
-          <p>Este sistema só pode ser executado em domínios autorizados.</p>
-          <p>Entre em contato com o administrador do sistema.</p>
-        </div>
-      </div>
-    `;
+  const allowedDomains = ['posturas.conectarioverde.com.br'];
+  if (!allowedDomains.includes(window.location.hostname)) {
     throw new Error('Domínio não autorizado');
   }
 };
