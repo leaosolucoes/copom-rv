@@ -59,6 +59,7 @@ interface SystemSettings {
 export const PublicComplaintForm = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string>('');
   const [settings, setSettings] = useState<SystemSettings>({
     public_neighborhoods: [],
     public_complaint_types: [],
@@ -104,7 +105,8 @@ export const PublicComplaintForm = () => {
           'public_complaint_types',
           'public_occurrence_types',
           'public_classifications',
-          'form_fields_config'
+          'form_fields_config',
+          'public_logo_url'
         ]);
 
       if (error) {
@@ -124,6 +126,8 @@ export const PublicComplaintForm = () => {
       data.forEach(item => {
         if (item.key === 'form_fields_config') {
           fieldsConfig = (item.value as unknown as FormField[]) || [];
+        } else if (item.key === 'public_logo_url') {
+          setLogoUrl(item.value as string);
         } else {
           const value = typeof item.value === 'string' ? JSON.parse(item.value) : item.value;
           settingsObj[item.key as keyof SystemSettings] = value;
@@ -370,7 +374,14 @@ export const PublicComplaintForm = () => {
       {/* Cabeçalho informativo */}
       <Card className="shadow-form border-l-4 border-l-primary">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-primary">
+          <CardTitle className="flex items-center gap-3 text-primary">
+            {logoUrl && (
+              <img 
+                src={logoUrl} 
+                alt="Logo" 
+                className="h-10 w-10 object-contain"
+              />
+            )}
             <AlertTriangle className="h-5 w-5" />
             Formulário de Denúncia
           </CardTitle>
