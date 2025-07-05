@@ -376,11 +376,14 @@ export const PublicComplaintForm = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-3 text-primary">
             {logoUrl && (
-              <img 
-                src={logoUrl} 
-                alt="Logo" 
-                className="h-10 w-10 object-contain"
-              />
+              <div className="flex items-center gap-2">
+                <img 
+                  src={logoUrl} 
+                  alt="Logo" 
+                  className="h-10 w-10 object-contain"
+                />
+                <span className="text-sm font-medium">Fiscalização de Posturas</span>
+              </div>
             )}
             <AlertTriangle className="h-5 w-5" />
             Formulário de Denúncia
