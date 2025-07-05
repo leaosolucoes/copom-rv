@@ -57,63 +57,85 @@ export const useSupabaseAuth = () => {
   };
 
   useEffect(() => {
-    // Set up auth state listener
+    // Check for existing custom session first
+    const checkExistingSession = () => {
+      try {
+        const storedSession = localStorage.getItem('custom_session');
+        const storedProfile = localStorage.getItem('custom_profile');
+        
+        if (storedSession && storedProfile) {
+          const session = JSON.parse(storedSession);
+          const profile = JSON.parse(storedProfile);
+          
+          setSession(session);
+          setUser(session.user);
+          setProfile(profile);
+          setIsLoading(false);
+          return true;
+        }
+      } catch (error) {
+        console.error('Error loading stored session:', error);
+        localStorage.removeItem('custom_session');
+        localStorage.removeItem('custom_profile');
+      }
+      return false;
+    };
+
+    // Set up auth state listener for Supabase Auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Only handle if we don't have a custom session
+        if (!checkExistingSession()) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            setTimeout(async () => {
+              const userProfile = await fetchUserProfile(session.user.id);
+              setProfile(userProfile);
+              setIsLoading(false);
+            }, 0);
+          } else {
+            setProfile(null);
+            setIsLoading(false);
+          }
+        }
+      }
+    );
+
+    // Initial check - first custom session, then Supabase session
+    if (!checkExistingSession()) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile with roles
           setTimeout(async () => {
             const userProfile = await fetchUserProfile(session.user.id);
             setProfile(userProfile);
             setIsLoading(false);
           }, 0);
         } else {
-          setProfile(null);
           setIsLoading(false);
         }
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        setTimeout(async () => {
-          const userProfile = await fetchUserProfile(session.user.id);
-          setProfile(userProfile);
-          setIsLoading(false);
-        }, 0);
-      } else {
-        setIsLoading(false);
-      }
-    });
+      });
+    }
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
+      // SISTEMA HÍBRIDO: Primeiro tenta Supabase Auth, depois fallback para sistema customizado
+      
+      // Tentativa 1: Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.toLowerCase().trim(),
         password: password
       });
 
-      if (error) {
-        toast({
-          title: "Erro no login",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error };
-      }
-
-      if (data.user) {
-        // Update last login
+      if (data.user && !error) {
+        // Sucesso com Supabase Auth
         await supabase
           .from('users')
           .update({ last_login: new Date().toISOString() })
@@ -123,9 +145,89 @@ export const useSupabaseAuth = () => {
           title: "Login realizado",
           description: "Bem-vindo ao sistema!",
         });
+        return { error: null };
       }
 
+      // Tentativa 2: Sistema customizado como fallback
+      console.log('Supabase Auth failed, trying custom auth...');
+      
+      const { data: customData, error: customError } = await supabase
+        .rpc('authenticate_user', {
+          p_email: email.toLowerCase().trim(),
+          p_password: password
+        });
+
+      if (customError) {
+        console.error('Custom auth error:', customError);
+        toast({
+          title: "Erro no login",
+          description: "Erro interno do servidor",
+          variant: "destructive",
+        });
+        return { error: customError };
+      }
+
+      if (!customData || customData.length === 0 || !customData[0].password_valid) {
+        toast({
+          title: "Erro no login",
+          description: "Email ou senha incorretos",
+          variant: "destructive",
+        });
+        return { error: new Error('Invalid credentials') };
+      }
+
+      const userData = customData[0];
+      
+      // Criar sessão simulada para compatibilidade
+      const mockUser = {
+        id: userData.user_id,
+        email: userData.email,
+        user_metadata: {
+          full_name: userData.full_name,
+          role: userData.role
+        }
+      } as any;
+
+      const mockSession = {
+        user: mockUser,
+        access_token: 'custom_token_' + userData.user_id,
+        refresh_token: 'custom_refresh_' + userData.user_id
+      } as any;
+
+      // Set user and profile data
+      setUser(mockUser);
+      setSession(mockSession);
+      setProfile({
+        id: userData.user_id,
+        email: userData.email,
+        full_name: userData.full_name,
+        role: userData.role as 'super_admin' | 'admin' | 'atendente',
+        is_active: userData.is_active
+      });
+
+      // Store in localStorage for persistence
+      localStorage.setItem('custom_session', JSON.stringify(mockSession));
+      localStorage.setItem('custom_profile', JSON.stringify({
+        id: userData.user_id,
+        email: userData.email,
+        full_name: userData.full_name,
+        role: userData.role as 'super_admin' | 'admin' | 'atendente',
+        is_active: userData.is_active
+      }));
+
+      // Update last login
+      await supabase
+        .from('users')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', userData.user_id);
+
+      toast({
+        title: "Login realizado",
+        description: "Bem-vindo ao sistema!",
+      });
+
       return { error: null };
+
     } catch (error: any) {
       console.error('Error in signIn:', error);
       toast({
@@ -139,16 +241,17 @@ export const useSupabaseAuth = () => {
 
   const signOut = async () => {
     try {
+      // Sign out from both systems
       const { error } = await supabase.auth.signOut();
       
-      if (error) {
-        console.error('Error signing out:', error);
-        return { error };
-      }
-
       setUser(null);
       setSession(null);
       setProfile(null);
+      
+      // Clear custom session data
+      localStorage.removeItem('custom_session');
+      localStorage.removeItem('custom_profile');
+      localStorage.removeItem('user');
       
       return { error: null };
     } catch (error: any) {
