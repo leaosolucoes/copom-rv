@@ -44,6 +44,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      console.log('Iniciando busca de usuários...');
       
       // Use Supabase Auth with proper RLS policies
       const { data: allUsers, error } = await supabase
@@ -60,13 +61,19 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('Resposta da consulta:', { allUsers, error });
+
+      if (error) {
+        console.error('Erro na consulta:', error);
+        throw error;
+      }
       
       // Filter users based on role permissions
       const filteredUsers = userRole === 'admin' 
         ? allUsers.filter((user: any) => user.role === 'atendente')
         : allUsers;
         
+      console.log('Usuários filtrados:', filteredUsers);
       setUsers(filteredUsers);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
