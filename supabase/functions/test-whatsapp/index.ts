@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -38,10 +37,11 @@ serve(async (req) => {
       throw new Error('Dados da requisição inválidos')
     }
     
-    const { phoneNumber, message } = requestBody
+    const { phoneNumber, message, instanceName } = requestBody
     console.log('📞 Dados recebidos:', { 
       phoneNumber: phoneNumber ? `${phoneNumber.substring(0, 4)}****${phoneNumber.substring(phoneNumber.length - 4)}` : 'undefined',
-      messageLength: message ? message.length : 0 
+      messageLength: message ? message.length : 0,
+      instanceName: instanceName || 'não informado'
     })
 
     if (!phoneNumber || !message) {
@@ -76,7 +76,7 @@ serve(async (req) => {
       hasApiKey: !!config.api_key,
       hasApiUrl: !!config.api_url,
       hasInstanceName: !!config.instance_name,
-      apiUrlPreview: config.api_url ? `${config.api_url.substring(0, 20)}...` : 'undefined'
+      apiUrlPreview: config.api_url ? config.api_url.substring(0, 30) + '...' : 'undefined'
     })
 
     if (!config.api_key || !config.api_url || !config.instance_name) {
@@ -86,16 +86,22 @@ serve(async (req) => {
     // Step 4: Prepare WhatsApp payload
     console.log('4. Preparando payload para WhatsApp...')
     const cleanPhoneNumber = phoneNumber.replace(/\D/g, '')
+    
+    // Payload for Evolution API
     const whatsappPayload = {
       number: cleanPhoneNumber,
       text: message
     }
 
-    // Use instance name in the URL
-    const apiUrl = `${config.api_url.replace(/\/$/, '')}/message/sendText/${config.instance_name}`
+    // Correct URL format for Evolution API
+    const baseUrl = config.api_url.replace(/\/$/, '')
+    const instanceName = config.instance_name
+    const apiUrl = `${baseUrl}/message/sendText/${instanceName}`
+    
     console.log('🌐 URL da API:', apiUrl)
+    console.log('📤 Payload:', { number: cleanPhoneNumber, textLength: message.length })
 
-    // Step 5: Send to WhatsApp API
+    // Step 5: Send to WhatsApp API with correct headers
     console.log('5. Enviando mensagem para Evolution API...')
     const whatsappResponse = await fetch(apiUrl, {
       method: 'POST',
@@ -110,29 +116,63 @@ serve(async (req) => {
     
     let whatsappResult
     const responseText = await whatsappResponse.text()
-    console.log('📄 Response text:', responseText.substring(0, 500))
+    console.log('📄 Response text (primeiros 200 chars):', responseText.substring(0, 200))
     
     try {
       whatsappResult = JSON.parse(responseText)
     } catch (parseError) {
       console.error('❌ Erro ao fazer parse da resposta JSON:', parseError)
-      throw new Error(`Resposta inválida da Evolution API: ${responseText}`)
+      
+      // Se não conseguir fazer parse, retorna erro mas com mais informações
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Resposta inválida da Evolution API (${whatsappResponse.status}): ${responseText.substring(0, 100)}`,
+          timestamp: new Date().toISOString(),
+          debug: {
+            status: whatsappResponse.status,
+            url: apiUrl.replace(config.api_key, '***'),
+            responsePreview: responseText.substring(0, 100)
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      )
     }
 
     if (!whatsappResponse.ok) {
       const errorMsg = whatsappResult?.message || whatsappResult?.error || whatsappResult?.description || `Status: ${whatsappResponse.status}`
       console.error('❌ Erro da Evolution API:', errorMsg)
-      throw new Error(`Erro da Evolution API (${whatsappResponse.status}): ${errorMsg}`)
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Erro da Evolution API (${whatsappResponse.status}): ${errorMsg}`,
+          timestamp: new Date().toISOString(),
+          debug: {
+            status: whatsappResponse.status,
+            response: whatsappResult
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      )
     }
 
     console.log('✅ Mensagem enviada com sucesso!')
+    console.log('📊 Resultado:', whatsappResult)
     console.log('=== FIM DO TESTE WHATSAPP - SUCESSO ===')
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Mensagem de teste enviada com sucesso',
-        result: whatsappResult 
+        message: 'Mensagem de teste enviada com sucesso!',
+        result: whatsappResult,
+        timestamp: new Date().toISOString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -150,7 +190,11 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: error.message || 'Erro interno do servidor',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        debug: {
+          errorType: error.name,
+          errorStack: error.stack?.split('\n')[0]
+        }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
