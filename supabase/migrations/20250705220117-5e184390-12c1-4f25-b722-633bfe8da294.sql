@@ -1,0 +1,52 @@
+-- Atualizar lista de bairros de Rio Verde, GO
+INSERT INTO public.system_settings (key, value, description)
+VALUES (
+  'public_neighborhoods',
+  '[
+    "Centro",
+    "Setor Central",
+    "Jardim Marconal", 
+    "Vila Brasileira",
+    "Jardim dos Ipês",
+    "Cidade Jardim",
+    "Jardim América",
+    "Vila São Francisco",
+    "Setor Sul",
+    "Setor Norte",
+    "Setor Leste",
+    "Setor Oeste",
+    "Jardim Primavera",
+    "Vila Industrial",
+    "Jardim Panorama",
+    "Residencial Buriti",
+    "Jardim Europa",
+    "Vila Brasília",
+    "Setor Universitário",
+    "Jardim Eldorado",
+    "Vila Nova",
+    "Residencial Portal do Sol",
+    "Jardim São José",
+    "Vila Santana",
+    "Parque das Flores",
+    "Residencial Goiânia",
+    "Jardim das Oliveiras",
+    "Vila Santa Maria",
+    "Setor Aeroporto",
+    "Cidade Alpes Verdes",
+    "Residencial Aldeia do Vale",
+    "Condomínio Ouro Vermelho",
+    "Jardim Tropical",
+    "Vila Verde",
+    "Setor Residencial",
+    "Jardim Imperial",
+    "Vila Real",
+    "Parque dos Buritis",
+    "Residencial Vivendas do Lago",
+    "Jardim das Acácias"
+  ]'::jsonb,
+  'Lista de bairros de Rio Verde, GO para formulários públicos'
+)
+ON CONFLICT (key) DO UPDATE SET
+  value = EXCLUDED.value,
+  description = EXCLUDED.description,
+  updated_at = now();
