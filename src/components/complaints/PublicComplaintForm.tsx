@@ -149,12 +149,20 @@ export const PublicComplaintForm = () => {
   };
 
   const validateForm = (): boolean => {
+    console.log('Iniciando validação do formulário...');
+    console.log('Configuração dos campos:', fieldConfig);
+    console.log('Dados do formulário:', formData);
+    
     // Validar apenas campos obrigatórios que estão visíveis
     const requiredVisibleFields = fieldConfig.filter(field => field.required && field.visible);
+    console.log('Campos obrigatórios visíveis:', requiredVisibleFields);
     
     for (const field of requiredVisibleFields) {
       const fieldValue = formData[field.name as keyof FormData];
+      console.log(`Validando campo ${field.name}:`, fieldValue);
+      
       if (!fieldValue || fieldValue.toString().trim() === '') {
+        console.log(`Campo ${field.name} está vazio!`);
         toast({
           title: "Campo obrigatório",
           description: `Por favor, preencha o campo "${field.label}".`,
@@ -163,6 +171,7 @@ export const PublicComplaintForm = () => {
         return false;
       }
     }
+    console.log('Todos os campos obrigatórios foram preenchidos');
     return true;
   };
 
@@ -313,20 +322,28 @@ export const PublicComplaintForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Formulário submetido!');
     
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      console.log('Validação falhou, formulário não será enviado');
+      return;
+    }
     
+    console.log('Validação passou, iniciando envio...');
     setIsSubmitting(true);
 
     try {
+      console.log('Dados que serão enviados:', formData);
       const { error } = await supabase
         .from('complaints')
         .insert([formData]);
 
       if (error) {
+        console.error('Erro do Supabase:', error);
         throw error;
       }
 
+      console.log('Denúncia enviada com sucesso!');
       toast({
         title: "Denúncia enviada com sucesso!",
         description: "Sua denúncia foi registrada e será analisada pela equipe responsável.",
