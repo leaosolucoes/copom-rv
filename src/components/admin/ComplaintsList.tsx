@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -55,7 +54,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
 
       // Filter by status if selected
       if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
+        query = query.eq('status', statusFilter as ComplaintStatus);
       }
 
       const { data, error } = await query;

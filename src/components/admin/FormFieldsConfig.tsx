@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -53,7 +52,7 @@ export const FormFieldsConfig = () => {
       if (error && error.code !== 'PGRST116') throw error;
       
       if (data?.value) {
-        setFields(data.value as FormField[]);
+        setFields(data.value as unknown as FormField[]);
       } else {
         // Initialize with default fields if none exist
         const defaultFields: FormField[] = [
@@ -109,7 +108,7 @@ export const FormFieldsConfig = () => {
         .from('system_settings')
         .upsert({
           key: 'form_fields_config',
-          value: fieldsToSave as any,
+          value: fieldsToSave as unknown as any,
           description: 'Configuração dos campos do formulário público'
         }, {
           onConflict: 'key'
