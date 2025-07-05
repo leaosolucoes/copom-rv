@@ -4,7 +4,7 @@ import { PublicComplaintForm } from "@/components/complaints/PublicComplaintForm
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header showLoginButton={false} />
       <main className="py-8">
         <div className="container mx-auto">
           <PublicComplaintForm />
