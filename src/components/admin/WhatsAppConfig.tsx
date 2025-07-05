@@ -14,6 +14,7 @@ export const WhatsAppConfig = () => {
   const [config, setConfig] = useState({
     api_key: '',
     api_url: '',
+    instance_name: '',
     phone_number: '',
     message_template: '',
     send_full_complaint: false,
@@ -32,6 +33,7 @@ export const WhatsAppConfig = () => {
         .in('key', [
           'whatsapp_api_key',
           'whatsapp_api_url', 
+          'whatsapp_instance_name',
           'whatsapp_phone_number',
           'whatsapp_message_template',
           'whatsapp_send_full_complaint',
@@ -49,6 +51,7 @@ export const WhatsAppConfig = () => {
       setConfig({
         api_key: settings.api_key || '',
         api_url: settings.api_url || '',
+        instance_name: settings.instance_name || '',
         phone_number: settings.phone_number || '',
         message_template: settings.message_template || `🚨 *NOVA DENÚNCIA REGISTRADA*
 
@@ -139,6 +142,7 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
       const settings = [
         { key: 'whatsapp_api_key', value: config.api_key, description: 'API Key da Evolution API' },
         { key: 'whatsapp_api_url', value: config.api_url, description: 'URL da Evolution API' },
+        { key: 'whatsapp_instance_name', value: config.instance_name, description: 'Nome da instância Evolution API' },
         { key: 'whatsapp_phone_number', value: config.phone_number, description: 'Número do WhatsApp para receber notificações' },
         { key: 'whatsapp_message_template', value: config.message_template, description: 'Template da mensagem automática' },
         { key: 'whatsapp_send_full_complaint', value: config.send_full_complaint, description: 'Enviar denúncia completa ou apenas resumo' },
@@ -177,10 +181,10 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
 
   const testWhatsApp = async () => {
     // Validar se as configurações estão completas
-    if (!config.api_key || !config.api_url || !config.phone_number) {
+    if (!config.api_key || !config.api_url || !config.instance_name || !config.phone_number) {
       toast({
         title: "Configurações Incompletas",
-        description: "Por favor, preencha a API Key, URL da API e número do telefone antes de testar.",
+        description: "Por favor, preencha a API Key, URL da API, nome da instância e número do telefone antes de testar.",
         variant: "destructive",
       });
       return;
@@ -190,7 +194,8 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
       const { data, error } = await supabase.functions.invoke('test-whatsapp', {
         body: { 
           phoneNumber: config.phone_number,
-          message: 'Teste de integração WhatsApp - Sistema Posturas Rio Verde'
+          message: 'Teste de integração WhatsApp - Sistema Posturas Rio Verde',
+          instanceName: config.instance_name
         }
       });
 
@@ -244,6 +249,19 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
               onChange={(e) => setConfig(prev => ({ ...prev, api_url: e.target.value }))}
               placeholder="https://your-evolution-api.com"
             />
+          </div>
+          
+          <div>
+            <Label htmlFor="instance_name">Nome da Instância</Label>
+            <Input
+              id="instance_name"
+              value={config.instance_name}
+              onChange={(e) => setConfig(prev => ({ ...prev, instance_name: e.target.value }))}
+              placeholder="nome-da-instancia"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Nome da instância configurada na Evolution API
+            </p>
           </div>
           
           <div>

@@ -53,7 +53,7 @@ serve(async (req) => {
     const { data: settings, error: settingsError } = await supabaseClient
       .from('system_settings')
       .select('key, value')
-      .in('key', ['whatsapp_api_key', 'whatsapp_api_url'])
+      .in('key', ['whatsapp_api_key', 'whatsapp_api_url', 'whatsapp_instance_name'])
 
     if (settingsError) {
       console.error('❌ Erro ao buscar configurações:', settingsError)
@@ -75,11 +75,12 @@ serve(async (req) => {
     console.log('⚙️ Config processada:', {
       hasApiKey: !!config.api_key,
       hasApiUrl: !!config.api_url,
+      hasInstanceName: !!config.instance_name,
       apiUrlPreview: config.api_url ? `${config.api_url.substring(0, 20)}...` : 'undefined'
     })
 
-    if (!config.api_key || !config.api_url) {
-      throw new Error(`❌ Configurações incompletas - API Key: ${!!config.api_key}, API URL: ${!!config.api_url}`)
+    if (!config.api_key || !config.api_url || !config.instance_name) {
+      throw new Error(`❌ Configurações incompletas - API Key: ${!!config.api_key}, API URL: ${!!config.api_url}, Instance Name: ${!!config.instance_name}`)
     }
 
     // Step 4: Prepare WhatsApp payload
@@ -90,8 +91,9 @@ serve(async (req) => {
       text: message
     }
 
-    const apiUrl = `${config.api_url.replace(/\/$/, '')}/message/sendText/${config.api_key}`
-    console.log('🌐 URL da API:', apiUrl.replace(config.api_key, '***API_KEY***'))
+    // Use instance name in the URL
+    const apiUrl = `${config.api_url.replace(/\/$/, '')}/message/sendText/${config.instance_name}`
+    console.log('🌐 URL da API:', apiUrl)
 
     // Step 5: Send to WhatsApp API
     console.log('5. Enviando mensagem para Evolution API...')
@@ -99,6 +101,7 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'apikey': config.api_key
       },
       body: JSON.stringify(whatsappPayload)
     })
