@@ -17,15 +17,33 @@ import { ptBR } from "date-fns/locale";
 
 interface Complaint {
   id: string;
+  // Dados do reclamante
   complainant_name: string;
   complainant_phone: string;
+  complainant_type: string;
+  complainant_address: string;
+  complainant_number?: string;
+  complainant_block?: string;
+  complainant_lot?: string;
   complainant_neighborhood: string;
+  
+  // Endereço da ocorrência
+  occurrence_type: string;
   occurrence_address: string;
+  occurrence_number?: string;
+  occurrence_block?: string;
+  occurrence_lot?: string;
   occurrence_neighborhood: string;
+  occurrence_reference?: string;
+  
+  // Dados da reclamação
   narrative: string;
-  occurrence_date: string;
-  occurrence_time: string;
+  occurrence_date?: string;
+  occurrence_time?: string;
   classification: string;
+  assigned_to?: string;
+  
+  // Controle interno
   status: 'nova' | 'cadastrada' | 'finalizada';
   system_identifier?: string;
   processed_at?: string;
@@ -223,10 +241,12 @@ export default function AtendenteDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          {format(new Date(complaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })} às {complaint.occurrence_time}
-                        </div>
+                        {complaint.occurrence_date && complaint.occurrence_time && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            {format(new Date(complaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })} às {complaint.occurrence_time}
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4" />
                           {complaint.occurrence_neighborhood}
@@ -248,36 +268,121 @@ export default function AtendenteDashboard() {
                               <DialogTitle>Detalhes da Denúncia</DialogTitle>
                             </DialogHeader>
                             {selectedComplaint && (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label className="font-semibold">Nome do Reclamante</Label>
-                                    <p>{selectedComplaint.complainant_name}</p>
+                              <div className="space-y-6">
+                                {/* Dados do Reclamante */}
+                                <div className="space-y-3">
+                                  <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados do Reclamante</h3>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <Label className="font-semibold">Nome do Reclamante</Label>
+                                      <p>{selectedComplaint.complainant_name}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="font-semibold">Telefone</Label>
+                                      <p>{selectedComplaint.complainant_phone}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="font-semibold">Tipo</Label>
+                                      <p>{selectedComplaint.complainant_type}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="font-semibold">Bairro</Label>
+                                      <p>{selectedComplaint.complainant_neighborhood}</p>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <Label className="font-semibold">Telefone</Label>
-                                    <p>{selectedComplaint.complainant_phone}</p>
+                                  <div className="grid grid-cols-4 gap-4">
+                                    <div className="col-span-2">
+                                      <Label className="font-semibold">Endereço</Label>
+                                      <p>{selectedComplaint.complainant_address}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="font-semibold">Número</Label>
+                                      <p>{selectedComplaint.complainant_number || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="font-semibold">Quadra</Label>
+                                      <p>{selectedComplaint.complainant_block || 'N/A'}</p>
+                                    </div>
                                   </div>
+                                  {selectedComplaint.complainant_lot && (
+                                    <div>
+                                      <Label className="font-semibold">Lote</Label>
+                                      <p>{selectedComplaint.complainant_lot}</p>
+                                    </div>
+                                  )}
                                 </div>
-                                
-                                <div>
-                                  <Label className="font-semibold">Endereço da Ocorrência</Label>
-                                  <p>{selectedComplaint.occurrence_address}, {selectedComplaint.occurrence_neighborhood}</p>
-                                </div>
-                                
-                                <div>
-                                  <Label className="font-semibold">Narrativa</Label>
-                                  <p className="text-sm bg-muted p-3 rounded">{selectedComplaint.narrative}</p>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label className="font-semibold">Data/Hora</Label>
-                                    <p>{format(new Date(selectedComplaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })} às {selectedComplaint.occurrence_time}</p>
+
+                                {/* Endereço da Ocorrência */}
+                                <div className="space-y-3">
+                                  <h3 className="text-lg font-semibold text-primary border-b pb-2">Endereço da Ocorrência</h3>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <Label className="font-semibold">Tipo de Ocorrência</Label>
+                                      <p>{selectedComplaint.occurrence_type}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="font-semibold">Bairro</Label>
+                                      <p>{selectedComplaint.occurrence_neighborhood}</p>
+                                    </div>
                                   </div>
+                                  <div className="grid grid-cols-4 gap-4">
+                                    <div className="col-span-2">
+                                      <Label className="font-semibold">Endereço</Label>
+                                      <p>{selectedComplaint.occurrence_address}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="font-semibold">Número</Label>
+                                      <p>{selectedComplaint.occurrence_number || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="font-semibold">Quadra</Label>
+                                      <p>{selectedComplaint.occurrence_block || 'N/A'}</p>
+                                    </div>
+                                  </div>
+                                  {selectedComplaint.occurrence_lot && (
+                                    <div>
+                                      <Label className="font-semibold">Lote</Label>
+                                      <p>{selectedComplaint.occurrence_lot}</p>
+                                    </div>
+                                  )}
+                                  {selectedComplaint.occurrence_reference && (
+                                    <div>
+                                      <Label className="font-semibold">Referência</Label>
+                                      <p className="text-sm bg-muted p-2 rounded">{selectedComplaint.occurrence_reference}</p>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Dados da Reclamação */}
+                                <div className="space-y-3">
+                                  <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados da Reclamação</h3>
                                   <div>
-                                    <Label className="font-semibold">Classificação</Label>
-                                    <p>{selectedComplaint.classification}</p>
+                                    <Label className="font-semibold">Narrativa</Label>
+                                    <p className="text-sm bg-muted p-3 rounded mt-1">{selectedComplaint.narrative}</p>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    {selectedComplaint.occurrence_date && (
+                                      <div>
+                                        <Label className="font-semibold">Data</Label>
+                                        <p>{format(new Date(selectedComplaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}</p>
+                                      </div>
+                                    )}
+                                    {selectedComplaint.occurrence_time && (
+                                      <div>
+                                        <Label className="font-semibold">Hora</Label>
+                                        <p>{selectedComplaint.occurrence_time}</p>
+                                      </div>
+                                    )}
+                                    <div>
+                                      <Label className="font-semibold">Classificação</Label>
+                                      <p>{selectedComplaint.classification}</p>
+                                    </div>
+                                    {selectedComplaint.assigned_to && (
+                                      <div>
+                                        <Label className="font-semibold">Atribuído a</Label>
+                                        <p>{selectedComplaint.assigned_to}</p>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                                 
@@ -353,10 +458,12 @@ export default function AtendenteDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {format(new Date(complaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}
-                        </div>
+                        {complaint.occurrence_date && (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            {format(new Date(complaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}
+                          </div>
+                        )}
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4" />
                           {complaint.occurrence_neighborhood}

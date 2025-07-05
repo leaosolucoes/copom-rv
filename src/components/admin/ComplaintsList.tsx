@@ -9,27 +9,47 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Eye, Download, MessageSquare, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 
 type ComplaintStatus = Database['public']['Enums']['complaint_status'];
 
 interface Complaint {
   id: string;
+  // Dados do reclamante
   complainant_name: string;
   complainant_phone: string;
+  complainant_type: string;
+  complainant_address: string;
+  complainant_number?: string;
+  complainant_block?: string;
+  complainant_lot?: string;
+  complainant_neighborhood: string;
+  
+  // Endereço da ocorrência
   occurrence_type: string;
   occurrence_address: string;
+  occurrence_number?: string;
+  occurrence_block?: string;
+  occurrence_lot?: string;
   occurrence_neighborhood: string;
-  classification: string;
-  status: ComplaintStatus;
-  created_at: string;
-  processed_at: string | null;
-  attendant_id: string | null;
-  system_identifier: string | null;
+  occurrence_reference?: string;
+  
+  // Dados da reclamação
   narrative: string;
-  occurrence_date: string;
-  occurrence_time: string;
-  whatsapp_sent: boolean | null;
+  occurrence_date?: string;
+  occurrence_time?: string;
+  classification: string;
+  assigned_to?: string;
+  
+  // Controle interno
+  status: ComplaintStatus;
+  system_identifier?: string;
+  processed_at?: string;
+  attendant_id?: string;
+  whatsapp_sent?: boolean;
+  created_at: string;
 }
 
 interface ComplaintsListProps {
@@ -284,39 +304,115 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                             <DialogTitle>Detalhes da Denúncia</DialogTitle>
                           </DialogHeader>
                           {selectedComplaint && (
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <strong>Denunciante:</strong> {selectedComplaint.complainant_name}
+                            <div className="space-y-6">
+                              {/* Dados do Reclamante */}
+                              <div className="space-y-3">
+                                <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados do Reclamante</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <strong>Nome:</strong> {selectedComplaint.complainant_name}
+                                  </div>
+                                  <div>
+                                    <strong>Telefone:</strong> {selectedComplaint.complainant_phone}
+                                  </div>
+                                  <div>
+                                    <strong>Tipo:</strong> {selectedComplaint.complainant_type}
+                                  </div>
+                                  <div>
+                                    <strong>Bairro:</strong> {selectedComplaint.complainant_neighborhood}
+                                  </div>
                                 </div>
-                                <div>
-                                  <strong>Telefone:</strong> {selectedComplaint.complainant_phone}
+                                <div className="grid grid-cols-4 gap-4">
+                                  <div className="col-span-2">
+                                    <strong>Endereço:</strong> {selectedComplaint.complainant_address}
+                                  </div>
+                                  <div>
+                                    <strong>Número:</strong> {selectedComplaint.complainant_number || 'N/A'}
+                                  </div>
+                                  <div>
+                                    <strong>Quadra:</strong> {selectedComplaint.complainant_block || 'N/A'}
+                                  </div>
                                 </div>
-                                <div>
-                                  <strong>Tipo de Ocorrência:</strong> {selectedComplaint.occurrence_type}
+                                {selectedComplaint.complainant_lot && (
+                                  <div>
+                                    <strong>Lote:</strong> {selectedComplaint.complainant_lot}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Endereço da Ocorrência */}
+                              <div className="space-y-3">
+                                <h3 className="text-lg font-semibold text-primary border-b pb-2">Endereço da Ocorrência</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <strong>Tipo de Ocorrência:</strong> {selectedComplaint.occurrence_type}
+                                  </div>
+                                  <div>
+                                    <strong>Bairro:</strong> {selectedComplaint.occurrence_neighborhood}
+                                  </div>
                                 </div>
-                                <div>
-                                  <strong>Classificação:</strong> {selectedComplaint.classification}
+                                <div className="grid grid-cols-4 gap-4">
+                                  <div className="col-span-2">
+                                    <strong>Endereço:</strong> {selectedComplaint.occurrence_address}
+                                  </div>
+                                  <div>
+                                    <strong>Número:</strong> {selectedComplaint.occurrence_number || 'N/A'}
+                                  </div>
+                                  <div>
+                                    <strong>Quadra:</strong> {selectedComplaint.occurrence_block || 'N/A'}
+                                  </div>
                                 </div>
+                                {selectedComplaint.occurrence_lot && (
+                                  <div>
+                                    <strong>Lote:</strong> {selectedComplaint.occurrence_lot}
+                                  </div>
+                                )}
+                                {selectedComplaint.occurrence_reference && (
+                                  <div>
+                                    <strong>Referência:</strong>
+                                    <p className="text-sm bg-muted p-2 rounded mt-1">{selectedComplaint.occurrence_reference}</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Dados da Reclamação */}
+                              <div className="space-y-3">
+                                <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados da Reclamação</h3>
                                 <div>
-                                  <strong>Data da Ocorrência:</strong> {new Date(selectedComplaint.occurrence_date).toLocaleDateString('pt-BR')}
+                                  <strong>Narrativa:</strong>
+                                  <p className="text-sm bg-muted p-3 rounded mt-1">{selectedComplaint.narrative}</p>
                                 </div>
-                                <div>
-                                  <strong>Horário:</strong> {selectedComplaint.occurrence_time}
+                                <div className="grid grid-cols-2 gap-4">
+                                  {selectedComplaint.occurrence_date && (
+                                    <div>
+                                      <strong>Data:</strong> {format(new Date(selectedComplaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}
+                                    </div>
+                                  )}
+                                  {selectedComplaint.occurrence_time && (
+                                    <div>
+                                      <strong>Hora:</strong> {selectedComplaint.occurrence_time}
+                                    </div>
+                                  )}
+                                  <div>
+                                    <strong>Classificação:</strong> {selectedComplaint.classification}
+                                  </div>
+                                  {selectedComplaint.assigned_to && (
+                                    <div>
+                                      <strong>Atribuído a:</strong> {selectedComplaint.assigned_to}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <strong>Status:</strong> {selectedComplaint.status}
+                                  </div>
+                                  {selectedComplaint.system_identifier && (
+                                    <div>
+                                      <strong>Identificador do Sistema:</strong> {selectedComplaint.system_identifier}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                              <div>
-                                <strong>Endereço da Ocorrência:</strong> {selectedComplaint.occurrence_address}, {selectedComplaint.occurrence_neighborhood}
-                              </div>
-                              <div>
-                                <strong>Narrativa:</strong>
-                                <p className="mt-2 p-3 bg-gray-50 rounded">{selectedComplaint.narrative}</p>
-                              </div>
-                              {selectedComplaint.system_identifier && (
-                                <div>
-                                  <strong>Identificador do Sistema:</strong> {selectedComplaint.system_identifier}
-                                </div>
-                              )}
                               <div className="flex space-x-2">
                                 {userRole !== 'admin' && selectedComplaint.status === 'nova' && (
                                   <Button 
