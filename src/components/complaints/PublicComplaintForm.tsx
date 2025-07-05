@@ -37,6 +37,18 @@ interface FormData {
   assigned_to: string;
 }
 
+interface FormField {
+  id: string;
+  name: string;
+  label: string;
+  type: 'text' | 'select' | 'textarea' | 'tel' | 'date' | 'time';
+  options?: string[];
+  required: boolean;
+  visible: boolean;
+  order_index: number;
+  section: 'complainant' | 'occurrence' | 'complaint';
+}
+
 interface SystemSettings {
   public_neighborhoods: string[];
   public_complaint_types: string[];
@@ -53,6 +65,7 @@ export const PublicComplaintForm = () => {
     public_occurrence_types: [],
     public_classifications: []
   });
+  const [fieldConfig, setFieldConfig] = useState<FormField[]>([]);
 
   const [formData, setFormData] = useState<FormData>({
     complainant_name: "",
@@ -90,7 +103,8 @@ export const PublicComplaintForm = () => {
           'public_neighborhoods',
           'public_complaint_types',
           'public_occurrence_types',
-          'public_classifications'
+          'public_classifications',
+          'form_fields_config'
         ]);
 
       if (error) {
@@ -105,12 +119,19 @@ export const PublicComplaintForm = () => {
         public_classifications: []
       };
 
+      let fieldsConfig: FormField[] = [];
+
       data.forEach(item => {
-        const value = typeof item.value === 'string' ? JSON.parse(item.value) : item.value;
-        settingsObj[item.key as keyof SystemSettings] = value;
+        if (item.key === 'form_fields_config') {
+          fieldsConfig = (item.value as unknown as FormField[]) || [];
+        } else {
+          const value = typeof item.value === 'string' ? JSON.parse(item.value) : item.value;
+          settingsObj[item.key as keyof SystemSettings] = value;
+        }
       });
 
       setSettings(settingsObj);
+      setFieldConfig(fieldsConfig);
     } catch (error) {
       console.error('Erro ao processar configurações:', error);
     }
@@ -124,24 +145,166 @@ export const PublicComplaintForm = () => {
   };
 
   const validateForm = (): boolean => {
-    const requiredFields: (keyof FormData)[] = [
-      'complainant_name', 'complainant_phone', 'complainant_type', 
-      'complainant_address', 'complainant_neighborhood',
-      'occurrence_type', 'occurrence_address', 'occurrence_neighborhood',
-      'narrative', 'occurrence_date', 'occurrence_time', 'classification'
-    ];
-
-    for (const field of requiredFields) {
-      if (!formData[field].trim()) {
+    // Validar apenas campos obrigatórios que estão visíveis
+    const requiredVisibleFields = fieldConfig.filter(field => field.required && field.visible);
+    
+    for (const field of requiredVisibleFields) {
+      const fieldValue = formData[field.name as keyof FormData];
+      if (!fieldValue || fieldValue.toString().trim() === '') {
         toast({
           title: "Campo obrigatório",
-          description: `Por favor, preencha o campo obrigatório.`,
+          description: `Por favor, preencha o campo "${field.label}".`,
           variant: "destructive"
         });
         return false;
       }
     }
     return true;
+  };
+
+  const getFieldOptions = (field: FormField): string[] => {
+    // Para campos que têm opções configuradas
+    if (field.options && field.options.length > 0) {
+      return field.options;
+    }
+    
+    // Para campos que dependem das configurações do sistema
+    switch (field.name) {
+      case 'complainant_type':
+        return settings.public_complaint_types;
+      case 'complainant_neighborhood':
+      case 'occurrence_neighborhood':
+        return settings.public_neighborhoods;
+      case 'occurrence_type':
+        return settings.public_occurrence_types;
+      case 'classification':
+        return settings.public_classifications;
+      default:
+        return [];
+    }
+  };
+
+  const renderField = (field: FormField) => {
+    if (!field.visible) return null;
+
+    const fieldValue = formData[field.name as keyof FormData] || '';
+    const isRequired = field.required;
+    const label = `${field.label}${isRequired ? ' *' : ''}`;
+
+    switch (field.type) {
+      case 'text':
+      case 'tel':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.name}>{label}</Label>
+            <Input
+              id={field.name}
+              type={field.type === 'tel' ? 'tel' : 'text'}
+              value={fieldValue}
+              onChange={(e) => handleInputChange(field.name as keyof FormData, e.target.value)}
+              placeholder={field.type === 'tel' ? '(xx) xxxxx-xxxx' : `Digite ${field.label.toLowerCase()}`}
+              required={isRequired}
+            />
+          </div>
+        );
+
+      case 'textarea':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.name}>{label}</Label>
+            <Textarea
+              id={field.name}
+              value={fieldValue}
+              onChange={(e) => handleInputChange(field.name as keyof FormData, e.target.value)}
+              placeholder={`Digite ${field.label.toLowerCase()}...`}
+              rows={4}
+              required={isRequired}
+            />
+          </div>
+        );
+
+      case 'select':
+        const options = getFieldOptions(field);
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.name}>{label}</Label>
+            <Select 
+              value={fieldValue} 
+              onValueChange={(value) => handleInputChange(field.name as keyof FormData, value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={`Selecione ${field.label.toLowerCase()}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((option) => (
+                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+
+      case 'date':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.name}>{label}</Label>
+            <Input
+              id={field.name}
+              type="date"
+              value={fieldValue}
+              onChange={(e) => handleInputChange(field.name as keyof FormData, e.target.value)}
+              required={isRequired}
+            />
+          </div>
+        );
+
+      case 'time':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.name}>{label}</Label>
+            <Input
+              id={field.name}
+              type="time"
+              value={fieldValue}
+              onChange={(e) => handleInputChange(field.name as keyof FormData, e.target.value)}
+              required={isRequired}
+            />
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const renderSection = (sectionType: 'complainant' | 'occurrence' | 'complaint', title: string) => {
+    const sectionFields = fieldConfig
+      .filter(field => field.section === sectionType && field.visible)
+      .sort((a, b) => a.order_index - b.order_index);
+
+    if (sectionFields.length === 0) return null;
+
+    return (
+      <Card key={sectionType} className="shadow-form">
+        <CardHeader>
+          <CardTitle className="text-lg">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {sectionFields.map(field => {
+            const renderedField = renderField(field);
+            // Para campos de narrativa (textarea), ocupar toda a largura
+            if (field.type === 'textarea' || field.name === 'occurrence_reference') {
+              return (
+                <div key={field.id} className="md:col-span-2">
+                  {renderedField}
+                </div>
+              );
+            }
+            return renderedField;
+          })}
+        </CardContent>
+      </Card>
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -221,261 +384,9 @@ export const PublicComplaintForm = () => {
       </Card>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Dados do Reclamante */}
-        <Card className="shadow-form">
-          <CardHeader>
-            <CardTitle className="text-lg">Dados do Reclamante</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="complainant_name">Nome Completo *</Label>
-              <Input
-                id="complainant_name"
-                value={formData.complainant_name}
-                onChange={(e) => handleInputChange('complainant_name', e.target.value)}
-                placeholder="Digite seu nome completo"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="complainant_phone">Telefone *</Label>
-              <Input
-                id="complainant_phone"
-                value={formData.complainant_phone}
-                onChange={(e) => handleInputChange('complainant_phone', e.target.value)}
-                placeholder="(xx) xxxxx-xxxx"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="complainant_type">Tipo *</Label>
-              <Select value={formData.complainant_type} onValueChange={(value) => handleInputChange('complainant_type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {settings.public_complaint_types.map((type) => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="complainant_neighborhood">Bairro *</Label>
-              <Select value={formData.complainant_neighborhood} onValueChange={(value) => handleInputChange('complainant_neighborhood', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o bairro" />
-                </SelectTrigger>
-                <SelectContent>
-                  {settings.public_neighborhoods.map((neighborhood) => (
-                    <SelectItem key={neighborhood} value={neighborhood}>{neighborhood}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="complainant_address">Rua/Logradouro *</Label>
-              <Input
-                id="complainant_address"
-                value={formData.complainant_address}
-                onChange={(e) => handleInputChange('complainant_address', e.target.value)}
-                placeholder="Digite o endereço"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="complainant_number">Número</Label>
-              <Input
-                id="complainant_number"
-                value={formData.complainant_number}
-                onChange={(e) => handleInputChange('complainant_number', e.target.value)}
-                placeholder="Número"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="complainant_block">Quadra</Label>
-              <Input
-                id="complainant_block"
-                value={formData.complainant_block}
-                onChange={(e) => handleInputChange('complainant_block', e.target.value)}
-                placeholder="Quadra"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="complainant_lot">Lote</Label>
-              <Input
-                id="complainant_lot"
-                value={formData.complainant_lot}
-                onChange={(e) => handleInputChange('complainant_lot', e.target.value)}
-                placeholder="Lote"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Endereço da Ocorrência */}
-        <Card className="shadow-form">
-          <CardHeader>
-            <CardTitle className="text-lg">Endereço da Ocorrência</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="occurrence_type">Tipo *</Label>
-              <Select value={formData.occurrence_type} onValueChange={(value) => handleInputChange('occurrence_type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {settings.public_occurrence_types.map((type) => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="occurrence_neighborhood">Bairro *</Label>
-              <Select value={formData.occurrence_neighborhood} onValueChange={(value) => handleInputChange('occurrence_neighborhood', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o bairro" />
-                </SelectTrigger>
-                <SelectContent>
-                  {settings.public_neighborhoods.map((neighborhood) => (
-                    <SelectItem key={neighborhood} value={neighborhood}>{neighborhood}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="occurrence_address">Rua/Logradouro *</Label>
-              <Input
-                id="occurrence_address"
-                value={formData.occurrence_address}
-                onChange={(e) => handleInputChange('occurrence_address', e.target.value)}
-                placeholder="Digite o endereço da ocorrência"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="occurrence_number">Número</Label>
-              <Input
-                id="occurrence_number"
-                value={formData.occurrence_number}
-                onChange={(e) => handleInputChange('occurrence_number', e.target.value)}
-                placeholder="Número"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="occurrence_block">Quadra</Label>
-              <Input
-                id="occurrence_block"
-                value={formData.occurrence_block}
-                onChange={(e) => handleInputChange('occurrence_block', e.target.value)}
-                placeholder="Quadra"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="occurrence_lot">Lote</Label>
-              <Input
-                id="occurrence_lot"
-                value={formData.occurrence_lot}
-                onChange={(e) => handleInputChange('occurrence_lot', e.target.value)}
-                placeholder="Lote"
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="occurrence_reference">Ponto de Referência</Label>
-              <Input
-                id="occurrence_reference"
-                value={formData.occurrence_reference}
-                onChange={(e) => handleInputChange('occurrence_reference', e.target.value)}
-                placeholder="Próximo a algum estabelecimento conhecido..."
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Dados da Reclamação */}
-        <Card className="shadow-form">
-          <CardHeader>
-            <CardTitle className="text-lg">Dados da Reclamação</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="narrative">Narrativa *</Label>
-              <Textarea
-                id="narrative"
-                value={formData.narrative}
-                onChange={(e) => handleInputChange('narrative', e.target.value)}
-                placeholder="Descreva detalhadamente a situação..."
-                rows={4}
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="occurrence_date">Data da Ocorrência *</Label>
-                <Input
-                  id="occurrence_date"
-                  type="date"
-                  value={formData.occurrence_date}
-                  onChange={(e) => handleInputChange('occurrence_date', e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="occurrence_time">Horário *</Label>
-                <Input
-                  id="occurrence_time"
-                  type="time"
-                  value={formData.occurrence_time}
-                  onChange={(e) => handleInputChange('occurrence_time', e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="classification">Classificação *</Label>
-                <Select value={formData.classification} onValueChange={(value) => handleInputChange('classification', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a classificação" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {settings.public_classifications.map((classification) => (
-                      <SelectItem key={classification} value={classification}>{classification}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="assigned_to">Atribuir para</Label>
-                <Input
-                  id="assigned_to"
-                  value={formData.assigned_to}
-                  onChange={(e) => handleInputChange('assigned_to', e.target.value)}
-                  placeholder="Setor responsável (opcional)"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {renderSection('complainant', 'Dados do Reclamante')}
+        {renderSection('occurrence', 'Endereço da Ocorrência')}
+        {renderSection('complaint', 'Dados da Reclamação')}
 
         {/* Botão de envio */}
         <Card className="shadow-form">
