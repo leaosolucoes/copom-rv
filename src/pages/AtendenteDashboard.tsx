@@ -254,177 +254,160 @@ export default function AtendenteDashboard() {
                       
                       <p className="text-sm mb-4 line-clamp-2">{complaint.narrative}</p>
                       
-                      <div className="flex gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedComplaint(complaint)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              Ver Detalhes
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Detalhes da Denúncia</DialogTitle>
-                            </DialogHeader>
-                            {selectedComplaint && (
-                              <div className="space-y-6">
-                                {/* Dados do Reclamante */}
-                                <div className="space-y-3">
-                                  <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados do Reclamante</h3>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <Label className="font-semibold">Nome do Reclamante</Label>
-                                      <p>{selectedComplaint.complainant_name}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="font-semibold">Telefone</Label>
-                                      <p>{selectedComplaint.complainant_phone}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="font-semibold">Tipo</Label>
-                                      <p>{selectedComplaint.complainant_type}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="font-semibold">Bairro</Label>
-                                      <p>{selectedComplaint.complainant_neighborhood}</p>
-                                    </div>
-                                  </div>
-                                  <div className="grid grid-cols-4 gap-4">
-                                    <div className="col-span-2">
-                                      <Label className="font-semibold">Endereço</Label>
-                                      <p>{selectedComplaint.complainant_address}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="font-semibold">Número</Label>
-                                      <p>{selectedComplaint.complainant_number || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="font-semibold">Quadra</Label>
-                                      <p>{selectedComplaint.complainant_block || 'N/A'}</p>
-                                    </div>
-                                  </div>
-                                  {selectedComplaint.complainant_lot && (
-                                    <div>
-                                      <Label className="font-semibold">Lote</Label>
-                                      <p>{selectedComplaint.complainant_lot}</p>
-                                    </div>
-                                  )}
-                                </div>
+                       <div className="flex gap-2">
+                         <Dialog>
+                           <DialogTrigger asChild>
+                             <Button variant="outline" size="sm" onClick={() => setSelectedComplaint(complaint)}>
+                               <Eye className="h-4 w-4 mr-2" />
+                               Ver Detalhes
+                             </Button>
+                           </DialogTrigger>
+                           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                             <DialogHeader>
+                               <DialogTitle>Detalhes da Denúncia</DialogTitle>
+                             </DialogHeader>
+                             {selectedComplaint && (
+                               <div className="space-y-6">
+                                 {/* Dados do Reclamante */}
+                                 <div className="space-y-3">
+                                   <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados do Reclamante</h3>
+                                   <div className="grid grid-cols-2 gap-4">
+                                     <div>
+                                       <Label className="font-semibold">Nome do Reclamante</Label>
+                                       <p>{selectedComplaint.complainant_name}</p>
+                                     </div>
+                                     <div>
+                                       <Label className="font-semibold">Telefone</Label>
+                                       <p>{selectedComplaint.complainant_phone}</p>
+                                     </div>
+                                     <div>
+                                       <Label className="font-semibold">Tipo</Label>
+                                       <p>{selectedComplaint.complainant_type}</p>
+                                     </div>
+                                     <div>
+                                       <Label className="font-semibold">Bairro</Label>
+                                       <p>{selectedComplaint.complainant_neighborhood}</p>
+                                     </div>
+                                   </div>
+                                   <div className="grid grid-cols-4 gap-4">
+                                     <div className="col-span-2">
+                                       <Label className="font-semibold">Endereço</Label>
+                                       <p>{selectedComplaint.complainant_address}</p>
+                                     </div>
+                                     <div>
+                                       <Label className="font-semibold">Número</Label>
+                                       <p>{selectedComplaint.complainant_number || 'N/A'}</p>
+                                     </div>
+                                     <div>
+                                       <Label className="font-semibold">Quadra</Label>
+                                       <p>{selectedComplaint.complainant_block || 'N/A'}</p>
+                                     </div>
+                                   </div>
+                                   {selectedComplaint.complainant_lot && (
+                                     <div>
+                                       <Label className="font-semibold">Lote</Label>
+                                       <p>{selectedComplaint.complainant_lot}</p>
+                                     </div>
+                                   )}
+                                 </div>
 
-                                {/* Endereço da Ocorrência */}
-                                <div className="space-y-3">
-                                  <h3 className="text-lg font-semibold text-primary border-b pb-2">Endereço da Ocorrência</h3>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <Label className="font-semibold">Tipo de Ocorrência</Label>
-                                      <p>{selectedComplaint.occurrence_type}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="font-semibold">Bairro</Label>
-                                      <p>{selectedComplaint.occurrence_neighborhood}</p>
-                                    </div>
-                                  </div>
-                                  <div className="grid grid-cols-4 gap-4">
-                                    <div className="col-span-2">
-                                      <Label className="font-semibold">Endereço</Label>
-                                      <p>{selectedComplaint.occurrence_address}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="font-semibold">Número</Label>
-                                      <p>{selectedComplaint.occurrence_number || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="font-semibold">Quadra</Label>
-                                      <p>{selectedComplaint.occurrence_block || 'N/A'}</p>
-                                    </div>
-                                  </div>
-                                  {selectedComplaint.occurrence_lot && (
-                                    <div>
-                                      <Label className="font-semibold">Lote</Label>
-                                      <p>{selectedComplaint.occurrence_lot}</p>
-                                    </div>
-                                  )}
-                                  {selectedComplaint.occurrence_reference && (
-                                    <div>
-                                      <Label className="font-semibold">Referência</Label>
-                                      <p className="text-sm bg-muted p-2 rounded">{selectedComplaint.occurrence_reference}</p>
-                                    </div>
-                                  )}
-                                </div>
+                                 {/* Endereço da Ocorrência */}
+                                 <div className="space-y-3">
+                                   <h3 className="text-lg font-semibold text-primary border-b pb-2">Endereço da Ocorrência</h3>
+                                   <div className="grid grid-cols-2 gap-4">
+                                     <div>
+                                       <Label className="font-semibold">Tipo de Ocorrência</Label>
+                                       <p>{selectedComplaint.occurrence_type}</p>
+                                     </div>
+                                     <div>
+                                       <Label className="font-semibold">Bairro</Label>
+                                       <p>{selectedComplaint.occurrence_neighborhood}</p>
+                                     </div>
+                                   </div>
+                                   <div className="grid grid-cols-4 gap-4">
+                                     <div className="col-span-2">
+                                       <Label className="font-semibold">Endereço</Label>
+                                       <p>{selectedComplaint.occurrence_address}</p>
+                                     </div>
+                                     <div>
+                                       <Label className="font-semibold">Número</Label>
+                                       <p>{selectedComplaint.occurrence_number || 'N/A'}</p>
+                                     </div>
+                                     <div>
+                                       <Label className="font-semibold">Quadra</Label>
+                                       <p>{selectedComplaint.occurrence_block || 'N/A'}</p>
+                                     </div>
+                                   </div>
+                                   {selectedComplaint.occurrence_lot && (
+                                     <div>
+                                       <Label className="font-semibold">Lote</Label>
+                                       <p>{selectedComplaint.occurrence_lot}</p>
+                                     </div>
+                                   )}
+                                   {selectedComplaint.occurrence_reference && (
+                                     <div>
+                                       <Label className="font-semibold">Referência</Label>
+                                       <p className="text-sm bg-muted p-2 rounded">{selectedComplaint.occurrence_reference}</p>
+                                     </div>
+                                   )}
+                                 </div>
 
-                                {/* Dados da Reclamação */}
-                                <div className="space-y-3">
-                                  <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados da Reclamação</h3>
-                                  <div>
-                                    <Label className="font-semibold">Narrativa</Label>
-                                    <p className="text-sm bg-muted p-3 rounded mt-1">{selectedComplaint.narrative}</p>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    {selectedComplaint.occurrence_date && (
-                                      <div>
-                                        <Label className="font-semibold">Data</Label>
-                                        <p>{format(new Date(selectedComplaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}</p>
-                                      </div>
-                                    )}
-                                    {selectedComplaint.occurrence_time && (
-                                      <div>
-                                        <Label className="font-semibold">Hora</Label>
-                                        <p>{selectedComplaint.occurrence_time}</p>
-                                      </div>
-                                    )}
-                                    <div>
-                                      <Label className="font-semibold">Classificação</Label>
-                                      <p>{selectedComplaint.classification}</p>
-                                    </div>
-                                    {selectedComplaint.assigned_to && (
-                                      <div>
-                                        <Label className="font-semibold">Atribuído a</Label>
-                                        <p>{selectedComplaint.assigned_to}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                
-                                {selectedComplaint.status === 'nova' && (
-                                  <div className="space-y-3 pt-4 border-t">
-                                    <Label htmlFor="system_id">Identificador do Sistema</Label>
-                                    <Input
-                                      id="system_id"
-                                      value={systemIdentifier}
-                                      onChange={(e) => setSystemIdentifier(e.target.value)}
-                                      placeholder="Ex: DENUNCIA-2024-001"
-                                    />
-                                    <Button
-                                      className="bg-green-600 hover:bg-green-700 text-white w-full"
-                                      onClick={() => handleProcessComplaint(selectedComplaint.id)}
-                                      disabled={isProcessing}
-                                    >
-                                      {isProcessing ? "Processando..." : "Marcar como Cadastrada"}
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                        
-                        {complaint.status === 'nova' && (
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="default" 
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                              onClick={() => {
-                                setSelectedComplaint(complaint);
-                                setSystemIdentifier("");
-                              }}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Processar
-                            </Button>
-                          </DialogTrigger>
-                        )}
-                      </div>
+                                 {/* Dados da Reclamação */}
+                                 <div className="space-y-3">
+                                   <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados da Reclamação</h3>
+                                   <div>
+                                     <Label className="font-semibold">Narrativa</Label>
+                                     <p className="text-sm bg-muted p-3 rounded mt-1">{selectedComplaint.narrative}</p>
+                                   </div>
+                                   <div className="grid grid-cols-2 gap-4">
+                                     {selectedComplaint.occurrence_date && (
+                                       <div>
+                                         <Label className="font-semibold">Data</Label>
+                                         <p>{format(new Date(selectedComplaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}</p>
+                                       </div>
+                                     )}
+                                     {selectedComplaint.occurrence_time && (
+                                       <div>
+                                         <Label className="font-semibold">Hora</Label>
+                                         <p>{selectedComplaint.occurrence_time}</p>
+                                       </div>
+                                     )}
+                                     <div>
+                                       <Label className="font-semibold">Classificação</Label>
+                                       <p>{selectedComplaint.classification}</p>
+                                     </div>
+                                     {selectedComplaint.assigned_to && (
+                                       <div>
+                                         <Label className="font-semibold">Atribuído a</Label>
+                                         <p>{selectedComplaint.assigned_to}</p>
+                                       </div>
+                                     )}
+                                   </div>
+                                 </div>
+                                 
+                                 {selectedComplaint.status === 'nova' && (
+                                   <div className="space-y-3 pt-4 border-t">
+                                     <Label htmlFor="system_id">Identificador do Sistema</Label>
+                                     <Input
+                                       id="system_id"
+                                       value={systemIdentifier}
+                                       onChange={(e) => setSystemIdentifier(e.target.value)}
+                                       placeholder="Ex: DENUNCIA-2024-001"
+                                     />
+                                     <Button
+                                       className="bg-green-600 hover:bg-green-700 text-white w-full"
+                                       onClick={() => handleProcessComplaint(selectedComplaint.id)}
+                                       disabled={isProcessing}
+                                     >
+                                       {isProcessing ? "Processando..." : "Marcar como Cadastrada"}
+                                     </Button>
+                                   </div>
+                                 )}
+                               </div>
+                             )}
+                           </DialogContent>
+                         </Dialog>
+                       </div>
                     </CardContent>
                   </Card>
                 ))}
