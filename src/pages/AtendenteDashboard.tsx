@@ -106,17 +106,23 @@ export default function AtendenteDashboard() {
       return;
     }
 
+    console.log('🔄 Processando denúncia:', complaintId, 'com identificador:', systemIdentifier);
     setIsProcessing(true);
 
     try {
+      console.log('📝 Estado antes da atualização otimista:', complaints.find(c => c.id === complaintId)?.status);
+      
       // Atualização otimista do estado local
-      setComplaints(prevComplaints => 
-        prevComplaints.map(complaint => 
+      setComplaints(prevComplaints => {
+        const updatedComplaints = prevComplaints.map(complaint => 
           complaint.id === complaintId 
             ? { ...complaint, status: 'cadastrada' as const, system_identifier: systemIdentifier, processed_at: new Date().toISOString() }
             : complaint
-        )
-      );
+        );
+        
+        console.log('✅ Estado após atualização otimista:', updatedComplaints.find(c => c.id === complaintId)?.status);
+        return updatedComplaints;
+      });
 
       const { error } = await supabase
         .from('complaints')
@@ -129,6 +135,7 @@ export default function AtendenteDashboard() {
         .eq('id', complaintId);
 
       if (error) {
+        console.error('❌ Erro na atualização do banco:', error);
         // Reverter mudança otimista em caso de erro
         setComplaints(prevComplaints => 
           prevComplaints.map(complaint => 
@@ -140,18 +147,24 @@ export default function AtendenteDashboard() {
         throw error;
       }
 
+      console.log('✅ Denúncia atualizada no banco com sucesso');
+
       toast({
         title: "Denúncia cadastrada com sucesso!",
         description: "A denúncia foi marcada como cadastrada no sistema",
       });
 
+      // Limpar campos e fechar dialog
       setSystemIdentifier("");
       setSelectedComplaint(null);
       
+      console.log('🔄 Recarregando lista de denúncias...');
       // Recarregar dados para garantir sincronização
-      loadComplaints();
+      await loadComplaints();
+      console.log('✅ Lista recarregada');
+      
     } catch (error) {
-      console.error('Erro ao processar denúncia:', error);
+      console.error('❌ Erro ao processar denúncia:', error);
       toast({
         title: "Erro",
         description: "Não foi possível processar a denúncia",
