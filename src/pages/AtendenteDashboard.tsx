@@ -97,7 +97,12 @@ export default function AtendenteDashboard() {
   };
 
   const handleProcessComplaint = async (complaintId: string) => {
+    console.log('🚀 INÍCIO - handleProcessComplaint chamada com ID:', complaintId);
+    console.log('📊 Identificador atual:', systemIdentifier);
+    console.log('📝 Estado atual das denúncias:', complaints.length);
+    
     if (!systemIdentifier.trim()) {
+      console.log('❌ Identificador vazio - retornando');
       toast({
         title: "Identificador obrigatório",
         description: "Por favor, informe o identificador do sistema",
@@ -289,13 +294,13 @@ export default function AtendenteDashboard() {
                       <p className="text-sm mb-4 line-clamp-2">{complaint.narrative}</p>
                       
                        <div className="flex gap-2">
-                         <Dialog>
-                           <DialogTrigger asChild>
-                             <Button variant="outline" size="sm" onClick={() => setSelectedComplaint(complaint)}>
-                               <Eye className="h-4 w-4 mr-2" />
-                               Ver Detalhes
-                             </Button>
-                           </DialogTrigger>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" onClick={() => setSelectedComplaint(complaint)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Ver Detalhes
+                              </Button>
+                            </DialogTrigger>
                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                              <DialogHeader>
                                <DialogTitle>Detalhes da Denúncia</DialogTitle>
