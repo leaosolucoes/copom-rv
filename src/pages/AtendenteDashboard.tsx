@@ -109,6 +109,15 @@ export default function AtendenteDashboard() {
     setIsProcessing(true);
 
     try {
+      // Atualização otimista do estado local
+      setComplaints(prevComplaints => 
+        prevComplaints.map(complaint => 
+          complaint.id === complaintId 
+            ? { ...complaint, status: 'cadastrada' as const, system_identifier: systemIdentifier, processed_at: new Date().toISOString() }
+            : complaint
+        )
+      );
+
       const { error } = await supabase
         .from('complaints')
         .update({
@@ -119,7 +128,17 @@ export default function AtendenteDashboard() {
         })
         .eq('id', complaintId);
 
-      if (error) throw error;
+      if (error) {
+        // Reverter mudança otimista em caso de erro
+        setComplaints(prevComplaints => 
+          prevComplaints.map(complaint => 
+            complaint.id === complaintId 
+              ? { ...complaint, status: 'nova' as const, system_identifier: null, processed_at: null }
+              : complaint
+          )
+        );
+        throw error;
+      }
 
       toast({
         title: "Denúncia cadastrada com sucesso!",
@@ -128,6 +147,8 @@ export default function AtendenteDashboard() {
 
       setSystemIdentifier("");
       setSelectedComplaint(null);
+      
+      // Recarregar dados para garantir sincronização
       loadComplaints();
     } catch (error) {
       console.error('Erro ao processar denúncia:', error);
