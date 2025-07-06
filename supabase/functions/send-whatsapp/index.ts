@@ -40,6 +40,7 @@ serve(async (req) => {
       .in('key', [
         'whatsapp_api_key',
         'whatsapp_api_url',
+        'whatsapp_instance_name',
         'whatsapp_phone_number',
         'whatsapp_message_template',
         'whatsapp_send_full_complaint',
@@ -77,11 +78,12 @@ serve(async (req) => {
     const replacements = {
       '{complainant_name}': complaint.complainant_name,
       '{complainant_phone}': complaint.complainant_phone,
+      '{complainant_type}': complaint.complainant_type,
       '{occurrence_type}': complaint.occurrence_type,
       '{occurrence_address}': complaint.occurrence_address,
       '{occurrence_neighborhood}': complaint.occurrence_neighborhood,
-      '{occurrence_date}': new Date(complaint.occurrence_date).toLocaleDateString('pt-BR'),
-      '{occurrence_time}': complaint.occurrence_time,
+      '{occurrence_date}': complaint.occurrence_date ? new Date(complaint.occurrence_date).toLocaleDateString('pt-BR') : 'Não informado',
+      '{occurrence_time}': complaint.occurrence_time || 'Não informado',
       '{classification}': complaint.classification,
       '{narrative}': complaint.narrative
     }
@@ -90,7 +92,7 @@ serve(async (req) => {
       message = message.replace(new RegExp(key, 'g'), value || '')
     }
 
-    // Send WhatsApp message
+    // Send WhatsApp message using Evolution API
     const whatsappPayload = {
       number: config.phone_number,
       text: message
@@ -99,10 +101,14 @@ serve(async (req) => {
     console.log('Enviando mensagem para:', config.phone_number)
     console.log('Payload:', whatsappPayload)
 
-    const whatsappResponse = await fetch(`${config.api_url}/message/sendText/${config.api_key}`, {
+    // Evolution API endpoint format: /message/sendText/{instance_name}
+    const evolutionUrl = `${config.api_url}/message/sendText/${config.instance_name}`
+    
+    const whatsappResponse = await fetch(evolutionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'apikey': config.api_key
       },
       body: JSON.stringify(whatsappPayload)
     })
