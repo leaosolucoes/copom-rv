@@ -511,6 +511,9 @@ export default function AtendenteDashboard() {
                           <MapPin className="h-4 w-4" />
                           {complaint.occurrence_neighborhood}
                         </div>
+                        <div className="text-xs text-muted-foreground">
+                          Recebida: {format(new Date(complaint.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                        </div>
                         {complaint.processed_at && (
                           <div className="text-xs text-success">
                             Processada: {format(new Date(complaint.processed_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
@@ -567,6 +570,8 @@ export default function AtendenteDashboard() {
                   </div>
                   {selectedHistoryComplaint.processed_at && (
                     <div className="text-sm text-muted-foreground">
+                      Recebida em: {format(new Date(selectedHistoryComplaint.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                      <br />
                       Processada em: {format(new Date(selectedHistoryComplaint.processed_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                       {selectedHistoryComplaint.attendant?.full_name && (
                         <span className="block">
