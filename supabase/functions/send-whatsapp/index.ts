@@ -79,12 +79,22 @@ serve(async (req) => {
       '{complainant_name}': complaint.complainant_name,
       '{complainant_phone}': complaint.complainant_phone,
       '{complainant_type}': complaint.complainant_type,
+      '{complainant_address}': complaint.complainant_address,
+      '{complainant_number}': complaint.complainant_number || 'Não informado',
+      '{complainant_block}': complaint.complainant_block || 'Não informado',
+      '{complainant_lot}': complaint.complainant_lot || 'Não informado',
+      '{complainant_neighborhood}': complaint.complainant_neighborhood,
       '{occurrence_type}': complaint.occurrence_type,
       '{occurrence_address}': complaint.occurrence_address,
+      '{occurrence_number}': complaint.occurrence_number || 'Não informado',
+      '{occurrence_block}': complaint.occurrence_block || 'Não informado',
+      '{occurrence_lot}': complaint.occurrence_lot || 'Não informado',
       '{occurrence_neighborhood}': complaint.occurrence_neighborhood,
+      '{occurrence_reference}': complaint.occurrence_reference || 'Não informado',
       '{occurrence_date}': complaint.occurrence_date ? new Date(complaint.occurrence_date).toLocaleDateString('pt-BR') : 'Não informado',
       '{occurrence_time}': complaint.occurrence_time || 'Não informado',
-      '{classification}': complaint.classification,
+      '{classification}': complaint.classification || 'Não informado',
+      '{assigned_to}': complaint.assigned_to || 'Não atribuído',
       '{narrative}': complaint.narrative
     }
 

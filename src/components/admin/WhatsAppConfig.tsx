@@ -57,21 +57,36 @@ export const WhatsAppConfig = () => {
 
 📋 *Sistema de Posturas - Rio Verde*
 
-👤 *DENUNCIANTE:*
+👤 *DADOS DO DENUNCIANTE:*
 • Nome: {complainant_name}
 • Telefone: {complainant_phone}
 • Tipo: {complainant_type}
+• Endereço: {complainant_address}
+• Número: {complainant_number}
+• Quadra: {complainant_block}
+• Lote: {complainant_lot}
+• Bairro: {complainant_neighborhood}
 
 📍 *LOCAL DA OCORRÊNCIA:*
 • Endereço: {occurrence_address}
+• Número: {occurrence_number}
+• Quadra: {occurrence_block}
+• Lote: {occurrence_lot}
 • Bairro: {occurrence_neighborhood}
+• Ponto de Referência: {occurrence_reference}
 • Data: {occurrence_date}
 • Horário: {occurrence_time}
 
 ⚠️ *TIPO DE OCORRÊNCIA:*
 {occurrence_type}
 
-📝 *RELATO:*
+📊 *CLASSIFICAÇÃO:*
+{classification}
+
+👤 *ATRIBUÍDO PARA:*
+{assigned_to}
+
+📝 *NARRATIVA COMPLETA:*
 {narrative}
 
 🏛️ *Secretaria Municipal de Posturas*
@@ -328,7 +343,7 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
               placeholder="Digite o template da mensagem..."
             />
             <p className="text-sm text-gray-500 mt-1">
-              Variáveis disponíveis: {'{complainant_name}'}, {'{complainant_phone}'}, {'{occurrence_type}'}, {'{occurrence_address}'}, {'{occurrence_date}'}, {'{narrative}'}
+              Variáveis disponíveis: {'{complainant_name}'}, {'{complainant_phone}'}, {'{complainant_type}'}, {'{complainant_address}'}, {'{complainant_number}'}, {'{complainant_block}'}, {'{complainant_lot}'}, {'{complainant_neighborhood}'}, {'{occurrence_type}'}, {'{occurrence_address}'}, {'{occurrence_number}'}, {'{occurrence_block}'}, {'{occurrence_lot}'}, {'{occurrence_neighborhood}'}, {'{occurrence_reference}'}, {'{occurrence_date}'}, {'{occurrence_time}'}, {'{classification}'}, {'{assigned_to}'}, {'{narrative}'}
             </p>
           </div>
         </CardContent>
