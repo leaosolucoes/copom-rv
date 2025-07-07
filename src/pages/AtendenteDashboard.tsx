@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -65,6 +66,7 @@ export default function AtendenteDashboard() {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [selectedHistoryComplaint, setSelectedHistoryComplaint] = useState<Complaint | null>(null);
   const [systemIdentifier, setSystemIdentifier] = useState("");
+  const [classification, setClassification] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingComplaints, setIsLoadingComplaints] = useState(true);
 
@@ -149,19 +151,30 @@ export default function AtendenteDashboard() {
   const handleProcessComplaint = async (complaintId: string) => {
     console.log('🚀 INÍCIO - handleProcessComplaint chamada com ID:', complaintId);
     console.log('📊 Identificador atual:', systemIdentifier);
+    console.log('📊 Classificação atual:', classification);
     console.log('📝 Estado atual das denúncias:', complaints.length);
     
     if (!systemIdentifier.trim()) {
       console.log('❌ Identificador vazio - retornando');
       toast({
         title: "Identificador obrigatório",
-        description: "Por favor, informe o identificador do sistema",
+        description: "Por favor, informe o número do RAI",
         variant: "destructive"
       });
       return;
     }
 
-    console.log('🔄 Processando denúncia:', complaintId, 'com identificador:', systemIdentifier);
+    if (!classification.trim()) {
+      console.log('❌ Classificação vazia - retornando');
+      toast({
+        title: "Classificação obrigatória",
+        description: "Por favor, selecione a classificação da denúncia",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log('🔄 Processando denúncia:', complaintId, 'com identificador:', systemIdentifier, 'e classificação:', classification);
     setIsProcessing(true);
 
     try {
@@ -171,7 +184,13 @@ export default function AtendenteDashboard() {
       setComplaints(prevComplaints => {
         const updatedComplaints = prevComplaints.map(complaint => 
           complaint.id === complaintId 
-            ? { ...complaint, status: 'cadastrada' as const, system_identifier: systemIdentifier, processed_at: new Date().toISOString() }
+            ? { 
+                ...complaint, 
+                status: 'cadastrada' as const, 
+                system_identifier: systemIdentifier, 
+                classification: classification,
+                processed_at: new Date().toISOString() 
+              }
             : complaint
         );
         
@@ -182,6 +201,7 @@ export default function AtendenteDashboard() {
       console.log('🔍 Tentando atualizar com os dados:', {
         status: 'cadastrada',
         system_identifier: systemIdentifier,
+        classification: classification,
         processed_at: new Date().toISOString(),
         attendant_id: profile?.id,
         complaint_id: complaintId
@@ -192,6 +212,7 @@ export default function AtendenteDashboard() {
         .update({
           status: 'cadastrada',
           system_identifier: systemIdentifier,
+          classification: classification,
           processed_at: new Date().toISOString(),
           attendant_id: profile?.id
         })
@@ -206,7 +227,13 @@ export default function AtendenteDashboard() {
         setComplaints(prevComplaints => 
           prevComplaints.map(complaint => 
             complaint.id === complaintId 
-              ? { ...complaint, status: 'nova' as const, system_identifier: null, processed_at: null }
+              ? { 
+                  ...complaint, 
+                  status: 'nova' as const, 
+                  system_identifier: null, 
+                  classification: complaint.classification, // manter classificação original
+                  processed_at: null 
+                }
               : complaint
           )
         );
@@ -222,6 +249,7 @@ export default function AtendenteDashboard() {
 
       // Limpar campos e fechar dialog
       setSystemIdentifier("");
+      setClassification("");
       setSelectedComplaint(null);
       
       console.log('🔄 Recarregando lista de denúncias...');
@@ -485,24 +513,49 @@ export default function AtendenteDashboard() {
                                    </div>
                                  </div>
                                  
-                                 {selectedComplaint.status === 'nova' && (
-                                   <div className="space-y-3 pt-4 border-t">
-                                      <Label htmlFor="system_id">Identificador do Sistema (Número do RAI)</Label>
-                                      <Input
-                                        id="system_id"
-                                        value={systemIdentifier}
-                                        onChange={(e) => setSystemIdentifier(e.target.value)}
-                                        placeholder="Ex: RAI-2024-001"
-                                      />
-                                     <Button
-                                       className="bg-green-600 hover:bg-green-700 text-white w-full"
-                                       onClick={() => handleProcessComplaint(selectedComplaint.id)}
-                                       disabled={isProcessing}
-                                     >
-                                       {isProcessing ? "Processando..." : "Marcar como Cadastrada"}
-                                     </Button>
-                                   </div>
-                                 )}
+                                  {selectedComplaint.status === 'nova' && (
+                                    <div className="space-y-3 pt-4 border-t">
+                                      <div>
+                                        <Label htmlFor="classification">Classificação da Denúncia</Label>
+                                        <Select value={classification} onValueChange={setClassification}>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Selecione a classificação" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="URGENTE">URGENTE</SelectItem>
+                                            <SelectItem value="ALTA">ALTA</SelectItem>
+                                            <SelectItem value="MEDIA">MÉDIA</SelectItem>
+                                            <SelectItem value="BAIXA">BAIXA</SelectItem>
+                                            <SelectItem value="INFORMATIVA">INFORMATIVA</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      
+                                      <div>
+                                        <Label htmlFor="system_id">Identificador do Sistema (Número do RAI)</Label>
+                                        <Input
+                                          id="system_id"
+                                          value={systemIdentifier}
+                                          onChange={(e) => setSystemIdentifier(e.target.value)}
+                                          placeholder="Ex: RAI-2024-001"
+                                        />
+                                      </div>
+                                      
+                                      <Button
+                                        className="bg-green-600 hover:bg-green-700 text-white w-full"
+                                        onClick={() => handleProcessComplaint(selectedComplaint.id)}
+                                        disabled={isProcessing || !systemIdentifier.trim() || !classification.trim()}
+                                      >
+                                        {isProcessing ? "Processando..." : "Marcar como Cadastrada"}
+                                      </Button>
+                                      
+                                      {(!systemIdentifier.trim() || !classification.trim()) && (
+                                        <p className="text-sm text-destructive text-center">
+                                          Preencha a classificação e o número do RAI para continuar
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
                                </div>
                              )}
                            </DialogContent>
