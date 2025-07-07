@@ -203,12 +203,21 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
       return;
     }
 
-    // Usar o primeiro número da lista para teste
-    const firstPhoneNumber = config.phone_number.split(',')[0].trim();
+    // Processar todos os números
+    const phoneNumbers = config.phone_number.split(',').map(num => num.trim()).filter(num => num.length > 0);
+
+    if (phoneNumbers.length === 0) {
+      toast({
+        title: "Nenhum número encontrado",
+        description: "Verifique se os números foram inseridos corretamente.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       const payload = { 
-        phoneNumber: firstPhoneNumber,
+        phoneNumbers: phoneNumbers, // Enviando todos os números
         message: 'Template será usado pela edge function'
       }
 
@@ -220,10 +229,14 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
         throw new Error(`Erro na edge function: ${error.message || JSON.stringify(error)}`)
       }
 
-      if (data?.success) {
+      if (data?.success || data?.partial) {
+        const message = data.success 
+          ? data.message 
+          : `${data.message}. Alguns números podem ter falhado.`;
+        
         toast({
           title: "Sucesso",
-          description: "Mensagem de teste enviada com sucesso!",
+          description: message + (data.details ? ` (${data.details.successCount}/${data.details.totalNumbers})` : ''),
         });
       } else {
         const errorMsg = data?.error || 'Erro desconhecido na resposta'

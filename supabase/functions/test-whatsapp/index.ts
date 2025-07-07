@@ -24,14 +24,23 @@ serve(async (req) => {
 
     // 2. Parse request
     console.log('2. Fazendo parse da requisição...')
-    const { phoneNumber, message } = await req.json()
+    const { phoneNumber, phoneNumbers, message } = await req.json()
+    
+    // Suportar tanto formato singular quanto múltiplo
+    let numbersToTest = []
+    if (phoneNumbers && Array.isArray(phoneNumbers)) {
+      numbersToTest = phoneNumbers
+    } else if (phoneNumber) {
+      numbersToTest = [phoneNumber]
+    }
+    
     console.log('📞 Dados:', { 
-      phoneNumber: phoneNumber ? `***${phoneNumber.slice(-4)}` : 'undefined',
+      numbersCount: numbersToTest.length,
       messageLength: message?.length || 0 
     })
 
-    if (!phoneNumber || !message) {
-      throw new Error('phoneNumber e message são obrigatórios')
+    if (numbersToTest.length === 0 || !message) {
+      throw new Error('phoneNumbers/phoneNumber e message são obrigatórios')
     }
 
     // 3. Get WhatsApp settings
@@ -111,66 +120,107 @@ _Este é um teste - sistema funcionando corretamente!_`
 
     console.log('📝 Mensagem de teste preparada (100 primeiros chars):', testMessage.substring(0, 100))
 
-    const cleanPhone = phoneNumber.replace(/\D/g, '')
-    console.log('📱 Número limpo:', cleanPhone)
-
-    const whatsappPayload = {
-      number: cleanPhone + '@c.us',
-      text: testMessage
-    }
-
     const apiUrl = `${config.api_url.replace(/\/$/, '')}/message/sendText/${config.instance_name}`
     console.log('🌐 URL completa:', apiUrl)
 
-    // 5. Send to WhatsApp API
-    console.log('5. Enviando para Evolution API...')
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': config.api_key
-      },
-      body: JSON.stringify(whatsappPayload)
-    })
-
-    console.log('📡 Status response:', response.status)
+    // 5. Send to WhatsApp API for all numbers
+    console.log('5. Enviando para Evolution API para todos os números...')
     
-    const responseText = await response.text()
-    console.log('📄 Response text:', responseText)
+    const results = []
+    let successCount = 0
+    
+    for (let i = 0; i < numbersToTest.length; i++) {
+      const phoneNumber = numbersToTest[i]
+      console.log(`📱 Processando número ${i + 1}/${numbersToTest.length}: ${phoneNumber}`)
+      
+      try {
+        const cleanPhone = phoneNumber.replace(/\D/g, '')
+        console.log('📱 Número limpo:', cleanPhone)
 
-    let result
-    try {
-      result = JSON.parse(responseText)
-    } catch (e) {
-      console.error('❌ Parse error:', e)
-      throw new Error(`Resposta inválida da API: ${responseText.substring(0, 100)}`)
+        const whatsappPayload = {
+          number: cleanPhone + '@c.us',
+          text: testMessage
+        }
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': config.api_key
+          },
+          body: JSON.stringify(whatsappPayload)
+        })
+
+        console.log(`📡 Status response para ${cleanPhone}:`, response.status)
+        
+        const responseText = await response.text()
+        console.log(`📄 Response text para ${cleanPhone}:`, responseText)
+
+        let result
+        try {
+          result = JSON.parse(responseText)
+        } catch (e) {
+          console.error(`❌ Parse error para ${cleanPhone}:`, e)
+          throw new Error(`Resposta inválida da API: ${responseText.substring(0, 100)}`)
+        }
+
+        console.log(`📊 Resultado para ${cleanPhone}:`, result)
+
+        if (response.ok) {
+          console.log(`✅ Mensagem enviada para ${cleanPhone}!`)
+          successCount++
+          results.push({
+            phoneNumber: cleanPhone,
+            success: true,
+            status: response.status,
+            result: result
+          })
+        } else {
+          console.error(`❌ Response not OK para ${cleanPhone}:`, response.status, result)
+          results.push({
+            phoneNumber: cleanPhone,
+            success: false,
+            status: response.status,
+            error: result?.message || result?.error || 'Erro desconhecido'
+          })
+        }
+      } catch (error) {
+        console.error(`❌ Erro para número ${phoneNumber}:`, error.message)
+        results.push({
+          phoneNumber: phoneNumber,
+          success: false,
+          error: error.message
+        })
+      }
     }
 
-    console.log('📊 Resultado completo:', result)
+    // Success summary
+    console.log(`📊 Resumo: ${successCount}/${numbersToTest.length} mensagens enviadas com sucesso`)
+    console.log('=== FIM TESTE WHATSAPP ===')
 
-    if (!response.ok) {
-      console.error('❌ Response not OK:', response.status, result)
-      throw new Error(`Erro da Evolution API (${response.status}): ${result?.message || result?.error || 'Erro desconhecido'}`)
-    }
-
-    // Success
-    console.log('✅ Mensagem enviada!')
-    console.log('=== FIM TESTE WHATSAPP - SUCESSO ===')
+    const allSuccess = successCount === numbersToTest.length
+    const partialSuccess = successCount > 0 && successCount < numbersToTest.length
 
     return new Response(
       JSON.stringify({ 
-        success: true, 
-        message: 'Mensagem enviada com sucesso!',
+        success: allSuccess,
+        partial: partialSuccess,
+        message: allSuccess 
+          ? `Mensagem enviada com sucesso para todos os ${successCount} números!`
+          : partialSuccess 
+            ? `Mensagem enviada para ${successCount} de ${numbersToTest.length} números`
+            : 'Falha ao enviar para todos os números',
         details: {
-          to: cleanPhone,
-          status: response.status,
-          evolutionResponse: result
+          totalNumbers: numbersToTest.length,
+          successCount: successCount,
+          failedCount: numbersToTest.length - successCount,
+          results: results
         },
         timestamp: new Date().toISOString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+        status: allSuccess ? 200 : (partialSuccess ? 206 : 400)
       }
     )
 
