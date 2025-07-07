@@ -292,15 +292,16 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
           </div>
           
           <div>
-            <Label htmlFor="phone_number">Número do WhatsApp</Label>
+            <Label htmlFor="phone_number">Números do WhatsApp</Label>
             <Input
               id="phone_number"
               value={config.phone_number}
               onChange={(e) => setConfig(prev => ({ ...prev, phone_number: e.target.value }))}
-              placeholder="556299999999"
+              placeholder="556299999999, 556288888888, 556277777777"
             />
             <p className="text-sm text-gray-500 mt-1">
-              Número que receberá as notificações (formato: código do país + DDD + número)
+              Números que receberão as notificações (formato: código do país + DDD + número). 
+              Para múltiplos números, separe por vírgula.
             </p>
           </div>
         </CardContent>

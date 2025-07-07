@@ -102,32 +102,61 @@ serve(async (req) => {
       message = message.replace(new RegExp(key, 'g'), value || '')
     }
 
-    // Send WhatsApp message using Evolution API
-    const whatsappPayload = {
-      number: config.phone_number,
-      text: message
+    // Process multiple phone numbers separated by comma
+    const phoneNumbers = config.phone_number.split(',').map(num => num.trim()).filter(num => num.length > 0)
+    console.log('Enviando mensagem para números:', phoneNumbers)
+
+    const results = []
+    
+    // Send to each phone number
+    for (const phoneNumber of phoneNumbers) {
+      try {
+        const whatsappPayload = {
+          number: phoneNumber,
+          text: message
+        }
+
+        console.log('Enviando mensagem para:', phoneNumber)
+        console.log('Payload:', whatsappPayload)
+
+        // Evolution API endpoint format: /message/sendText/{instance_name}
+        const evolutionUrl = `${config.api_url}/message/sendText/${config.instance_name}`
+        
+        const whatsappResponse = await fetch(evolutionUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': config.api_key
+          },
+          body: JSON.stringify(whatsappPayload)
+        })
+
+        const whatsappResult = await whatsappResponse.json()
+        console.log(`Resposta da Evolution API para ${phoneNumber}:`, whatsappResult)
+
+        results.push({
+          phoneNumber,
+          success: whatsappResponse.ok,
+          result: whatsappResult
+        })
+
+        if (!whatsappResponse.ok) {
+          console.error(`Erro ao enviar para ${phoneNumber}:`, whatsappResult.message || 'Erro desconhecido')
+        }
+      } catch (error) {
+        console.error(`Erro ao enviar para ${phoneNumber}:`, error)
+        results.push({
+          phoneNumber,
+          success: false,
+          error: error.message
+        })
+      }
     }
 
-    console.log('Enviando mensagem para:', config.phone_number)
-    console.log('Payload:', whatsappPayload)
-
-    // Evolution API endpoint format: /message/sendText/{instance_name}
-    const evolutionUrl = `${config.api_url}/message/sendText/${config.instance_name}`
-    
-    const whatsappResponse = await fetch(evolutionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': config.api_key
-      },
-      body: JSON.stringify(whatsappPayload)
-    })
-
-    const whatsappResult = await whatsappResponse.json()
-    console.log('Resposta da Evolution API:', whatsappResult)
-
-    if (!whatsappResponse.ok) {
-      throw new Error(`Erro da Evolution API: ${whatsappResult.message || 'Erro desconhecido'}`)
+    // Check if at least one message was sent successfully
+    const successCount = results.filter(r => r.success).length
+    if (successCount === 0) {
+      throw new Error(`Falha ao enviar para todos os números: ${results.map(r => `${r.phoneNumber}: ${r.error || 'Erro desconhecido'}`).join(', ')}`)
     }
 
     // Update complaint to mark WhatsApp as sent
@@ -145,8 +174,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Mensagem enviada com sucesso',
-        whatsappResult 
+        message: `Mensagem enviada com sucesso para ${successCount} de ${phoneNumbers.length} números`,
+        results,
+        successCount,
+        totalNumbers: phoneNumbers.length
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
