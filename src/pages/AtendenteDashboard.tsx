@@ -76,6 +76,47 @@ export default function AtendenteDashboard() {
 
     if (profile) {
       loadComplaints();
+      
+      // Configurar realtime updates
+      const channel = supabase
+        .channel('schema-db-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'complaints'
+          },
+          (payload) => {
+            console.log('🔔 Nova denúncia recebida:', payload);
+            // Recarregar dados para incluir joins
+            loadComplaints();
+            
+            // Mostrar notificação
+            toast({
+              title: "Nova denúncia recebida!",
+              description: `Denúncia de ${payload.new.complainant_name}`,
+            });
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'complaints'
+          },
+          (payload) => {
+            console.log('🔄 Denúncia atualizada:', payload);
+            // Recarregar dados para manter sincronização
+            loadComplaints();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [profile, navigate, isLoading]);
 
