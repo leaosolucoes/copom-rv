@@ -203,9 +203,12 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
       return;
     }
 
+    // Usar o primeiro número da lista para teste
+    const firstPhoneNumber = config.phone_number.split(',')[0].trim();
+
     try {
       const payload = { 
-        phoneNumber: config.phone_number,
+        phoneNumber: firstPhoneNumber,
         message: 'Template será usado pela edge function'
       }
 
