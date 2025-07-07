@@ -48,6 +48,9 @@ interface Complaint {
   system_identifier?: string;
   processed_at?: string;
   created_at: string;
+  attendant?: {
+    full_name: string;
+  };
 }
 
 export default function AtendenteDashboard() {
@@ -60,6 +63,7 @@ export default function AtendenteDashboard() {
   const { toast } = useToast();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [selectedHistoryComplaint, setSelectedHistoryComplaint] = useState<Complaint | null>(null);
   const [systemIdentifier, setSystemIdentifier] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingComplaints, setIsLoadingComplaints] = useState(true);
@@ -79,7 +83,12 @@ export default function AtendenteDashboard() {
     try {
       const { data, error } = await supabase
         .from('complaints')
-        .select('*')
+        .select(`
+          *,
+          attendant:attendant_id(
+            full_name
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -505,11 +514,31 @@ export default function AtendenteDashboard() {
                         {complaint.processed_at && (
                           <div className="text-xs text-success">
                             Processada: {format(new Date(complaint.processed_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                            {complaint.attendant?.full_name && (
+                              <span className="block mt-1">
+                                por: {complaint.attendant.full_name}
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
                       
-                      <p className="text-sm line-clamp-2">{complaint.narrative}</p>
+                      <p className="text-sm line-clamp-2 cursor-pointer hover:text-primary" 
+                         onClick={() => setSelectedHistoryComplaint(complaint)}>
+                        {complaint.narrative}
+                      </p>
+                      
+                      <div className="mt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setSelectedHistoryComplaint(complaint)}
+                          className="w-full"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Detalhes Completos
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -517,6 +546,157 @@ export default function AtendenteDashboard() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Modal para histórico de denúncias */}
+        <Dialog open={!!selectedHistoryComplaint} onOpenChange={(open) => !open && setSelectedHistoryComplaint(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Detalhes da Denúncia Cadastrada</DialogTitle>
+            </DialogHeader>
+            {selectedHistoryComplaint && (
+              <div className="space-y-6">
+                {/* Status e Identificador */}
+                <div className="bg-muted p-4 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    {getStatusBadge(selectedHistoryComplaint.status)}
+                    {selectedHistoryComplaint.system_identifier && (
+                      <Badge variant="outline" className="text-xs">
+                        {selectedHistoryComplaint.system_identifier}
+                      </Badge>
+                    )}
+                  </div>
+                  {selectedHistoryComplaint.processed_at && (
+                    <div className="text-sm text-muted-foreground">
+                      Processada em: {format(new Date(selectedHistoryComplaint.processed_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                      {selectedHistoryComplaint.attendant?.full_name && (
+                        <span className="block">
+                          Atendente: {selectedHistoryComplaint.attendant.full_name}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Dados do Reclamante */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados do Reclamante</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-semibold">Nome do Reclamante</Label>
+                      <p>{selectedHistoryComplaint.complainant_name}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Telefone</Label>
+                      <p>{selectedHistoryComplaint.complainant_phone}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Tipo</Label>
+                      <p>{selectedHistoryComplaint.complainant_type}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Bairro</Label>
+                      <p>{selectedHistoryComplaint.complainant_neighborhood}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="col-span-2">
+                      <Label className="font-semibold">Endereço</Label>
+                      <p>{selectedHistoryComplaint.complainant_address}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Número</Label>
+                      <p>{selectedHistoryComplaint.complainant_number || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Quadra</Label>
+                      <p>{selectedHistoryComplaint.complainant_block || 'N/A'}</p>
+                    </div>
+                  </div>
+                  {selectedHistoryComplaint.complainant_lot && (
+                    <div>
+                      <Label className="font-semibold">Lote</Label>
+                      <p>{selectedHistoryComplaint.complainant_lot}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Endereço da Ocorrência */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-primary border-b pb-2">Endereço da Ocorrência</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-semibold">Tipo de Ocorrência</Label>
+                      <p>{selectedHistoryComplaint.occurrence_type}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Bairro</Label>
+                      <p>{selectedHistoryComplaint.occurrence_neighborhood}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="col-span-2">
+                      <Label className="font-semibold">Endereço</Label>
+                      <p>{selectedHistoryComplaint.occurrence_address}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Número</Label>
+                      <p>{selectedHistoryComplaint.occurrence_number || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Quadra</Label>
+                      <p>{selectedHistoryComplaint.occurrence_block || 'N/A'}</p>
+                    </div>
+                  </div>
+                  {selectedHistoryComplaint.occurrence_lot && (
+                    <div>
+                      <Label className="font-semibold">Lote</Label>
+                      <p>{selectedHistoryComplaint.occurrence_lot}</p>
+                    </div>
+                  )}
+                  {selectedHistoryComplaint.occurrence_reference && (
+                    <div>
+                      <Label className="font-semibold">Referência</Label>
+                      <p className="text-sm bg-muted p-2 rounded">{selectedHistoryComplaint.occurrence_reference}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Dados da Reclamação */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados da Reclamação</h3>
+                  <div>
+                    <Label className="font-semibold">Narrativa</Label>
+                    <p className="text-sm bg-muted p-3 rounded mt-1">{selectedHistoryComplaint.narrative}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedHistoryComplaint.occurrence_date && (
+                      <div>
+                        <Label className="font-semibold">Data</Label>
+                        <p>{format(new Date(selectedHistoryComplaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}</p>
+                      </div>
+                    )}
+                    {selectedHistoryComplaint.occurrence_time && (
+                      <div>
+                        <Label className="font-semibold">Hora</Label>
+                        <p>{selectedHistoryComplaint.occurrence_time}</p>
+                      </div>
+                    )}
+                    <div>
+                      <Label className="font-semibold">Classificação</Label>
+                      <p>{selectedHistoryComplaint.classification}</p>
+                    </div>
+                    {selectedHistoryComplaint.assigned_to && (
+                      <div>
+                        <Label className="font-semibold">Atribuído a</Label>
+                        <p>{selectedHistoryComplaint.assigned_to}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
