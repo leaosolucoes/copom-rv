@@ -129,7 +129,15 @@ export default function AtendenteDashboard() {
         return updatedComplaints;
       });
 
-      const { error } = await supabase
+      console.log('🔍 Tentando atualizar com os dados:', {
+        status: 'cadastrada',
+        system_identifier: systemIdentifier,
+        processed_at: new Date().toISOString(),
+        attendant_id: profile?.id,
+        complaint_id: complaintId
+      });
+
+      const { data, error } = await supabase
         .from('complaints')
         .update({
           status: 'cadastrada',
@@ -137,7 +145,10 @@ export default function AtendenteDashboard() {
           processed_at: new Date().toISOString(),
           attendant_id: profile?.id
         })
-        .eq('id', complaintId);
+        .eq('id', complaintId)
+        .select();
+
+      console.log('🔍 Resultado da atualização:', { data, error });
 
       if (error) {
         console.error('❌ Erro na atualização do banco:', error);
@@ -426,13 +437,13 @@ export default function AtendenteDashboard() {
                                  
                                  {selectedComplaint.status === 'nova' && (
                                    <div className="space-y-3 pt-4 border-t">
-                                     <Label htmlFor="system_id">Identificador do Sistema</Label>
-                                     <Input
-                                       id="system_id"
-                                       value={systemIdentifier}
-                                       onChange={(e) => setSystemIdentifier(e.target.value)}
-                                       placeholder="Ex: DENUNCIA-2024-001"
-                                     />
+                                      <Label htmlFor="system_id">Identificador do Sistema (Número do RAI)</Label>
+                                      <Input
+                                        id="system_id"
+                                        value={systemIdentifier}
+                                        onChange={(e) => setSystemIdentifier(e.target.value)}
+                                        placeholder="Ex: RAI-2024-001"
+                                      />
                                      <Button
                                        className="bg-green-600 hover:bg-green-700 text-white w-full"
                                        onClick={() => handleProcessComplaint(selectedComplaint.id)}
