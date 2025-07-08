@@ -444,6 +444,16 @@ export const ComplaintsList = () => {
   };
 
   const exportComplaintsPDF = async () => {
+    // Verificar permissão antes de executar
+    if (userRole !== 'admin' && userRole !== 'super_admin') {
+      toast({
+        title: "Acesso Negado",
+        description: "Apenas administradores podem exportar relatórios PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Filtrar denúncias por data se especificado - usando created_at como "Data Recebida"
       let complaintsToExport = filteredComplaints;
@@ -502,15 +512,22 @@ export const ComplaintsList = () => {
         try {
           // Converter URL da logo para base64
           const logoResponse = await fetch(logoUrl);
-          const logoBlob = await logoResponse.blob();
-          const logoBase64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(logoBlob);
-          });
-          
-          // Adicionar logo no cabeçalho
-          pdf.addImage(logoBase64, 'JPEG', 20, 10, 30, 30);
+          if (logoResponse.ok) {
+            const logoBlob = await logoResponse.blob();
+            const logoBase64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(logoBlob);
+            });
+            
+            // Detectar formato da imagem
+            const imageFormat = logoBlob.type.includes('png') ? 'PNG' : 
+                               logoBlob.type.includes('jpeg') || logoBlob.type.includes('jpg') ? 'JPEG' : 'PNG';
+            
+            // Adicionar logo no cabeçalho
+            pdf.addImage(logoBase64, imageFormat, 20, 10, 30, 30);
+          }
           pdf.setFontSize(18);
           pdf.text('RELATÓRIO DE DENÚNCIAS', 60, 25);
         } catch (logoError) {
@@ -605,10 +622,11 @@ export const ComplaintsList = () => {
         description: "Relatório PDF gerado com sucesso!",
       });
     } catch (error: any) {
-      console.error('Erro ao exportar PDF:', error);
+      console.error('Erro detalhado ao exportar PDF:', error);
+      const errorMessage = error.message || 'Erro desconhecido ao gerar relatório PDF';
       toast({
         title: "Erro",
-        description: "Erro ao gerar relatório PDF",
+        description: `Erro ao gerar relatório PDF: ${errorMessage}`,
         variant: "destructive",
       });
     }
@@ -728,10 +746,13 @@ export const ComplaintsList = () => {
             </Button>
           </div>
 
-          <Button onClick={exportComplaintsPDF} variant="default">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar PDF
-          </Button>
+          {/* Botão de exportar PDF - apenas para admin e super_admin */}
+          {(userRole === 'admin' || userRole === 'super_admin') && (
+            <Button onClick={exportComplaintsPDF} variant="default">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar PDF
+            </Button>
+          )}
         </div>
       </div>
 
