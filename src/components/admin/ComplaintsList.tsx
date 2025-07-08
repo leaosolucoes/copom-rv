@@ -64,6 +64,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [classifications, setClassifications] = useState<string[]>([]);
   const { toast } = useToast();
 
   // Debug info
@@ -155,12 +156,29 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
     }
   };
 
+  const fetchClassifications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'public_classifications')
+        .single();
+
+      if (error) throw error;
+      const value = data.value;
+      setClassifications(Array.isArray(value) ? value.filter(item => typeof item === 'string') as string[] : []);
+    } catch (error) {
+      console.error('Erro ao carregar classificações:', error);
+    }
+  };
+
   useEffect(() => {
     fetchComplaints();
   }, [statusFilter, dateFilter]);
 
   useEffect(() => {
     fetchSoundSetting();
+    fetchClassifications();
     
     // Setup realtime updates for sound notifications
     const channel = supabase
@@ -399,7 +417,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                               <Eye className="h-4 w-4" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
+                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>Detalhes da Denúncia</DialogTitle>
                           </DialogHeader>
@@ -541,10 +559,39 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                                     onClick={() => {
                                       const rai = window.prompt('Digite o RAI:');
                                       if (rai) {
-                                        const classification = window.prompt('Digite a classificação:');
-                                        if (classification) {
-                                          updateComplaintStatus(selectedComplaint.id, 'cadastrada', rai);
-                                        }
+                                        // Criar um select de classificações
+                                        const selectDiv = document.createElement('div');
+                                        selectDiv.innerHTML = `
+                                          <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+                                            <div style="background: white; padding: 20px; border-radius: 8px; min-width: 300px;">
+                                              <h3 style="margin-bottom: 15px;">Selecione a Classificação:</h3>
+                                              <select id="classificationSelect" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;">
+                                                <option value="">Selecione uma classificação...</option>
+                                                ${classifications.map(c => `<option value="${c}">${c}</option>`).join('')}
+                                              </select>
+                                              <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                                <button id="cancelBtn" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                                                <button id="confirmBtn" style="padding: 8px 16px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer;">Confirmar</button>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        `;
+                                        document.body.appendChild(selectDiv);
+                                        
+                                        document.getElementById('cancelBtn')?.addEventListener('click', () => {
+                                          document.body.removeChild(selectDiv);
+                                        });
+                                        
+                                        document.getElementById('confirmBtn')?.addEventListener('click', () => {
+                                          const select = document.getElementById('classificationSelect') as HTMLSelectElement;
+                                          const classification = select.value;
+                                          if (classification) {
+                                            updateComplaintStatus(selectedComplaint.id, 'cadastrada', rai);
+                                            document.body.removeChild(selectDiv);
+                                          } else {
+                                            alert('Por favor, selecione uma classificação');
+                                          }
+                                        });
                                       }
                                     }}
                                     variant="default"
