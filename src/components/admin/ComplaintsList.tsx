@@ -679,8 +679,8 @@ export const ComplaintsList = () => {
 
                                      <div className="flex flex-wrap gap-2 pt-4 border-t">
                                        <p className="text-sm text-gray-500">UserRole: {userRole} | Status: {selectedComplaint.status}</p>
-                                      {/* Botões para ATENDENTE com denúncia NOVA */}
-                                      {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
+                                       {/* Botões para ATENDENTE com denúncia NOVA */}
+                                       {(userRole === 'atendente' || userRole === 'authenticated') && selectedComplaint.status === 'nova' && (
                                         <>
                                           <Button 
                                             onClick={() => sendToAdmin(selectedComplaint.id)}
@@ -722,7 +722,7 @@ export const ComplaintsList = () => {
                                       )}
 
                                       {/* Botões para ATENDENTE com denúncia VERIFICADA */}
-                                      {userRole === 'atendente' && selectedComplaint.status === 'verificado' && (
+                                      {(userRole === 'atendente' || userRole === 'authenticated') && selectedComplaint.status === 'verificado' && (
                                         <Button 
                                           onClick={() => {
                                             if (!raiData.rai.trim()) {
