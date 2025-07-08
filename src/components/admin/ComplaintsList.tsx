@@ -533,11 +533,14 @@ export const ComplaintsList = () => {
             const imageFormat = logoBlob.type.includes('png') ? 'PNG' : 
                                logoBlob.type.includes('jpeg') || logoBlob.type.includes('jpg') ? 'JPEG' : 'PNG';
             
-            // Adicionar logo no cabeçalho
+            // Adicionar logo no cabeçalho (lado esquerdo)
             pdf.addImage(logoBase64, imageFormat, 20, 10, 30, 30);
           }
+          
+          // Posicionar o título ao lado da logo, não em cima
           pdf.setFontSize(18);
-          pdf.text('RELATÓRIO DE DENÚNCIAS - HISTÓRICO', 60, 25);
+          pdf.text('RELATÓRIO DE DENÚNCIAS - HISTÓRICO', 60, 20);
+          yPosition = 50; // Aumentar a posição Y para dar espaço à logo
         } catch (logoError) {
           console.error('Erro ao carregar logo:', logoError);
           pdf.setFontSize(18);
@@ -563,11 +566,11 @@ export const ComplaintsList = () => {
         ? `Até ${format(endDate, 'dd/MM/yyyy')}`
         : 'Todas as datas';
       
-      pdf.text(`Período: ${dateRange}`, 20, yPosition + 10);
-      pdf.text(`Data de geração: ${format(today, 'dd/MM/yyyy HH:mm')}`, 20, yPosition + 20);
-      pdf.text(`Total de denúncias: ${complaintsToExport.length}`, 20, yPosition + 30);
+      pdf.text(`Período: ${dateRange}`, 20, yPosition + 5);
+      pdf.text(`Data de geração: ${format(today, 'dd/MM/yyyy HH:mm')}`, 20, yPosition + 15);
+      pdf.text(`Total de denúncias: ${complaintsToExport.length}`, 20, yPosition + 25);
       
-      yPosition += 50;
+      yPosition += 40;
 
       // Configurar tabela usando autoTable
       const tableColumns = [
