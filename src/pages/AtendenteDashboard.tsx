@@ -1,14 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { ComplaintsList } from "@/components/admin/ComplaintsList";
 import { LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AtendenteDashboard() {
   const { profile, signOut, isLoading } = useSupabaseAuth();
   const navigate = useNavigate();
+  const [logoUrl, setLogoUrl] = useState<string>('');
 
   useEffect(() => {
     if (!isLoading && !profile) {
@@ -16,6 +18,28 @@ export default function AtendenteDashboard() {
       return;
     }
   }, [profile, navigate, isLoading]);
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'public_logo_url')
+          .maybeSingle();
+
+        if (error) throw error;
+        
+        if (data?.value) {
+          setLogoUrl(data.value as string);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar logo:', error);
+      }
+    };
+
+    fetchLogo();
+  }, []);
 
   if (isLoading) {
     return (
@@ -29,7 +53,7 @@ export default function AtendenteDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showLoginButton={false} />
+      <Header showLoginButton={false} logoUrl={logoUrl} />
       
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-between mb-6">

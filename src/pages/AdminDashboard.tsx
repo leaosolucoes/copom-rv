@@ -8,15 +8,39 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ComplaintsList } from '@/components/admin/ComplaintsList';
 import { Users, FileText } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
   const { profile, signOut, hasRole, isLoading } = useSupabaseAuth();
+  const [logoUrl, setLogoUrl] = useState<string>('');
 
   useEffect(() => {
     if (!isLoading && (!profile || !hasRole(['admin', 'super_admin']))) {
       window.location.href = '/acesso';
     }
   }, [profile, hasRole, isLoading]);
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'public_logo_url')
+          .maybeSingle();
+
+        if (error) throw error;
+        
+        if (data?.value) {
+          setLogoUrl(data.value as string);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar logo:', error);
+      }
+    };
+
+    fetchLogo();
+  }, []);
 
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {
@@ -36,7 +60,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showLoginButton={false} />
+      <Header showLoginButton={false} logoUrl={logoUrl} />
       
       {/* User Info Bar */}
       <div className="bg-white border-b shadow-sm">

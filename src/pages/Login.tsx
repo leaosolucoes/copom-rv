@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/layout/Header';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LogIn, AlertCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [logoUrl, setLogoUrl] = useState<string>('');
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -44,6 +46,28 @@ const Login = () => {
       }
     }
   }, [isAuthenticated, profile, navigate, authLoading]);
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'public_logo_url')
+          .maybeSingle();
+
+        if (error) throw error;
+        
+        if (data?.value) {
+          setLogoUrl(data.value as string);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar logo:', error);
+      }
+    };
+
+    fetchLogo();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +105,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showLoginButton={false} />
+      <Header showLoginButton={false} logoUrl={logoUrl} />
       
       <main className="flex items-center justify-center py-12 px-4">
         <Card className="w-full max-w-md">
