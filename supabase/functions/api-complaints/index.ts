@@ -97,12 +97,22 @@ serve(async (req) => {
 })
 
 async function validateApiToken(req: Request, supabase: any) {
-  const apiToken = req.headers.get('x-api-token')
+  // Tentar pegar o token do header x-api-token primeiro
+  let apiToken = req.headers.get('x-api-token')
+  
+  // Se não encontrar, tentar pegar do Authorization header
+  if (!apiToken) {
+    const authHeader = req.headers.get('authorization')
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      apiToken = authHeader.substring(7) // Remove "Bearer "
+    }
+  }
+  
   if (!apiToken) {
     return {
       valid: false,
       response: new Response(
-        JSON.stringify({ error: 'Token da API necessário no header x-api-token' }),
+        JSON.stringify({ error: 'Token da API necessário no header x-api-token ou Authorization Bearer' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
