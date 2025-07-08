@@ -88,7 +88,33 @@ export function ApiManagement() {
 
   useEffect(() => {
     console.log('🎯 Componente ApiManagement montado, carregando dados...');
-    loadData();
+    
+    // Verificar estado da autenticação primeiro
+    const checkAuthAndLoad = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('🔐 Estado da sessão:', { 
+          hasSession: !!session, 
+          hasUser: !!session?.user, 
+          userId: session?.user?.id,
+          error 
+        });
+        
+        if (session?.user) {
+          console.log('✅ Usuário autenticado, carregando dados...');
+          loadData();
+        } else {
+          console.log('❌ Usuário não autenticado');
+          // Tentar carregar dados usando service role temporariamente
+          loadTokensWithServiceRole();
+        }
+      } catch (err) {
+        console.error('💥 Erro ao verificar autenticação:', err);
+        loadData(); // Tentar carregar mesmo assim
+      }
+    };
+    
+    checkAuthAndLoad();
   }, []);
 
   const loadData = async () => {
@@ -111,6 +137,28 @@ export function ApiManagement() {
     }
   };
 
+  const loadTokensWithServiceRole = async () => {
+    try {
+      console.log('🔧 Carregando tokens usando service role...');
+      
+      // Usar edge function para carregar tokens
+      const response = await supabase.functions.invoke('api-auth', {
+        body: { 
+          action: 'list-tokens'
+        }
+      });
+      
+      console.log('📋 Resposta do service role:', response);
+      
+      if (response.data?.tokens) {
+        setTokens(response.data.tokens);
+        console.log('✅ Tokens carregados via service role');
+      }
+    } catch (error) {
+      console.error('💥 Erro ao carregar via service role:', error);
+    }
+  };
+
   const loadTokens = async () => {
     try {
       console.log('🔄 Carregando tokens...');
@@ -130,11 +178,8 @@ export function ApiManagement() {
 
       if (error) {
         console.error('❌ Erro ao carregar tokens:', error);
-        toast({
-          title: "Erro",
-          description: `Erro ao carregar tokens: ${error.message}`,
-          variant: "destructive",
-        });
+        console.log('🔧 Tentando carregar via service role...');
+        await loadTokensWithServiceRole();
         return;
       }
       

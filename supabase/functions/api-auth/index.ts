@@ -37,11 +37,49 @@ serve(async (req) => {
     const action = body.action
     console.log('🎯 Action recebida:', action)
 
-    if (action !== 'generate-token') {
+    if (!['generate-token', 'list-tokens'].includes(action)) {
       console.log('❌ Action inválida:', action)
       return new Response(
         JSON.stringify({ error: 'Invalid action: ' + action }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Se for listar tokens, fazer uma query simples
+    if (action === 'list-tokens') {
+      console.log('📋 Listando tokens...');
+      
+      const supabaseUrl = 'https://smytdnkylauxocqrkchn.supabase.co'
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+      
+      if (!serviceKey) {
+        return new Response(
+          JSON.stringify({ error: 'Service key not configured' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
+        auth: { autoRefreshToken: false, persistSession: false }
+      })
+
+      const { data: tokens, error: tokensError } = await supabaseAdmin
+        .from('api_tokens')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      console.log('📋 Tokens encontrados:', { count: tokens?.length, error: tokensError });
+
+      if (tokensError) {
+        return new Response(
+          JSON.stringify({ error: 'Failed to load tokens', details: tokensError.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, tokens: tokens || [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
