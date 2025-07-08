@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle } from 'lucide-react';
 import { MediaModal } from "@/components/ui/media-modal";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -23,6 +23,78 @@ import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 
 type ComplaintStatus = 'nova' | 'cadastrada' | 'finalizada' | 'a_verificar' | 'verificado';
+
+// ... keep existing code (interfaces and types)
+
+// Componente para preview de vídeo com fallback
+interface VideoPreviewProps {
+  video: string;
+  index: number;
+  onOpenModal: () => void;
+}
+
+const VideoPreview = ({ video, index, onOpenModal }: VideoPreviewProps) => {
+  const [videoError, setVideoError] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+
+  console.log('VideoPreview renderizando:', video);
+
+  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    console.error('Erro ao carregar vídeo:', video, e);
+    setVideoError(true);
+  };
+
+  const handleVideoLoaded = () => {
+    console.log('Vídeo carregado com sucesso:', video);
+    setVideoLoaded(true);
+  };
+
+  return (
+    <div className="relative cursor-pointer group border rounded overflow-hidden bg-gray-100">
+      {!videoError ? (
+        <>
+          <video 
+            src={video} 
+            className="w-full h-32 object-cover"
+            preload="metadata"
+            muted
+            onError={handleVideoError}
+            onLoadedMetadata={handleVideoLoaded}
+            onCanPlay={handleVideoLoaded}
+          />
+          {!videoLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="w-full h-32 flex flex-col items-center justify-center bg-gray-200 text-gray-500">
+          <AlertCircle className="h-6 w-6 mb-1" />
+          <span className="text-xs text-center px-2">
+            Erro ao carregar vídeo
+          </span>
+          <span className="text-xs text-center px-2 mt-1">
+            {video.split('/').pop()?.split('.').pop()?.toUpperCase()} 
+          </span>
+        </div>
+      )}
+      
+      <div 
+        className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+        onClick={onOpenModal}
+      >
+        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+          <Play className="h-4 w-4 text-white ml-0.5" />
+        </div>
+      </div>
+      
+      <div className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1 rounded">
+        Vídeo {index + 1}
+      </div>
+    </div>
+  );
+};
 
 interface Complaint {
   id: string;
@@ -1205,31 +1277,12 @@ export const ComplaintsList = () => {
                                                   {selectedComplaint.videos.map((video, index) => {
                                                     console.log('Renderizando vídeo:', video, 'Index:', index);
                                                     return (
-                                                      <div key={index} className="relative cursor-pointer group border rounded overflow-hidden bg-gray-100">
-                                                        <video 
-                                                          src={video} 
-                                                          className="w-full h-32 object-cover"
-                                                          preload="metadata"
-                                                          muted
-                                                          onError={(e) => {
-                                                            console.error('Erro ao carregar vídeo preview:', video, e);
-                                                          }}
-                                                          onLoadedMetadata={() => {
-                                                            console.log('Metadata do vídeo carregada:', video);
-                                                          }}
-                                                        />
-                                                        <div 
-                                                          className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                                                          onClick={() => openMediaModal(selectedComplaint.videos!, index, 'video')}
-                                                        >
-                                                          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                                                            <div className="w-0 h-0 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5"></div>
-                                                          </div>
-                                                        </div>
-                                                        <div className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1 rounded">
-                                                          Vídeo {index + 1}
-                                                        </div>
-                                                      </div>
+                                                      <VideoPreview 
+                                                        key={index}
+                                                        video={video}
+                                                        index={index}
+                                                        onOpenModal={() => openMediaModal(selectedComplaint.videos!, index, 'video')}
+                                                      />
                                                     );
                                                   })}
                                                 </div>

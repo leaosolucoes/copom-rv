@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertCircle, Download } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -13,20 +13,24 @@ interface MediaModalProps {
 
 export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: MediaModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [videoError, setVideoError] = useState(false);
 
   console.log('MediaModal props:', { isOpen, media, initialIndex, type });
 
   // Atualizar currentIndex quando initialIndex mudar
   useEffect(() => {
     setCurrentIndex(initialIndex);
+    setVideoError(false); // Reset error state when changing videos
   }, [initialIndex]);
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : media.length - 1));
+    setVideoError(false);
   };
 
   const goToNext = () => {
     setCurrentIndex((prev) => (prev < media.length - 1 ? prev + 1 : 0));
+    setVideoError(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -74,29 +78,61 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                 style={{ maxHeight: 'calc(90vh - 4rem)' }}
               />
             ) : (
-              <video
-                key={media[currentIndex]} // Force re-render when video changes
-                src={media[currentIndex]}
-                controls
-                preload="metadata"
-                className="max-w-full max-h-full"
-                style={{ maxHeight: 'calc(90vh - 4rem)' }}
-                onError={(e) => {
-                  console.error('Erro ao carregar vídeo:', media[currentIndex]);
-                  console.error('Video error event:', e);
-                }}
-                onLoadStart={() => {
-                  console.log('Carregando vídeo:', media[currentIndex]);
-                }}
-                onCanPlay={() => {
-                  console.log('Vídeo pronto para reproduzir:', media[currentIndex]);
-                }}
-              >
-                <source src={media[currentIndex]} type="video/mp4" />
-                <source src={media[currentIndex]} type="video/webm" />
-                <source src={media[currentIndex]} type="video/ogg" />
-                Seu navegador não suporta o elemento de vídeo.
-              </video>
+              <>
+                {!videoError ? (
+                  <video
+                    key={media[currentIndex]} // Force re-render when video changes
+                    src={media[currentIndex]}
+                    controls
+                    preload="metadata"
+                    className="max-w-full max-h-full"
+                    style={{ maxHeight: 'calc(90vh - 4rem)' }}
+                    onError={(e) => {
+                      console.error('Erro ao carregar vídeo no modal:', media[currentIndex]);
+                      console.error('Video error event:', e);
+                      setVideoError(true);
+                    }}
+                    onLoadStart={() => {
+                      console.log('Carregando vídeo no modal:', media[currentIndex]);
+                      setVideoError(false);
+                    }}
+                    onCanPlay={() => {
+                      console.log('Vídeo pronto para reproduzir no modal:', media[currentIndex]);
+                    }}
+                  >
+                    <source src={media[currentIndex]} type="video/mp4" />
+                    <source src={media[currentIndex]} type="video/webm" />
+                    <source src={media[currentIndex]} type="video/quicktime" />
+                    <source src={media[currentIndex]} type="video/ogg" />
+                    Seu navegador não suporta o elemento de vídeo.
+                  </video>
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-8 text-white">
+                    <AlertCircle className="h-16 w-16 mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Erro ao carregar vídeo</h3>
+                    <p className="text-sm text-gray-300 mb-4 text-center">
+                      O formato do vídeo pode não ser suportado pelo seu navegador.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-white border-white hover:bg-white hover:text-black"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = media[currentIndex];
+                        link.download = media[currentIndex].split('/').pop() || 'video';
+                        link.target = '_blank';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Baixar Vídeo
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
