@@ -152,8 +152,11 @@ export function ApiManagement() {
 
   const generateToken = async () => {
     try {
-      const response = await supabase.functions.invoke('api-auth/generate-token', {
-        body: newTokenData
+      const response = await supabase.functions.invoke('api-auth', {
+        body: { 
+          action: 'generate-token',
+          ...newTokenData 
+        }
       });
 
       if (response.error) {

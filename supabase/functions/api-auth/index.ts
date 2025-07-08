@@ -33,14 +33,26 @@ serve(async (req) => {
     const url = new URL(req.url)
     const path = url.pathname
     
-    // Extrair a ação do caminho (pode ser /generate-token ou /api-auth/generate-token)
+    // Tentar extrair ação do corpo da requisição primeiro
     let action = ''
-    if (path.includes('generate-token')) {
-      action = 'generate-token'
-    } else if (path.includes('validate-token')) {
-      action = 'validate-token'
-    } else if (path.includes('refresh-token')) {
-      action = 'refresh-token'
+    if (req.method === 'POST') {
+      try {
+        const body = await req.clone().json()
+        action = body.action || ''
+      } catch (e) {
+        // Se não conseguir ler o body, tenta extrair do caminho
+      }
+    }
+    
+    // Se não tem ação no body, extrai do caminho
+    if (!action) {
+      if (path.includes('generate-token')) {
+        action = 'generate-token'
+      } else if (path.includes('validate-token')) {
+        action = 'validate-token'
+      } else if (path.includes('refresh-token')) {
+        action = 'refresh-token'
+      }
     }
 
     console.log('API Auth - Ação:', action, 'Caminho:', path)
