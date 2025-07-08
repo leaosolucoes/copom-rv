@@ -841,30 +841,32 @@ export function ApiManagement() {
         </TabsContent>
 
         <TabsContent value="docs">
-          <Card>
-            <CardHeader>
-              <CardTitle>Documentação da API</CardTitle>
-              <CardDescription>
-                Guia completo de uso da API do sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Autenticação</h3>
-                <div className="bg-muted p-4 rounded-lg">
-                  <p className="mb-2">Use o header <code>x-api-token</code> em todas as requisições:</p>
-                  <pre className="bg-background p-2 rounded text-sm">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Documentação da API</CardTitle>
+                <CardDescription>
+                  Guia completo de uso da API do sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">🔑 Autenticação</h3>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <p className="mb-2 font-medium">Use o header <code className="bg-background px-2 py-1 rounded">x-api-token</code> em todas as requisições:</p>
+                    <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
 {`curl -H "x-api-token: seu_token_aqui" \\
      -H "Content-Type: application/json" \\
      https://posturas.conectarioverde.com.br/functions/v1/api-users`}
-                  </pre>
+                    </pre>
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Estrutura de Resposta</h3>
-                <div className="bg-muted p-4 rounded-lg">
-                  <pre className="bg-background p-2 rounded text-sm">
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">📊 Estrutura de Resposta</h3>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <p className="mb-2 font-medium">Todas as respostas seguem este padrão:</p>
+                    <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
 {`{
   "success": true,
   "data": {...},
@@ -875,70 +877,316 @@ export function ApiManagement() {
     "pages": 2
   }
 }`}
-                  </pre>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Códigos de Status</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-green-500">200</Badge>
-                    <span>Sucesso</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-blue-500">201</Badge>
-                    <span>Criado</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="destructive">400</Badge>
-                    <span>Dados inválidos</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="destructive">401</Badge>
-                    <span>Token inválido</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="destructive">403</Badge>
-                    <span>Sem permissão</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="destructive">404</Badge>
-                    <span>Não encontrado</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="destructive">429</Badge>
-                    <span>Rate limit excedido</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="destructive">500</Badge>
-                    <span>Erro interno</span>
+                    </pre>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Rate Limiting</h3>
-                <p className="text-muted-foreground">
-                  Cada token possui um limite de requisições por hora. Quando o limite é atingido, 
-                  você receberá um erro 429. O limite é resetado a cada hora.
-                </p>
-              </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">🚦 Códigos de Status HTTP</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex items-center gap-3">
+                      <Badge className="bg-green-500 min-w-12">200</Badge>
+                      <span>Sucesso - Operação realizada</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className="bg-blue-500 min-w-12">201</Badge>
+                      <span>Criado - Recurso criado com sucesso</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="destructive" className="min-w-12">400</Badge>
+                      <span>Dados inválidos - Erro na requisição</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="destructive" className="min-w-12">401</Badge>
+                      <span>Token inválido - Não autorizado</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="destructive" className="min-w-12">403</Badge>
+                      <span>Sem permissão - Acesso negado</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="destructive" className="min-w-12">404</Badge>
+                      <span>Não encontrado - Recurso inexistente</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="destructive" className="min-w-12">429</Badge>
+                      <span>Rate limit excedido</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="destructive" className="min-w-12">500</Badge>
+                      <span>Erro interno do servidor</span>
+                    </div>
+                  </div>
+                </div>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Integração com N8N</h3>
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">⏱️ Rate Limiting</h3>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <p className="text-muted-foreground mb-2">
+                      Cada token possui um limite de requisições por hora. Quando o limite é atingido, 
+                      você receberá um erro 429 com os headers:
+                    </p>
+                    <pre className="bg-background p-3 rounded text-sm">
+{`X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1640995200`}
+                    </pre>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>📋 Endpoints Principais</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h4 className="text-md font-semibold mb-3 flex items-center gap-2">
+                    🏛️ Denúncias
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="border rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="default">POST</Badge>
+                        <code className="text-sm">/api-complaints</code>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">Criar nova denúncia no sistema</p>
+                      <div className="bg-background p-2 rounded text-xs">
+                        <p><strong>Scopes:</strong> complaints:write</p>
+                        <p><strong>Rate Limit:</strong> 200/hora</p>
+                      </div>
+                    </div>
+                    
+                    <div className="border rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline">GET</Badge>
+                        <code className="text-sm">/api-complaints</code>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">Listar denúncias com filtros e paginação</p>
+                      <div className="bg-background p-2 rounded text-xs">
+                        <p><strong>Scopes:</strong> complaints:read</p>
+                        <p><strong>Rate Limit:</strong> 1000/hora</p>
+                      </div>
+                    </div>
+
+                    <div className="border rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline">GET</Badge>
+                        <code className="text-sm">/api-complaints/&#123;id&#125;</code>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">Obter detalhes completos de uma denúncia</p>
+                      <div className="bg-background p-2 rounded text-xs">
+                        <p><strong>Scopes:</strong> complaints:read</p>
+                        <p><strong>Rate Limit:</strong> 500/hora</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-md font-semibold mb-3 flex items-center gap-2">
+                    👥 Usuários
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="border rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline">GET</Badge>
+                        <code className="text-sm">/api-users</code>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">Listar todos os usuários do sistema</p>
+                      <div className="bg-background p-2 rounded text-xs">
+                        <p><strong>Scopes:</strong> users:read</p>
+                        <p><strong>Rate Limit:</strong> 1000/hora</p>
+                      </div>
+                    </div>
+                    
+                    <div className="border rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="default">POST</Badge>
+                        <code className="text-sm">/api-users</code>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">Criar novo usuário no sistema</p>
+                      <div className="bg-background p-2 rounded text-xs">
+                        <p><strong>Scopes:</strong> users:write</p>
+                        <p><strong>Rate Limit:</strong> 100/hora</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-md font-semibold mb-3 flex items-center gap-2">
+                    🏢 CNPJ
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="border rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline">GET</Badge>
+                        <code className="text-sm">/api-cnpj/&#123;cnpj&#125;</code>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">Consultar dados completos de CNPJ na Receita Federal</p>
+                      <div className="bg-background p-2 rounded text-xs">
+                        <p><strong>Scopes:</strong> cnpj:read</p>
+                        <p><strong>Rate Limit:</strong> 300/hora</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-md font-semibold mb-3 flex items-center gap-2">
+                    📤 Upload de Arquivos
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="border rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="default">POST</Badge>
+                        <code className="text-sm">/api-upload</code>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">Upload de arquivo único (imagem, vídeo, documento)</p>
+                      <div className="bg-background p-2 rounded text-xs">
+                        <p><strong>Scopes:</strong> files:write</p>
+                        <p><strong>Rate Limit:</strong> 200/hora</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>🔧 Exemplos de Uso</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h4 className="text-md font-semibold mb-3">Criar uma denúncia</h4>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
+{`curl -X POST \\
+  https://posturas.conectarioverde.com.br/functions/v1/api-complaints \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-token: seu_token_aqui" \\
+  -d '{
+    "complainant_name": "João Silva",
+    "complainant_phone": "11999887766",
+    "complainant_type": "pessoa_fisica",
+    "complainant_address": "Rua das Flores, 123",
+    "complainant_neighborhood": "Centro",
+    "occurrence_type": "poluicao_sonora",
+    "occurrence_address": "Rua do Barulho, 456",
+    "occurrence_neighborhood": "Vila Nova",
+    "narrative": "Som muito alto durante a madrugada",
+    "classification": "urgente"
+  }'`}
+                    </pre>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-md font-semibold mb-3">Listar denúncias</h4>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
+{`curl -X GET \\
+  "https://posturas.conectarioverde.com.br/functions/v1/api-complaints?page=1&limit=10&status=nova" \\
+  -H "x-api-token: seu_token_aqui"`}
+                    </pre>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-md font-semibold mb-3">Consultar CNPJ</h4>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
+{`curl -X GET \\
+  https://posturas.conectarioverde.com.br/functions/v1/api-cnpj/11222333000181 \\
+  -H "x-api-token: seu_token_aqui"`}
+                    </pre>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>🔗 Integração com N8N</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="bg-muted p-4 rounded-lg">
-                  <p className="mb-2">Configuração do nó HTTP Request no N8N:</p>
-                  <ul className="list-disc list-inside space-y-1 text-sm">
-                    <li>Method: GET/POST/PUT/DELETE conforme endpoint</li>
-                    <li>URL: https://posturas.conectarioverde.com.br/functions/v1/api-[endpoint]</li>
-                    <li>Headers: x-api-token = seu_token_aqui</li>
-                    <li>Content-Type: application/json</li>
-                  </ul>
+                  <p className="mb-3 font-medium">Configuração do nó HTTP Request no N8N:</p>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-20 font-medium text-sm">Method:</div>
+                      <div className="text-sm">GET/POST/PUT/DELETE conforme endpoint</div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-20 font-medium text-sm">URL:</div>
+                      <div className="text-sm font-mono bg-background px-2 py-1 rounded">
+                        https://posturas.conectarioverde.com.br/functions/v1/api-[endpoint]
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-20 font-medium text-sm">Headers:</div>
+                      <div className="text-sm">
+                        <div>x-api-token: seu_token_aqui</div>
+                        <div>Content-Type: application/json</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+
+                <div>
+                  <h4 className="text-md font-semibold mb-3">Exemplo de Workflow N8N</h4>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <ol className="list-decimal list-inside space-y-2 text-sm">
+                      <li>Webhook Trigger - Recebe dados da denúncia</li>
+                      <li>HTTP Request - Envia para /api-complaints</li>
+                      <li>Condition - Verifica se criada com sucesso</li>
+                      <li>HTTP Request - Notifica por WhatsApp (opcional)</li>
+                    </ol>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>📚 Recursos Adicionais</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h5 className="font-semibold mb-2">📖 Documentação Completa</h5>
+                    <p className="text-sm text-muted-foreground">
+                      Consulte o arquivo docs/api-complaints-post.md para documentação detalhada do endpoint de criação de denúncias.
+                    </p>
+                  </div>
+                  
+                  <div className="p-4 border rounded-lg">
+                    <h5 className="font-semibold mb-2">🔧 Collection Postman</h5>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Use o botão "Exportar Postman" acima para baixar uma collection completa com todos os endpoints.
+                    </p>
+                  </div>
+                  
+                  <div className="p-4 border rounded-lg">
+                    <h5 className="font-semibold mb-2">🎯 Rate Limits</h5>
+                    <p className="text-sm text-muted-foreground">
+                      Cada endpoint possui limites específicos. Consulte a aba "Endpoints" para ver os limites de cada um.
+                    </p>
+                  </div>
+                  
+                  <div className="p-4 border rounded-lg">
+                    <h5 className="font-semibold mb-2">🔐 Scopes</h5>
+                    <p className="text-sm text-muted-foreground">
+                      Configure os scopes corretos ao gerar tokens. Use '*' apenas para tokens de desenvolvimento.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
