@@ -78,12 +78,38 @@ export function ApiManagement() {
   const { toast } = useToast();
 
   const availableScopes = [
+    // Usuários
     'users:read', 'users:write', 'users:delete',
+    
+    // Denúncias
     'complaints:read', 'complaints:write', 'complaints:delete',
+    
+    // Configurações
     'settings:read', 'settings:write',
-    'cnpj:read', 'files:read', 'files:write', 'files:delete',
-    'token:create', 'token:validate', 'token:refresh',
-    '*' // All permissions
+    
+    // CNPJ
+    'cnpj:read',
+    
+    // Arquivos
+    'files:read', 'files:write', 'files:delete',
+    
+    // Tokens
+    'token:create', 'token:validate', 'token:refresh', 'token:read', 'token:delete',
+    
+    // Relatórios
+    'reports:read', 'reports:create', 'reports:export',
+    
+    // Notificações
+    'notifications:read', 'notifications:write', 'notifications:send', 'notifications:whatsapp',
+    
+    // Auditoria
+    'audit:read', 'audit:export',
+    
+    // Sistema
+    'system:read', 'system:write',
+    
+    // Todas as permissões
+    '*'
   ];
 
   useEffect(() => {
