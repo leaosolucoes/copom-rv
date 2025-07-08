@@ -155,17 +155,46 @@ export function ApiManagement() {
       console.log('🔄 Iniciando geração de token...');
       console.log('📋 Dados do token:', newTokenData);
 
-      const { data: session } = await supabase.auth.getSession();
+      // Verificar se o usuário está autenticado
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      console.log('🔐 Verificação de sessão:', { 
+        hasSession: !!sessionData?.session,
+        hasUser: !!sessionData?.session?.user,
+        userId: sessionData?.session?.user?.id,
+        error: sessionError 
+      });
       
-      if (!session?.session?.access_token) {
-        throw new Error('Usuário não autenticado. Faça login novamente.');
+      if (sessionError) {
+        console.error('❌ Erro ao obter sessão:', sessionError);
+        throw new Error('Erro ao verificar autenticação: ' + sessionError.message);
       }
 
-      console.log('🔐 Token de sessão encontrado');
+      if (!sessionData?.session?.access_token) {
+        console.error('❌ Sem token de acesso na sessão');
+        console.log('🔍 Dados da sessão completos:', sessionData);
+        
+        // Tentar fazer login novamente silenciosamente
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        console.log('🔄 Tentativa de refresh:', { success: !!refreshData?.session, error: refreshError });
+        
+        if (refreshError || !refreshData?.session?.access_token) {
+          throw new Error('Sessão expirada. Faça login novamente.');
+        }
+        
+        console.log('✅ Sessão renovada com sucesso');
+      }
+
+      const currentSession = sessionData?.session || (await supabase.auth.refreshSession()).data?.session;
+      
+      if (!currentSession?.access_token) {
+        throw new Error('Não foi possível obter token de acesso válido');
+      }
+
+      console.log('🔐 Token de sessão confirmado, fazendo chamada para API...');
 
       const response = await supabase.functions.invoke('api-auth', {
         headers: {
-          Authorization: `Bearer ${session.session.access_token}`
+          Authorization: `Bearer ${currentSession.access_token}`
         },
         body: { 
           action: 'generate-token',
@@ -173,14 +202,19 @@ export function ApiManagement() {
         }
       });
 
-      console.log('📡 Resposta da função:', response);
+      console.log('📡 Resposta da função edge:', response);
 
       if (response.error) {
-        console.error('❌ Erro na função:', response.error);
+        console.error('❌ Erro na função edge:', response.error);
         throw new Error(response.error.message || 'Erro na função edge');
       }
 
-      if (response.data?.success) {
+      if (!response.data) {
+        console.error('❌ Resposta vazia da função edge');
+        throw new Error('Resposta vazia da API');
+      }
+
+      if (response.data.success) {
         console.log('✅ Token gerado com sucesso!');
         setGeneratedToken(response.data.token);
         setShowGeneratedToken(true);
