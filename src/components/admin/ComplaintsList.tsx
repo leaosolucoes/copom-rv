@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 
-type ComplaintStatus = 'nova' | 'cadastrada' | 'finalizada' | 'a_verificar';
+type ComplaintStatus = 'nova' | 'cadastrada' | 'finalizada' | 'a_verificar' | 'verificado';
 
 interface Complaint {
   id: string;
@@ -359,7 +359,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
       const { error } = await supabase
         .from('complaints')
         .update({ 
-          status: 'nova' as ComplaintStatus,
+          status: 'verificado' as ComplaintStatus,
           processed_at: new Date().toISOString()
         })
         .eq('id', complaintId);
