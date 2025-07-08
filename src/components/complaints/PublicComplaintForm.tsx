@@ -271,7 +271,42 @@ export const PublicComplaintForm = () => {
   };
 
   const getFieldOptions = (field: FormField): string[] => {
-    // Para campos que têm opções configuradas
+    // Para tipos de ocorrência, sempre usar configuração dinâmica do Super Admin
+    if (field.name === 'occurrence_type') {
+      console.log('🔍 getFieldOptions chamado para occurrence_type');
+      console.log('📊 settings.public_occurrence_types:', settings.public_occurrence_types);
+      
+      // Filtrar apenas tipos visíveis
+      if (Array.isArray(settings.public_occurrence_types) && settings.public_occurrence_types.length > 0) {
+        try {
+          // Verificar se está no novo formato (objetos com name e visible)
+          const hasNewFormat = settings.public_occurrence_types.some((item: any) => 
+            item && typeof item === 'object' && 'name' in item && 'visible' in item
+          );
+          
+          console.log('🔄 hasNewFormat:', hasNewFormat);
+          
+          if (hasNewFormat) {
+            // Novo formato com objetos
+            const visibleTypes = settings.public_occurrence_types
+              .filter((type: any) => type && type.visible)
+              .map((type: any) => type.name);
+            console.log('✅ Tipos visíveis (novo formato):', visibleTypes);
+            return visibleTypes;
+          }
+        } catch (e) {
+          console.log('❌ Erro ao processar novo formato:', e);
+          // Em caso de erro, usar formato antigo
+        }
+        // Formato antigo com strings (compatibilidade)
+        console.log('📱 Usando formato antigo (strings):', settings.public_occurrence_types);
+        return settings.public_occurrence_types as string[];
+      }
+      console.log('⚠️ Nenhum tipo de ocorrência encontrado, retornando array vazio');
+      return [];
+    }
+
+    // Para campos que têm opções configuradas (exceto occurrence_type)
     if (field.options && field.options.length > 0) {
       return field.options;
     }
@@ -283,38 +318,6 @@ export const PublicComplaintForm = () => {
       case 'complainant_neighborhood':
       case 'occurrence_neighborhood':
         return settings.public_neighborhoods;
-      case 'occurrence_type':
-        console.log('🔍 getFieldOptions chamado para occurrence_type');
-        console.log('📊 settings.public_occurrence_types:', settings.public_occurrence_types);
-        
-        // Filtrar apenas tipos visíveis
-        if (Array.isArray(settings.public_occurrence_types) && settings.public_occurrence_types.length > 0) {
-          try {
-            // Verificar se está no novo formato (objetos com name e visible)
-            const hasNewFormat = settings.public_occurrence_types.some((item: any) => 
-              item && typeof item === 'object' && 'name' in item && 'visible' in item
-            );
-            
-            console.log('🔄 hasNewFormat:', hasNewFormat);
-            
-            if (hasNewFormat) {
-              // Novo formato com objetos
-              const visibleTypes = settings.public_occurrence_types
-                .filter((type: any) => type && type.visible)
-                .map((type: any) => type.name);
-              console.log('✅ Tipos visíveis (novo formato):', visibleTypes);
-              return visibleTypes;
-            }
-          } catch (e) {
-            console.log('❌ Erro ao processar novo formato:', e);
-            // Em caso de erro, usar formato antigo
-          }
-          // Formato antigo com strings (compatibilidade)
-          console.log('📱 Usando formato antigo (strings):', settings.public_occurrence_types);
-          return settings.public_occurrence_types as string[];
-        }
-        console.log('⚠️ Nenhum tipo de ocorrência encontrado, retornando array vazio');
-        return [];
       case 'classification':
         return settings.public_classifications;
       default:
