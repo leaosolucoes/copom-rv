@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight, AlertCircle, Download } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertCircle, Download, Play } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -81,44 +81,39 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
               <div className="relative w-full h-full flex flex-col items-center justify-center">
                 {!videoError ? (
                   <>
-                    <video
-                      key={media[currentIndex]} // Force re-render when video changes
-                      className="max-w-full max-h-full mb-4"
-                      style={{ maxHeight: 'calc(90vh - 8rem)' }}
-                      controls
-                      preload="metadata"
-                      playsInline
-                      onError={(e) => {
-                        console.error('Erro ao carregar vídeo no modal:', media[currentIndex]);
-                        console.error('Video error event:', e);
-                        setVideoError(true);
-                      }}
-                      onLoadStart={() => {
-                        console.log('Carregando vídeo no modal:', media[currentIndex]);
-                        setVideoError(false);
-                      }}
-                      onCanPlay={() => {
-                        console.log('Vídeo pronto para reproduzir no modal:', media[currentIndex]);
-                      }}
-                      onLoadedData={() => {
-                        console.log('Dados do vídeo carregados:', media[currentIndex]);
-                      }}
-                    >
-                      {/* Múltiplas sources para diferentes formatos */}
-                      <source src={media[currentIndex]} type="video/mp4" />
-                      <source src={media[currentIndex]} type="video/webm" />
-                      <source src={media[currentIndex]} type="video/quicktime" />
-                      <source src={media[currentIndex]} type="video/x-msvideo" />
-                      <source src={media[currentIndex]} type="video/ogg" />
-                      <source src={media[currentIndex]} type="video/3gpp" />
-                      <source src={media[currentIndex]} type="video/x-ms-wmv" />
-                      {/* Fallback genérico */}
-                      <source src={media[currentIndex]} />
-                      Seu navegador não suporta o elemento de vídeo.
-                    </video>
+                    <div className="w-full flex items-center justify-center mb-4">
+                      <video
+                        key={media[currentIndex]}
+                        src={media[currentIndex]}
+                        controls
+                        preload="metadata"
+                        playsInline
+                        className="max-w-full max-h-full rounded"
+                        style={{ maxHeight: 'calc(90vh - 10rem)' }}
+                        onError={() => {
+                          console.error('Erro ao carregar vídeo:', media[currentIndex]);
+                          setVideoError(true);
+                        }}
+                        onLoadedData={() => {
+                          console.log('Vídeo carregado:', media[currentIndex]);
+                          setVideoError(false);
+                        }}
+                        onCanPlay={() => {
+                          console.log('Vídeo pode ser reproduzido:', media[currentIndex]);
+                        }}
+                      >
+                        <source src={media[currentIndex]} type="video/mp4" />
+                        <source src={media[currentIndex]} type="video/webm" />
+                        <source src={media[currentIndex]} type="video/quicktime" />
+                        <source src={media[currentIndex]} type="video/x-msvideo" />
+                        <source src={media[currentIndex]} type="video/ogg" />
+                        <source src={media[currentIndex]} />
+                        Seu navegador não suporta este formato de vídeo.
+                      </video>
+                    </div>
                     
-                    {/* Botão de download sempre visível para vídeos que carregam */}
-                    <div className="flex gap-2 mt-2">
+                    {/* Botões de ação sempre visíveis */}
+                    <div className="flex gap-2">
                       <Button
                         variant="secondary"
                         size="sm"
@@ -127,7 +122,6 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                           const link = document.createElement('a');
                           link.href = media[currentIndex];
                           link.download = media[currentIndex].split('/').pop() || 'video';
-                          link.target = '_blank';
                           document.body.appendChild(link);
                           link.click();
                           document.body.removeChild(link);
@@ -144,7 +138,8 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                           window.open(media[currentIndex], '_blank');
                         }}
                       >
-                        Abrir em nova aba
+                        <Play className="h-4 w-4 mr-2" />
+                        Abrir Player Externo
                       </Button>
                     </div>
                   </>
@@ -153,7 +148,7 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                     <AlertCircle className="h-16 w-16 mb-4 text-yellow-400" />
                     <h3 className="text-lg font-semibold mb-2">Formato não suportado</h3>
                     <p className="text-sm text-gray-300 mb-4 text-center">
-                      O vídeo {media[currentIndex].split('.').pop()?.toUpperCase()} não pode ser reproduzido neste navegador.
+                      O arquivo {media[currentIndex].split('.').pop()?.toUpperCase()} não pode ser reproduzido neste navegador.
                     </p>
                     <div className="flex gap-2">
                       <Button
@@ -164,7 +159,6 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                           const link = document.createElement('a');
                           link.href = media[currentIndex];
                           link.download = media[currentIndex].split('/').pop() || 'video';
-                          link.target = '_blank';
                           document.body.appendChild(link);
                           link.click();
                           document.body.removeChild(link);
@@ -181,11 +175,12 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                           window.open(media[currentIndex], '_blank');
                         }}
                       >
-                        Abrir em nova aba
+                        <Play className="h-4 w-4 mr-2" />
+                        Player Externo
                       </Button>
                     </div>
                     <p className="text-xs text-gray-400 mt-4 text-center">
-                      Baixe o arquivo para reproduzir em um player externo
+                      Baixe o arquivo ou use um player externo para reproduzir
                     </p>
                   </div>
                 )}
