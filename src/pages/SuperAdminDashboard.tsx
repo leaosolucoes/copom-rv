@@ -13,7 +13,8 @@ import { FormFieldsConfig } from '@/components/admin/FormFieldsConfig';
 import { LogoUpload } from '@/components/admin/LogoUpload';
 import { OccurrenceTypesConfig } from '@/components/admin/OccurrenceTypesConfig';
 import { SoundNotificationControl } from '@/components/admin/SoundNotificationControl';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List } from 'lucide-react';
+import { ApiManagement } from '@/components/admin/ApiManagement';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code } from 'lucide-react';
 
 const SuperAdminDashboard = () => {
   const { profile, signOut, hasRole, isLoading } = useSupabaseAuth();
@@ -74,7 +75,7 @@ const SuperAdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="complaints" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 lg:w-fit">`
+          <TabsList className="grid w-full grid-cols-8 lg:w-fit">`
             <TabsTrigger value="complaints" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Denúncias</span>
@@ -98,6 +99,10 @@ const SuperAdminDashboard = () => {
             <TabsTrigger value="occurrence-types" className="flex items-center gap-2">
               <List className="h-4 w-4" />
               <span className="hidden sm:inline">Tipos</span>
+            </TabsTrigger>
+            <TabsTrigger value="api" className="flex items-center gap-2">
+              <Code className="h-4 w-4" />
+              <span className="hidden sm:inline">API</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -185,6 +190,20 @@ const SuperAdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <OccurrenceTypesConfig />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="api" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gerenciamento de API</CardTitle>
+                <CardDescription>
+                  Configure tokens, monitore uso e gerencie a API completa do sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ApiManagement />
               </CardContent>
             </Card>
           </TabsContent>

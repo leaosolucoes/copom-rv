@@ -14,6 +14,186 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_endpoints: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_enabled: boolean
+          method: string
+          path: string
+          rate_limit_per_hour: number
+          required_scopes: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          method: string
+          path: string
+          rate_limit_per_hour?: number
+          required_scopes?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          method?: string
+          path?: string
+          rate_limit_per_hour?: number
+          required_scopes?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      api_logs: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_message: string | null
+          execution_time_ms: number | null
+          id: string
+          ip_address: unknown | null
+          method: string
+          request_body: Json | null
+          response_body: Json | null
+          status_code: number
+          token_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          ip_address?: unknown | null
+          method: string
+          request_body?: Json | null
+          response_body?: Json | null
+          status_code: number
+          token_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          ip_address?: unknown | null
+          method?: string
+          request_body?: Json | null
+          response_body?: Json | null
+          status_code?: number
+          token_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_logs_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "api_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          requests_count: number
+          token_id: string
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          requests_count?: number
+          token_id: string
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          requests_count?: number
+          token_id?: string
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_rate_limits_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "api_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          last_used_at: string | null
+          rate_limit_per_hour: number
+          scopes: string[]
+          token_hash: string
+          token_name: string
+          token_type: string
+          updated_at: string
+          usage_count: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          rate_limit_per_hour?: number
+          scopes?: string[]
+          token_hash: string
+          token_name: string
+          token_type: string
+          updated_at?: string
+          usage_count?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          rate_limit_per_hour?: number
+          scopes?: string[]
+          token_hash?: string
+          token_name?: string
+          token_type?: string
+          updated_at?: string
+          usage_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -347,6 +527,10 @@ export type Database = {
           password_valid: boolean
         }[]
       }
+      check_rate_limit: {
+        Args: { p_token_id: string; p_endpoint: string; p_limit: number }
+        Returns: boolean
+      }
       create_user_secure: {
         Args: {
           p_email: string
@@ -357,6 +541,10 @@ export type Database = {
           p_requester_id?: string
         }
         Returns: Json
+      }
+      generate_api_token_hash: {
+        Args: { token_string: string }
+        Returns: string
       }
       get_user_role: {
         Args: { _user_id: string }
@@ -420,6 +608,17 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      validate_api_token: {
+        Args: { token_string: string }
+        Returns: {
+          token_id: string
+          user_id: string
+          token_type: string
+          scopes: string[]
+          is_valid: boolean
+          rate_limit_per_hour: number
+        }[]
       }
       verify_password: {
         Args: { password: string; hash: string }
