@@ -699,8 +699,8 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                                     </div>
                                   </div>
                                   
-                                  {/* Formulário RAI - mostrar apenas para atendente e denúncia nova */}
-                                  {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
+                                   {/* Formulário RAI - mostrar para atendente e denúncia nova ou verificada */}
+                                   {userRole === 'atendente' && (selectedComplaint.status === 'nova' || selectedComplaint.status === 'verificado') && (
                                     <div className="space-y-4 border-t pt-4">
                                       <h4 className="text-md font-semibold text-primary">Cadastrar com RAI</h4>
                                       <div className="grid grid-cols-2 gap-4">
@@ -739,7 +739,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                                   )}
 
                                     <div className="flex space-x-2">
-                                      {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
+                                      {userRole === 'atendente' && (selectedComplaint.status === 'nova' || selectedComplaint.status === 'verificado') && (
                                         <>
                                           <Button 
                                             onClick={() => sendToAdmin(selectedComplaint.id)}
@@ -826,7 +826,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                              </DialogContent>
                            </Dialog>
                            
-                             {userRole === 'atendente' && complaint.status === 'nova' && (
+                             {userRole === 'atendente' && (complaint.status === 'nova' || complaint.status === 'verificado') && (
                                <Button 
                                  size="sm" 
                                  variant="secondary"
