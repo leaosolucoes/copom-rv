@@ -892,30 +892,28 @@ export const ComplaintsList = () => {
           </div>
         </div>
         
-        {/* Para atendentes: Campo de pesquisa de CNPJ */}
-        {userRole === 'atendente' && (
-          <div className="flex gap-4 items-center flex-wrap">
-            <div className="flex gap-2 items-center">
-              <span className="text-sm font-medium">Consultar CNPJ:</span>
-              
-              <Input
-                placeholder="Digite o CNPJ..."
-                value={cnpjSearch}
-                onChange={(e) => setCnpjSearch(e.target.value)}
-                className="w-[200px]"
-                maxLength={18}
-              />
-              
-              <Button 
-                onClick={searchCnpj}
-                disabled={cnpjLoading}
-                variant="default"
-              >
-                {cnpjLoading ? "Consultando..." : "Consultar"}
-              </Button>
-            </div>
+        {/* Campo de pesquisa de CNPJ - para todos os perfis */}
+        <div className="flex gap-4 items-center flex-wrap">
+          <div className="flex gap-2 items-center">
+            <span className="text-sm font-medium">Consultar CNPJ:</span>
+            
+            <Input
+              placeholder="Digite o CNPJ..."
+              value={cnpjSearch}
+              onChange={(e) => setCnpjSearch(e.target.value)}
+              className="w-[200px]"
+              maxLength={18}
+            />
+            
+            <Button 
+              onClick={searchCnpj}
+              disabled={cnpjLoading}
+              variant="default"
+            >
+              {cnpjLoading ? "Consultando..." : "Consultar"}
+            </Button>
           </div>
-        )}
+        </div>
         
         {/* Para admin/super_admin: Filtros de Data para PDF */}
         {(userRole === 'admin' || userRole === 'super_admin') && (
