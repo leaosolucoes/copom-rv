@@ -395,17 +395,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                               <Eye className="h-4 w-4" />
                             </Button>
                           </DialogTrigger>
-                        
-                        {userRole === 'atendente' && complaint.status === 'nova' && (
-                          <Button 
-                            size="sm" 
-                            variant="secondary"
-                            onClick={() => sendToAdmin(complaint.id)}
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
-                        )}
-                         <DialogContent className="max-w-2xl">
+                          <DialogContent className="max-w-2xl">
                           <DialogHeader>
                             <DialogTitle>Detalhes da Denúncia</DialogTitle>
                           </DialogHeader>
@@ -551,9 +541,19 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                               </div>
                             </div>
                           )}
-                        </DialogContent>
-                      </Dialog>
-                    </div>
+                         </DialogContent>
+                       </Dialog>
+                       
+                       {userRole === 'atendente' && complaint.status === 'nova' && (
+                         <Button 
+                           size="sm" 
+                           variant="secondary"
+                           onClick={() => sendToAdmin(complaint.id)}
+                         >
+                           <Send className="h-4 w-4" />
+                         </Button>
+                       )}
+                     </div>
                   </TableCell>
                 </TableRow>
               ))}
