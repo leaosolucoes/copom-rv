@@ -75,12 +75,26 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
               />
             ) : (
               <video
+                key={media[currentIndex]} // Force re-render when video changes
                 src={media[currentIndex]}
                 controls
-                autoPlay
+                preload="metadata"
                 className="max-w-full max-h-full"
                 style={{ maxHeight: 'calc(90vh - 4rem)' }}
+                onError={(e) => {
+                  console.error('Erro ao carregar vídeo:', media[currentIndex]);
+                  console.error('Video error event:', e);
+                }}
+                onLoadStart={() => {
+                  console.log('Carregando vídeo:', media[currentIndex]);
+                }}
+                onCanPlay={() => {
+                  console.log('Vídeo pronto para reproduzir:', media[currentIndex]);
+                }}
               >
+                <source src={media[currentIndex]} type="video/mp4" />
+                <source src={media[currentIndex]} type="video/webm" />
+                <source src={media[currentIndex]} type="video/ogg" />
                 Seu navegador não suporta o elemento de vídeo.
               </video>
             )}
