@@ -11,6 +11,7 @@ import { SystemSettings } from '@/components/admin/SystemSettings';
 import { WhatsAppConfig } from '@/components/admin/WhatsAppConfig';
 import { FormFieldsConfig } from '@/components/admin/FormFieldsConfig';
 import { LogoUpload } from '@/components/admin/LogoUpload';
+import { SoundNotificationControl } from '@/components/admin/SoundNotificationControl';
 import { Users, FileText, Settings, MessageSquare, Layout, Image } from 'lucide-react';
 
 const SuperAdminDashboard = () => {
@@ -170,17 +171,21 @@ const SuperAdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configurações Gerais</CardTitle>
-                <CardDescription>
-                  Configurações avançadas do sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SystemSettings />
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Configurações Gerais</CardTitle>
+                  <CardDescription>
+                    Configurações avançadas do sistema
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SystemSettings />
+                </CardContent>
+              </Card>
+              
+              <SoundNotificationControl />
+            </div>
           </TabsContent>
         </Tabs>
       </main>

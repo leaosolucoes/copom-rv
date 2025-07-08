@@ -45,7 +45,7 @@ interface Complaint {
   assigned_to?: string;
   
   // Controle interno
-  status: 'nova' | 'cadastrada' | 'finalizada';
+  status: 'nova' | 'cadastrada' | 'finalizada' | 'a_verificar';
   system_identifier?: string;
   processed_at?: string;
   created_at: string;

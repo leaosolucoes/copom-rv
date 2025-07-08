@@ -7,13 +7,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Download, MessageSquare, Calendar } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send, Volume2, VolumeX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 
-type ComplaintStatus = Database['public']['Enums']['complaint_status'];
+type ComplaintStatus = 'nova' | 'cadastrada' | 'finalizada' | 'a_verificar';
 
 interface Complaint {
   id: string;
@@ -62,6 +62,8 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const { toast } = useToast();
 
   const fetchComplaints = async () => {
@@ -75,6 +77,14 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
       // Filter by status if selected
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter as ComplaintStatus);
+      }
+
+      // Filter by date if selected
+      if (dateFilter) {
+        const startDate = new Date(dateFilter);
+        const endDate = new Date(dateFilter);
+        endDate.setDate(endDate.getDate() + 1);
+        query = query.gte('created_at', startDate.toISOString()).lt('created_at', endDate.toISOString());
       }
 
       const { data, error } = await query;
@@ -93,9 +103,83 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
     }
   };
 
+  const fetchSoundSetting = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'sound_notifications_enabled')
+        .single();
+
+      if (error) throw error;
+      setSoundEnabled(data.value === true);
+    } catch (error) {
+      console.error('Erro ao carregar configuração de som:', error);
+    }
+  };
+
+  const playNotificationSound = () => {
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwMZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAOUo8j6vGUdBjOQ3fHWeCwEJ3LL7eGPOgMVaLzt5JFPEC1YrdbqsGYfBjuV4PTXfjYEH2y8796iRgEXmMn96YFMAzKQz/fGdyQCK3rM7+WQRALEgbb+zG0lBR6J3PrHeCYEFWq88+aUUwGFgLT4028nBHuu5/ueNQMTcLjp4p9UE0+Y1vL6rWclBwTBpcl+3gABSHcA');
+    audio.play().catch(e => console.log('Erro ao reproduzir som:', e));
+  };
+
+  const sendToAdmin = async (complaintId: string) => {
+    try {
+      const { error } = await supabase
+        .from('complaints')
+        .update({ 
+          status: 'a_verificar' as ComplaintStatus,
+          processed_at: new Date().toISOString()
+        })
+        .eq('id', complaintId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Denúncia enviada para verificação do administrador!",
+      });
+      
+      fetchComplaints();
+    } catch (error: any) {
+      console.error('Erro ao enviar para admin:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar denúncia para administrador",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchComplaints();
-  }, [statusFilter]);
+  }, [statusFilter, dateFilter]);
+
+  useEffect(() => {
+    fetchSoundSetting();
+    
+    // Setup realtime updates for sound notifications
+    const channel = supabase
+      .channel('complaint-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'complaints'
+        },
+        () => {
+          if (soundEnabled) {
+            playNotificationSound();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [soundEnabled]);
 
   const updateComplaintStatus = async (complaintId: string, newStatus: ComplaintStatus, systemIdentifier?: string) => {
     try {
@@ -193,13 +277,15 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
     const colors = {
       nova: 'bg-yellow-500',
       cadastrada: 'bg-blue-500',
-      finalizada: 'bg-green-500'
+      finalizada: 'bg-green-500',
+      a_verificar: 'bg-red-500'
     };
     
     const labels = {
       nova: 'Nova',
       cadastrada: 'Cadastrada',
-      finalizada: 'Finalizada'
+      finalizada: 'Finalizada',
+      a_verificar: 'A Verificar'
     };
 
     return (
@@ -240,8 +326,18 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
               <SelectItem value="nova">Novas</SelectItem>
               <SelectItem value="cadastrada">Cadastradas</SelectItem>
               <SelectItem value="finalizada">Finalizadas</SelectItem>
+              {userRole !== 'atendente' && (
+                <SelectItem value="a_verificar">A Verificar</SelectItem>
+              )}
             </SelectContent>
           </Select>
+          <Input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="w-[180px]"
+            placeholder="Filtrar por data"
+          />
         </div>
         
         {userRole === 'super_admin' && (
@@ -299,6 +395,15 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
+                      {userRole === 'atendente' && complaint.status === 'nova' && (
+                        <Button 
+                          size="sm" 
+                          variant="secondary"
+                          onClick={() => sendToAdmin(complaint.id)}
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      )}
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
                             <DialogTitle>Detalhes da Denúncia</DialogTitle>
@@ -414,7 +519,16 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                                 </div>
                               </div>
                               <div className="flex space-x-2">
-                                {userRole !== 'admin' && selectedComplaint.status === 'nova' && (
+                                {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
+                                  <Button 
+                                    onClick={() => sendToAdmin(selectedComplaint.id)}
+                                    variant="secondary"
+                                  >
+                                    <Send className="h-4 w-4 mr-2" />
+                                    Enviar para Admin
+                                  </Button>
+                                )}
+                                {userRole !== 'admin' && selectedComplaint.status === 'nova' && userRole !== 'atendente' && (
                                   <Button 
                                     onClick={() => {
                                       const identifier = window.prompt('Digite o identificador do sistema:');
