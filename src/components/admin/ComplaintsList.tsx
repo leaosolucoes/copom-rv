@@ -536,6 +536,23 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                                     Marcar como Cadastrada
                                   </Button>
                                 )}
+                                {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
+                                  <Button 
+                                    onClick={() => {
+                                      const rai = window.prompt('Digite o RAI:');
+                                      if (rai) {
+                                        const classification = window.prompt('Digite a classificação:');
+                                        if (classification) {
+                                          updateComplaintStatus(selectedComplaint.id, 'cadastrada', rai);
+                                        }
+                                      }
+                                    }}
+                                    variant="default"
+                                  >
+                                    <Calendar className="h-4 w-4 mr-2" />
+                                    Cadastrar com RAI
+                                  </Button>
+                                )}
                                 {userRole === 'super_admin' && (
                                   <Button onClick={() => sendWhatsAppMessage(selectedComplaint)}>
                                     <MessageSquare className="h-4 w-4 mr-2" />
