@@ -12,87 +12,75 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  )
+  console.log('=== INÍCIO DA REQUISIÇÃO ===')
+  console.log('Method:', req.method)
+  console.log('URL:', req.url)
+  
+  // Log de todos os headers
+  console.log('=== HEADERS RECEBIDOS ===')
+  for (const [key, value] of req.headers.entries()) {
+    console.log(`${key}: ${value}`)
+  }
+  
+  // Verificar se é uma requisição válida
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Método não permitido. Use POST.' }),
+      { 
+        status: 405, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+  }
+
+  // Verificar token simples
+  const apiToken = req.headers.get('x-api-token')
+  console.log('Token encontrado:', apiToken)
+  
+  if (!apiToken) {
+    console.log('ERRO: Token não encontrado!')
+    return new Response(
+      JSON.stringify({ error: 'Token da API necessário no header x-api-token' }),
+      { 
+        status: 401, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+  }
+
+  // Verificar se é o token correto
+  if (apiToken !== 'sat_production_3ea84279b2484a138e6fba8ebec5c7e0') {
+    console.log('ERRO: Token inválido!')
+    return new Response(
+      JSON.stringify({ error: 'Token da API inválido' }),
+      { 
+        status: 401, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+  }
+
+  console.log('Token válido! Processando requisição...')
 
   try {
-    const startTime = Date.now()
-    
-    console.log('Iniciando validação do token...')
-    console.log('URL:', req.url)
-    console.log('Method:', req.method)
-    
-    // Validar token da API
-    const tokenValidation = await validateApiToken(req, supabase)
-    if (!tokenValidation.valid) {
-      console.log('Token inválido, retornando erro 401')
-      return tokenValidation.response
-    }
-
-    const url = new URL(req.url)
-    const pathSegments = url.pathname.split('/').filter(Boolean)
-    const complaintId = pathSegments[pathSegments.length - 1]
-    const action = pathSegments[pathSegments.length - 1]
-
-    let result
-    switch (req.method) {
-      case 'GET':
-        if (action === 'media' && pathSegments.length > 2) {
-          const actualComplaintId = pathSegments[pathSegments.length - 2]
-          result = await getComplaintMedia(actualComplaintId, supabase)
-        } else if (complaintId && complaintId !== 'complaints') {
-          result = await getComplaint(complaintId, supabase)
-        } else {
-          result = await listComplaints(url.searchParams, supabase)
-        }
-        break
-      case 'POST':
-        result = await createComplaint(req, supabase)
-        break
-      case 'PUT':
-        result = await updateComplaint(complaintId, req, supabase)
-        break
-      case 'PATCH':
-        if (action === 'status') {
-          const actualComplaintId = pathSegments[pathSegments.length - 2]
-          result = await updateComplaintStatus(actualComplaintId, req, supabase)
-        } else {
-          result = { status: 400, data: { error: 'Ação PATCH não reconhecida' } }
-        }
-        break
-      case 'DELETE':
-        result = await deleteComplaint(complaintId, supabase)
-        break
-      default:
-        result = {
-          status: 405,
-          data: { error: 'Método não permitido' }
-        }
-    }
-
-    // Log da requisição
-    await logApiRequest(
-      req,
-      tokenValidation.tokenData.token_id,
-      result.status,
-      Date.now() - startTime,
-      result.data,
-      supabase
-    )
+    const body = await req.json()
+    console.log('Body recebido:', JSON.stringify(body, null, 2))
 
     return new Response(
-      JSON.stringify(result.data),
+      JSON.stringify({ 
+        success: true, 
+        message: 'API funcionando!', 
+        data: body 
+      }),
       { 
-        status: result.status, 
+        status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     )
   } catch (error) {
-    console.error('Erro na API de denúncias:', error)
+    console.error('Erro ao processar requisição:', error)
     return new Response(
-      JSON.stringify({ error: 'Erro interno do servidor' }),
+      JSON.stringify({ error: 'Erro interno do servidor', details: error.message }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
