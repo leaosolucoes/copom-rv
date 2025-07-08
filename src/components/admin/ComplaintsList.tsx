@@ -635,7 +635,12 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                 </TableHeader>
                 <TableBody>
                   {filteredComplaints
-                    .filter(complaint => complaint.status !== 'nova')
+                    .filter(complaint => {
+                      if (complaint.status === 'nova') return false;
+                      // Ocultar denúncias "A Verificar" para atendentes
+                      if (userRole === 'atendente' && complaint.status === 'a_verificar') return false;
+                      return true;
+                    })
                     .map((complaint) => (
                     <TableRow key={complaint.id}>
                       <TableCell>
