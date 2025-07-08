@@ -93,88 +93,109 @@ async function generateToken(req: Request, supabase: any) {
     )
   }
 
-  const authHeader = req.headers.get('authorization')
-  if (!authHeader) {
+  try {
+    const body = await req.json()
+    
+    // Log do body recebido
+    console.log('Body recebido:', body)
+    
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Token de autorização necessário' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    console.log('Token extraído:', token ? 'presente' : 'ausente')
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+    
+    if (userError || !user) {
+      console.log('Erro de autenticação:', userError)
+      return new Response(
+        JSON.stringify({ error: 'Token inválido', details: userError?.message }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('Usuário autenticado:', user.id)
+
+    // Verificar se é super admin
+    const { data: userData, error: roleError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    console.log('Dados do usuário:', userData, 'Erro:', roleError)
+
+    if (roleError || userData?.role !== 'super_admin') {
+      return new Response(
+        JSON.stringify({ error: 'Acesso negado. Apenas super admins podem gerar tokens.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Usar os dados do token do body que já foi lido
+    console.log('Gerando token com dados:', body)
+    
+    // Gerar token único
+    const tokenString = `sat_${body.token_type}_${crypto.randomUUID().replace(/-/g, '')}`
+    
+    // Hash do token para armazenar no banco
+    const encoder = new TextEncoder()
+    const data = encoder.encode(tokenString)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const tokenHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    // Inserir no banco
+    const { data: newToken, error: insertError } = await supabase
+      .from('api_tokens')
+      .insert({
+        user_id: user.id,
+        token_name: body.token_name,
+        token_hash: tokenHash,
+        token_type: body.token_type,
+        scopes: body.scopes || [],
+        expires_at: body.expires_at || null,
+        rate_limit_per_hour: body.rate_limit_per_hour || 1000
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Erro ao inserir token:', insertError)
+      return new Response(
+        JSON.stringify({ error: 'Erro ao criar token' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     return new Response(
-      JSON.stringify({ error: 'Token de autorização necessário' }),
-      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        success: true,
+        token: tokenString,
+        token_info: {
+          id: newToken.id,
+          name: newToken.token_name,
+          type: newToken.token_type,
+          scopes: newToken.scopes,
+          expires_at: newToken.expires_at,
+          rate_limit_per_hour: newToken.rate_limit_per_hour
+        }
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-  }
-
-  const token = authHeader.replace('Bearer ', '')
-  const { data: { user }, error: userError } = await supabase.auth.getUser(token)
-  
-  if (userError || !user) {
+  } catch (error: any) {
+    console.error('Erro ao gerar token:', error)
     return new Response(
-      JSON.stringify({ error: 'Token inválido' }),
-      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
-  // Verificar se é super admin
-  const { data: userData, error: roleError } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (roleError || userData?.role !== 'super_admin') {
-    return new Response(
-      JSON.stringify({ error: 'Acesso negado. Apenas super admins podem gerar tokens.' }),
-      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
-  const body: TokenGenerateRequest = await req.json()
-  
-  // Gerar token único
-  const tokenString = `sat_${body.token_type}_${crypto.randomUUID().replace(/-/g, '')}`
-  
-  // Hash do token para armazenar no banco
-  const encoder = new TextEncoder()
-  const data = encoder.encode(tokenString)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  const tokenHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-
-  // Inserir no banco
-  const { data: newToken, error: insertError } = await supabase
-    .from('api_tokens')
-    .insert({
-      user_id: user.id,
-      token_name: body.token_name,
-      token_hash: tokenHash,
-      token_type: body.token_type,
-      scopes: body.scopes || [],
-      expires_at: body.expires_at || null,
-      rate_limit_per_hour: body.rate_limit_per_hour || 1000
-    })
-    .select()
-    .single()
-
-  if (insertError) {
-    console.error('Erro ao inserir token:', insertError)
-    return new Response(
-      JSON.stringify({ error: 'Erro ao criar token' }),
+      JSON.stringify({ error: 'Erro interno do servidor', details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
-
-  return new Response(
-    JSON.stringify({
-      success: true,
-      token: tokenString,
-      token_info: {
-        id: newToken.id,
-        name: newToken.token_name,
-        type: newToken.token_type,
-        scopes: newToken.scopes,
-        expires_at: newToken.expires_at,
-        rate_limit_per_hour: newToken.rate_limit_per_hour
-      }
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  )
 }
 
 async function validateToken(req: Request, supabase: any) {
