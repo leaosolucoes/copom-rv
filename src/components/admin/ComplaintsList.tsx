@@ -147,8 +147,53 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
   };
 
   const playNotificationSound = () => {
-    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwMZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAOUo8j6vGUdBjOQ3fHWeCwEJ3LL7eGPOgMVaLzt5JFPEC1YrdbqsGYfBjuV4PTXfjYEH2y8796iRgEXmMn96YFMAzKQz/fGdyQCK3rM7+WQRALEgbb+zG0lBR6J3PrHeCYEFWq88+aUUwGFgLT4028nBHuu5/ueNQMTcLjp4p9UE0+Y1vL6rWclBwTBpcl+3gABSHcA');
-    audio.play().catch(e => console.log('Erro ao reproduzir som:', e));
+    console.log('🔊 Tentando tocar som - soundEnabled:', soundEnabled);
+    
+    if (!soundEnabled) {
+      console.log('🔇 Som desabilitado nas configurações');
+      return;
+    }
+
+    try {
+      // Criar um áudio mais simples e confiável
+      const audio = new Audio();
+      audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwMZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAOUo8j6vGUdBjOQ3fHWeCwEJ3LL7eGPOgMVaLzt5JFPEC1YrdbqsGYfBjuV4PTXfjYEH2y8796iRgEXmMn96YFMAzKQz/fGdyQCK3rM7+WQRALEgbb+zG0lBR6J3PrHeCYEFWq88+aUUwGFgLT4028nBHuu5/ueNQMTcLjp4p9UE0+Y1vL6rWclBwTBpcl+3gABSHcA';
+      audio.volume = 0.8;
+      audio.preload = 'auto';
+      
+      const playPromise = audio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('✅ Som tocado com sucesso!');
+          })
+          .catch((error) => {
+            console.error('❌ Erro ao tocar som:', error);
+            console.log('🔄 Tentando som alternativo...');
+            
+            // Fallback: tentar um beep simples
+            const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const oscillator = context.createOscillator();
+            const gainNode = context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(context.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0.3, context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 1);
+            
+            oscillator.start();
+            oscillator.stop(context.currentTime + 1);
+            
+            console.log('🔔 Som alternativo tocado!');
+          });
+      }
+    } catch (error) {
+      console.error('💥 Erro geral ao tocar som:', error);
+    }
   };
 
   const sendToAdmin = async (complaintId: string) => {
