@@ -87,6 +87,7 @@ export function ApiManagement() {
   ];
 
   useEffect(() => {
+    console.log('🎯 Componente ApiManagement montado, carregando dados...');
     loadData();
   }, []);
 
@@ -111,15 +112,26 @@ export function ApiManagement() {
   };
 
   const loadTokens = async () => {
-    const { data, error } = await supabase
-      .from('api_tokens')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      console.log('🔄 Carregando tokens...');
+      
+      const { data, error } = await supabase
+        .from('api_tokens')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      throw error;
+      console.log('📋 Resultado do carregamento:', { data, error });
+
+      if (error) {
+        console.error('❌ Erro ao carregar tokens:', error);
+        throw error;
+      }
+      
+      console.log('✅ Tokens carregados:', data);
+      setTokens((data || []) as ApiToken[]);
+    } catch (error) {
+      console.error('💥 Erro na função loadTokens:', error);
     }
-    setTokens((data || []) as ApiToken[]);
   };
 
   const loadLogs = async () => {
