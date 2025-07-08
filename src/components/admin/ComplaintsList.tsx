@@ -690,6 +690,41 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                               </DialogHeader>
                               {selectedComplaint && (
                                 <div className="space-y-6">
+                                  {/* Informações de Controle - mostrar apenas no histórico */}
+                                  {selectedComplaint.status !== 'nova' && (
+                                    <div className="space-y-3 bg-muted/30 p-4 rounded-lg">
+                                      <h3 className="text-lg font-semibold text-primary border-b pb-2">Informações de Controle</h3>
+                                      <div className="grid grid-cols-3 gap-4">
+                                        <div>
+                                          <strong>Data/Hora Recebida:</strong>
+                                          <div className="text-sm">
+                                            <div>{new Date(selectedComplaint.created_at).toLocaleDateString('pt-BR')}</div>
+                                            <div className="text-gray-500">{new Date(selectedComplaint.created_at).toLocaleTimeString('pt-BR')}</div>
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <strong>Data/Hora Cadastro:</strong>
+                                          <div className="text-sm">
+                                            {selectedComplaint.processed_at ? (
+                                              <>
+                                                <div>{new Date(selectedComplaint.processed_at).toLocaleDateString('pt-BR')}</div>
+                                                <div className="text-gray-500">{new Date(selectedComplaint.processed_at).toLocaleTimeString('pt-BR')}</div>
+                                              </>
+                                            ) : (
+                                              <span className="text-gray-400">-</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <strong>Atendente:</strong>
+                                          <div className="text-sm">
+                                            {selectedComplaint.assigned_to || <span className="text-gray-400">-</span>}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
                                   {/* Dados do Reclamante */}
                                   <div className="space-y-3">
                                     <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados do Reclamante</h3>
