@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { format } from 'date-fns';
@@ -455,11 +455,23 @@ export const ComplaintsList = () => {
     }
 
     try {
-      // Filtrar denúncias por data se especificado - usando created_at como "Data Recebida"
-      let complaintsToExport = filteredComplaints;
+      // Filtrar denúncias do histórico (finalizada e cadastrada) - sempre usar histórico para PDF
+      let complaintsToExport = complaints.filter(complaint => 
+        complaint.status === 'finalizada' || complaint.status === 'cadastrada'
+      );
       
+      // Aplicar filtros de busca se houver
+      if (searchTerm) {
+        complaintsToExport = complaintsToExport.filter(complaint =>
+          complaint.complainant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          complaint.occurrence_address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          complaint.classification.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      
+      // Filtrar por data se especificado - usando created_at como "Data Recebida"
       if (startDate || endDate) {
-        complaintsToExport = filteredComplaints.filter(complaint => {
+        complaintsToExport = complaintsToExport.filter(complaint => {
           const complaintDate = new Date(complaint.created_at);
           // Normalizar as datas para comparação (apenas a data, sem horário)
           const complaintDateOnly = new Date(complaintDate.getFullYear(), complaintDate.getMonth(), complaintDate.getDate());
@@ -480,14 +492,10 @@ export const ComplaintsList = () => {
         });
       }
 
-      console.log('Denúncias antes do filtro:', filteredComplaints.length);
-      console.log('Filtro de data:', { startDate, endDate });
-      console.log('Denúncias após filtro:', complaintsToExport.length);
-
       if (complaintsToExport.length === 0) {
         const message = startDate || endDate 
-          ? "Nenhuma denúncia encontrada no período selecionado. Verifique as datas ou remova os filtros."
-          : "Nenhuma denúncia encontrada.";
+          ? "Nenhuma denúncia encontrada no histórico para o período selecionado. Verifique as datas ou remova os filtros."
+          : "Nenhuma denúncia encontrada no histórico.";
         
         toast({
           title: "Aviso",
@@ -529,16 +537,16 @@ export const ComplaintsList = () => {
             pdf.addImage(logoBase64, imageFormat, 20, 10, 30, 30);
           }
           pdf.setFontSize(18);
-          pdf.text('RELATÓRIO DE DENÚNCIAS', 60, 25);
+          pdf.text('RELATÓRIO DE DENÚNCIAS - HISTÓRICO', 60, 25);
         } catch (logoError) {
           console.error('Erro ao carregar logo:', logoError);
           pdf.setFontSize(18);
-          pdf.text('RELATÓRIO DE DENÚNCIAS', 20, 20);
+          pdf.text('RELATÓRIO DE DENÚNCIAS - HISTÓRICO', 20, 20);
           yPosition = 30;
         }
       } else {
         pdf.setFontSize(18);
-        pdf.text('RELATÓRIO DE DENÚNCIAS', 20, 20);
+        pdf.text('RELATÓRIO DE DENÚNCIAS - HISTÓRICO', 20, 20);
         yPosition = 30;
       }
       
@@ -585,7 +593,7 @@ export const ComplaintsList = () => {
       ]);
 
       // Adicionar tabela
-      (pdf as any).autoTable({
+      autoTable(pdf, {
         head: [tableColumns],
         body: tableRows,
         startY: yPosition,
