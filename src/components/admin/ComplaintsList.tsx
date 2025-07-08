@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -903,17 +904,17 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
         </div>
       )}
 
-      {/* Modal RAI */}
-      {showRaiModal && selectedComplaint && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
-          <div className="bg-background p-6 rounded-lg min-w-[400px] shadow-xl">
+      {/* Modal RAI usando createPortal para aparecer acima de tudo */}
+      {showRaiModal && selectedComplaint && createPortal(
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999]">
+          <div className="bg-background p-6 rounded-lg min-w-[400px] shadow-xl border">
             <h3 className="text-lg font-semibold mb-4">Cadastrar Denúncia</h3>
             
             <div className="space-y-4">
               <div>
-                <Label htmlFor="rai">Número RAI *</Label>
+                <Label htmlFor="rai-input">Número RAI *</Label>
                 <Input
-                  id="rai"
+                  id="rai-input"
                   type="text"
                   placeholder="Digite o número RAI"
                   value={raiData.rai}
@@ -923,7 +924,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
               </div>
               
               <div>
-                <Label htmlFor="classification">Classificação *</Label>
+                <Label htmlFor="classification-select">Classificação *</Label>
                 <Select 
                   value={raiData.classification} 
                   onValueChange={(value) => setRaiData({ ...raiData, classification: value })}
@@ -931,7 +932,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Selecione uma classificação..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[10000]">
                     {classifications.map((classification) => (
                       <SelectItem key={classification} value={classification}>
                         {classification}
@@ -945,7 +946,10 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
             <div className="flex gap-3 justify-end mt-6">
               <Button 
                 variant="outline" 
-                onClick={() => setShowRaiModal(false)}
+                onClick={() => {
+                  setShowRaiModal(false);
+                  setRaiData({ rai: '', classification: '' });
+                }}
               >
                 Cancelar
               </Button>
@@ -971,13 +975,15 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                   
                   updateComplaintStatus(selectedComplaint.id, 'cadastrada', raiData.rai);
                   setShowRaiModal(false);
+                  setRaiData({ rai: '', classification: '' });
                 }}
               >
                 Cadastrar
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
