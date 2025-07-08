@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, Download, MessageSquare, Calendar, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
@@ -70,6 +71,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
   const [showRaiModal, setShowRaiModal] = useState(false);
   const [raiData, setRaiData] = useState({ rai: '', classification: '' });
   const { toast } = useToast();
+  const { profile } = useSupabaseAuth();
 
   // Debug info
   console.log('🔍 ComplaintsList - userRole:', userRole);
@@ -217,6 +219,11 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
 
       if (systemIdentifier) {
         updateData.system_identifier = systemIdentifier;
+      }
+
+      // Se for cadastrada, adicionar o nome do atendente atual
+      if (newStatus === 'cadastrada' && profile) {
+        updateData.assigned_to = profile.full_name;
       }
 
       const { error } = await supabase
