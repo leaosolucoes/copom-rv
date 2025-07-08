@@ -66,7 +66,7 @@ export const ComplaintsList = () => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [raiData, setRaiData] = useState({ rai: '', classification: '' });
   const { toast } = useToast();
-  const { user } = useSupabaseAuth();
+  const { user, profile } = useSupabaseAuth();
   
   // Get user role from the user object
   const userRole = user?.role || 'atendente';
@@ -148,11 +148,23 @@ export const ComplaintsList = () => {
 
       if (error) throw error;
       
+      // Filter complaints based on user role for attendants
+      let filteredData = data || [];
+      
+      if (profile?.role === 'atendente') {
+        // Atendentes não podem ver denúncias com status 'finalizada' ou 'a_verificar'
+        filteredData = data?.filter(complaint => 
+          complaint.status !== 'finalizada' && complaint.status !== 'a_verificar'
+        ) || [];
+      }
+      
       console.log(`🔍 ComplaintsList - userRole: ${userRole}`);
-      console.log(`🔍 ComplaintsList - complaints: ${data?.length || 0}`);
+      console.log(`🔍 ComplaintsList - profile role: ${profile?.role}`);
+      console.log(`🔍 ComplaintsList - total complaints: ${data?.length || 0}`);
+      console.log(`🔍 ComplaintsList - filtered complaints: ${filteredData?.length || 0}`);
       console.log(`🔍 ComplaintsList - classifications: ${JSON.stringify(classifications)}`);
       
-      setComplaints(data as Complaint[]);
+      setComplaints(filteredData as Complaint[]);
     } catch (error) {
       console.error('Erro ao carregar denúncias:', error);
     } finally {
