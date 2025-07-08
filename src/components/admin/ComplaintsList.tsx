@@ -445,29 +445,43 @@ export const ComplaintsList = () => {
 
   const exportComplaintsPDF = async () => {
     try {
-      // Filtrar denúncias por data se especificado
+      // Filtrar denúncias por data se especificado - usando created_at como "Data Recebida"
       let complaintsToExport = filteredComplaints;
       
       if (startDate || endDate) {
         complaintsToExport = filteredComplaints.filter(complaint => {
           const complaintDate = new Date(complaint.created_at);
+          // Normalizar as datas para comparação (apenas a data, sem horário)
+          const complaintDateOnly = new Date(complaintDate.getFullYear(), complaintDate.getMonth(), complaintDate.getDate());
           
-          if (startDate && endDate) {
-            return complaintDate >= startDate && complaintDate <= endDate;
-          } else if (startDate) {
-            return complaintDate >= startDate;
-          } else if (endDate) {
-            return complaintDate <= endDate;
+          let matchesDateFilter = true;
+          
+          if (startDate) {
+            const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            matchesDateFilter = matchesDateFilter && complaintDateOnly >= startDateOnly;
           }
           
-          return true;
+          if (endDate) {
+            const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+            matchesDateFilter = matchesDateFilter && complaintDateOnly <= endDateOnly;
+          }
+          
+          return matchesDateFilter;
         });
       }
 
+      console.log('Denúncias antes do filtro:', filteredComplaints.length);
+      console.log('Filtro de data:', { startDate, endDate });
+      console.log('Denúncias após filtro:', complaintsToExport.length);
+
       if (complaintsToExport.length === 0) {
+        const message = startDate || endDate 
+          ? "Nenhuma denúncia encontrada no período selecionado. Verifique as datas ou remova os filtros."
+          : "Nenhuma denúncia encontrada.";
+        
         toast({
           title: "Aviso",
-          description: "Nenhuma denúncia encontrada no período selecionado.",
+          description: message,
           variant: "destructive",
         });
         return;
