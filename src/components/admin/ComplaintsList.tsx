@@ -73,6 +73,10 @@ export const ComplaintsList = () => {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [logoUrl, setLogoUrl] = useState<string>('');
+  const [cnpjSearch, setCnpjSearch] = useState<string>('');
+  const [cnpjData, setCnpjData] = useState<any>(null);
+  const [cnpjModalOpen, setCnpjModalOpen] = useState(false);
+  const [cnpjLoading, setCnpjLoading] = useState(false);
   const { toast } = useToast();
   const { user, profile } = useSupabaseAuth();
   
@@ -237,6 +241,202 @@ export const ComplaintsList = () => {
       }
     } catch (error) {
       console.error('Erro ao carregar logo:', error);
+    }
+  };
+
+  const searchCnpj = async () => {
+    if (!cnpjSearch.trim()) {
+      toast({
+        title: "Aviso",
+        description: "Digite um CNPJ para pesquisar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCnpjLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('search-cnpj', {
+        body: { cnpj: cnpjSearch }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        setCnpjData(data.data);
+        setCnpjModalOpen(true);
+      } else {
+        toast({
+          title: "Erro",
+          description: data.error || "Erro ao consultar CNPJ",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Erro ao consultar CNPJ:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao consultar CNPJ. Verifique se o número está correto.",
+        variant: "destructive",
+      });
+    } finally {
+      setCnpjLoading(false);
+    }
+  };
+
+  const exportCnpjToPDF = async () => {
+    if (!cnpjData) return;
+
+    try {
+      // Criar PDF usando jsPDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      
+      // Configurar fontes
+      pdf.setFont('helvetica', 'bold');
+      
+      let yPosition = 30;
+      
+      // Adicionar logo se disponível
+      if (logoUrl) {
+        try {
+          const logoResponse = await fetch(logoUrl);
+          if (logoResponse.ok) {
+            const logoBlob = await logoResponse.blob();
+            const logoBase64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(logoBlob);
+            });
+            
+            const imageFormat = logoBlob.type.includes('png') ? 'PNG' : 
+                               logoBlob.type.includes('jpeg') || logoBlob.type.includes('jpg') ? 'JPEG' : 'PNG';
+            
+            pdf.addImage(logoBase64, imageFormat, 20, 10, 30, 30);
+          }
+          
+          pdf.setFontSize(18);
+          pdf.text('CONSULTA DE CNPJ', 60, 20);
+          yPosition = 50;
+        } catch (logoError) {
+          console.error('Erro ao carregar logo:', logoError);
+          pdf.setFontSize(18);
+          pdf.text('CONSULTA DE CNPJ', 20, 20);
+          yPosition = 30;
+        }
+      } else {
+        pdf.setFontSize(18);
+        pdf.text('CONSULTA DE CNPJ', 20, 20);
+        yPosition = 30;
+      }
+      
+      // Adicionar informações da consulta
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      
+      const today = new Date();
+      pdf.text(`Data da consulta: ${format(today, 'dd/MM/yyyy HH:mm')}`, 20, yPosition + 5);
+      
+      yPosition += 25;
+
+      // Dados da empresa
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14);
+      pdf.text('DADOS DA EMPRESA', 20, yPosition);
+      yPosition += 15;
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+
+      const empresaData = [
+        ['CNPJ', cnpjData.cnpj || '-'],
+        ['Razão Social', cnpjData.nome || '-'],
+        ['Nome Fantasia', cnpjData.fantasia || '-'],
+        ['Situação', cnpjData.situacao || '-'],
+        ['Data de Abertura', cnpjData.abertura || '-'],
+        ['Porte', cnpjData.porte || '-'],
+        ['Natureza Jurídica', cnpjData.natureza_juridica || '-'],
+        ['Capital Social', cnpjData.capital_social || '-'],
+        ['Tipo', cnpjData.tipo || '-'],
+        ['Telefone', cnpjData.telefone || '-'],
+        ['Email', cnpjData.email || '-'],
+        ['Endereço', `${cnpjData.logradouro || ''}, ${cnpjData.numero || ''}`],
+        ['Complemento', cnpjData.complemento || '-'],
+        ['Bairro', cnpjData.bairro || '-'],
+        ['Município', cnpjData.municipio || '-'],
+        ['UF', cnpjData.uf || '-'],
+        ['CEP', cnpjData.cep || '-'],
+      ];
+
+      // Adicionar dados usando autoTable
+      autoTable(pdf, {
+        body: empresaData,
+        startY: yPosition,
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+        },
+        columnStyles: {
+          0: { cellWidth: 40, fontStyle: 'bold' },
+          1: { cellWidth: 130 },
+        },
+        margin: { left: 20, right: 20 },
+      });
+
+      // Atividades (se existirem)
+      if (cnpjData.atividade_principal || cnpjData.atividades_secundarias) {
+        const finalY = (pdf as any).lastAutoTable.finalY + 20;
+        
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.text('ATIVIDADES', 20, finalY);
+        
+        let atividadesData = [];
+        
+        if (cnpjData.atividade_principal) {
+          atividadesData.push(['Principal', `${cnpjData.atividade_principal[0]?.code || ''} - ${cnpjData.atividade_principal[0]?.text || ''}`]);
+        }
+        
+        if (cnpjData.atividades_secundarias && cnpjData.atividades_secundarias.length > 0) {
+          cnpjData.atividades_secundarias.forEach((atividade: any, index: number) => {
+            atividadesData.push([
+              index === 0 ? 'Secundárias' : '',
+              `${atividade.code || ''} - ${atividade.text || ''}`
+            ]);
+          });
+        }
+
+        autoTable(pdf, {
+          body: atividadesData,
+          startY: finalY + 10,
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+          },
+          columnStyles: {
+            0: { cellWidth: 25, fontStyle: 'bold' },
+            1: { cellWidth: 145 },
+          },
+          margin: { left: 20, right: 20 },
+        });
+      }
+
+      // Salvar PDF
+      const fileName = `consulta-cnpj-${cnpjData.cnpj}-${format(today, 'yyyy-MM-dd')}.pdf`;
+      pdf.save(fileName);
+
+      toast({
+        title: "Sucesso",
+        description: "Relatório de CNPJ gerado com sucesso!",
+      });
+    } catch (error: any) {
+      console.error('Erro ao gerar PDF do CNPJ:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao gerar relatório PDF do CNPJ",
+        variant: "destructive",
+      });
     }
   };
 
@@ -692,79 +892,103 @@ export const ComplaintsList = () => {
           </div>
         </div>
         
-        {/* Filtros de Data para PDF */}
-        <div className="flex gap-4 items-center flex-wrap">
-          <div className="flex gap-2 items-center">
-            <span className="text-sm font-medium">Filtros para PDF:</span>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-[140px] justify-start text-left font-normal",
-                    !startDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate ? format(startDate, "dd/MM/yyyy") : "Data inicial"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CalendarComponent
-                  mode="single"
-                  selected={startDate}
-                  onSelect={setStartDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-[140px] justify-start text-left font-normal",
-                    !endDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? format(endDate, "dd/MM/yyyy") : "Data final"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CalendarComponent
-                  mode="single"
-                  selected={endDate}
-                  onSelect={setEndDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setStartDate(undefined);
-                setEndDate(undefined);
-              }}
-              className="text-sm"
-            >
-              Limpar
-            </Button>
+        {/* Para atendentes: Campo de pesquisa de CNPJ */}
+        {userRole === 'atendente' && (
+          <div className="flex gap-4 items-center flex-wrap">
+            <div className="flex gap-2 items-center">
+              <span className="text-sm font-medium">Consultar CNPJ:</span>
+              
+              <Input
+                placeholder="Digite o CNPJ..."
+                value={cnpjSearch}
+                onChange={(e) => setCnpjSearch(e.target.value)}
+                className="w-[200px]"
+                maxLength={18}
+              />
+              
+              <Button 
+                onClick={searchCnpj}
+                disabled={cnpjLoading}
+                variant="default"
+              >
+                {cnpjLoading ? "Consultando..." : "Consultar"}
+              </Button>
+            </div>
           </div>
+        )}
+        
+        {/* Para admin/super_admin: Filtros de Data para PDF */}
+        {(userRole === 'admin' || userRole === 'super_admin') && (
+          <div className="flex gap-4 items-center flex-wrap">
+            <div className="flex gap-2 items-center">
+              <span className="text-sm font-medium">Filtros para PDF:</span>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[140px] justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "dd/MM/yyyy") : "Data inicial"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
 
-          {/* Botão de exportar PDF - apenas para admin e super_admin */}
-          {(userRole === 'admin' || userRole === 'super_admin') && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[140px] justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "dd/MM/yyyy") : "Data final"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setStartDate(undefined);
+                  setEndDate(undefined);
+                }}
+                className="text-sm"
+              >
+                Limpar
+              </Button>
+            </div>
+
             <Button onClick={exportComplaintsPDF} variant="default">
               <Download className="h-4 w-4 mr-2" />
               Exportar PDF
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <Tabs defaultValue="novas" className="w-full">
@@ -1322,6 +1546,85 @@ export const ComplaintsList = () => {
        </div>
      )}
 
-   </div>
- );
+      {/* Modal de dados do CNPJ */}
+      <Dialog open={cnpjModalOpen} onOpenChange={setCnpjModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Dados do CNPJ</DialogTitle>
+          </DialogHeader>
+          
+          {cnpjData && (
+            <div className="space-y-6">
+              {/* Dados principais */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Dados da Empresa</h3>
+                  <div className="space-y-2">
+                    <div><strong>CNPJ:</strong> {cnpjData.cnpj}</div>
+                    <div><strong>Razão Social:</strong> {cnpjData.nome}</div>
+                    <div><strong>Nome Fantasia:</strong> {cnpjData.fantasia || 'Não informado'}</div>
+                    <div><strong>Situação:</strong> {cnpjData.situacao}</div>
+                    <div><strong>Data de Abertura:</strong> {cnpjData.abertura}</div>
+                    <div><strong>Porte:</strong> {cnpjData.porte}</div>
+                    <div><strong>Natureza Jurídica:</strong> {cnpjData.natureza_juridica}</div>
+                    <div><strong>Capital Social:</strong> {cnpjData.capital_social}</div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Contato e Endereço</h3>
+                  <div className="space-y-2">
+                    <div><strong>Telefone:</strong> {cnpjData.telefone || 'Não informado'}</div>
+                    <div><strong>Email:</strong> {cnpjData.email || 'Não informado'}</div>
+                    <div><strong>Endereço:</strong> {cnpjData.logradouro}, {cnpjData.numero}</div>
+                    <div><strong>Complemento:</strong> {cnpjData.complemento || 'Não informado'}</div>
+                    <div><strong>Bairro:</strong> {cnpjData.bairro}</div>
+                    <div><strong>Município:</strong> {cnpjData.municipio}</div>
+                    <div><strong>UF:</strong> {cnpjData.uf}</div>
+                    <div><strong>CEP:</strong> {cnpjData.cep}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Atividades */}
+              {(cnpjData.atividade_principal || (cnpjData.atividades_secundarias && cnpjData.atividades_secundarias.length > 0)) && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Atividades</h3>
+                  <div className="space-y-2">
+                    {cnpjData.atividade_principal && (
+                      <div>
+                        <strong>Principal:</strong> {cnpjData.atividade_principal[0]?.code} - {cnpjData.atividade_principal[0]?.text}
+                      </div>
+                    )}
+                    
+                    {cnpjData.atividades_secundarias && cnpjData.atividades_secundarias.length > 0 && (
+                      <div>
+                        <strong>Secundárias:</strong>
+                        <ul className="ml-4 mt-1 space-y-1">
+                          {cnpjData.atividades_secundarias.map((atividade: any, index: number) => (
+                            <li key={index} className="text-sm">
+                              {atividade.code} - {atividade.text}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Botão para exportar PDF */}
+              <div className="flex justify-end pt-4 border-t">
+                <Button onClick={exportCnpjToPDF} variant="default">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar PDF
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+    </div>
+  );
 };
