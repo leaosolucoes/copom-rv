@@ -248,7 +248,7 @@ export function ApiManagement() {
       variable: [
         {
           key: "baseUrl",
-          value: `${window.location.origin}/functions/v1`,
+          value: "https://posturas.conectarioverde.com.br/functions/v1",
           type: "string"
         },
         {
@@ -677,7 +677,7 @@ export function ApiManagement() {
                   <pre className="bg-background p-2 rounded text-sm">
 {`curl -H "x-api-token: seu_token_aqui" \\
      -H "Content-Type: application/json" \\
-     https://seu-dominio.com/functions/v1/api-users`}
+     https://posturas.conectarioverde.com.br/functions/v1/api-users`}
                   </pre>
                 </div>
               </div>
@@ -752,7 +752,7 @@ export function ApiManagement() {
                   <p className="mb-2">Configuração do nó HTTP Request no N8N:</p>
                   <ul className="list-disc list-inside space-y-1 text-sm">
                     <li>Method: GET/POST/PUT/DELETE conforme endpoint</li>
-                    <li>URL: https://seu-dominio.com/functions/v1/api-[endpoint]</li>
+                    <li>URL: https://posturas.conectarioverde.com.br/functions/v1/api-[endpoint]</li>
                     <li>Headers: x-api-token = seu_token_aqui</li>
                     <li>Content-Type: application/json</li>
                   </ul>
