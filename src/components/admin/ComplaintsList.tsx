@@ -187,8 +187,34 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
     fetchSoundSetting();
     fetchClassifications();
     
-    // Setup realtime updates for sound notifications
-    const channel = supabase
+    // Setup realtime updates para denúncias
+    const complaintsChannel = supabase
+      .channel('complaints-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Escuta INSERT, UPDATE e DELETE
+          schema: 'public',
+          table: 'complaints'
+        },
+        (payload) => {
+          console.log('📢 Realtime update:', payload);
+          
+          // Tocar som apenas para novas denúncias
+          if (payload.eventType === 'INSERT' && soundEnabled) {
+            playNotificationSound();
+          }
+          
+          // Atualizar lista de denúncias
+          fetchComplaints();
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Realtime status:', status);
+      });
+
+    // Setup realtime updates for sound notifications (mantido para compatibilidade)
+    const soundChannel = supabase
       .channel('complaint-updates')
       .on(
         'postgres_changes',
@@ -206,7 +232,8 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(complaintsChannel);
+      supabase.removeChannel(soundChannel);
     };
   }, [soundEnabled]);
 
