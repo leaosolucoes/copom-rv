@@ -85,8 +85,9 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
               <div className="w-full h-full flex flex-col items-center justify-center p-4">
                 <div className="relative w-full max-w-4xl">
                   {/* Debug info */}
-                  <div className="absolute top-2 left-2 bg-black/75 text-white text-xs p-2 rounded z-20">
-                    URL: {media[currentIndex]}
+                  <div className="absolute top-2 left-2 bg-black/75 text-white text-xs p-2 rounded z-20 max-w-md">
+                    <div>URL: {media[currentIndex]}</div>
+                    <div>Formato: {media[currentIndex].split('.').pop()?.toUpperCase()}</div>
                   </div>
                   
                   {/* Loading indicator */}
@@ -100,58 +101,68 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                   )}
                   
                   {!videoError ? (
-                    <video
-                      key={`video-${currentIndex}-${media[currentIndex]}`}
-                      className="w-full h-auto max-h-[70vh] bg-black rounded"
-                      controls
-                      preload="metadata"
-                      playsInline
-                      crossOrigin="anonymous"
-                      onLoadStart={() => {
-                        console.log('🎬 Iniciando carregamento do vídeo:', media[currentIndex]);
-                        setIsLoading(true);
-                        setVideoError(false);
-                      }}
-                      onLoadedMetadata={() => {
-                        console.log('📊 Metadata carregada para:', media[currentIndex]);
-                        setIsLoading(false);
-                      }}
-                      onCanPlay={() => {
-                        console.log('✅ Vídeo pode ser reproduzido:', media[currentIndex]);
-                        setIsLoading(false);
-                      }}
-                      onError={(e) => {
-                        console.error('❌ Erro no vídeo:', media[currentIndex]);
-                        console.error('Event details:', e);
-                        console.error('Video element:', e.currentTarget);
-                        setVideoError(true);
-                        setIsLoading(false);
-                      }}
-                      onLoadedData={() => {
-                        console.log('📁 Dados do vídeo carregados:', media[currentIndex]);
-                        setIsLoading(false);
-                      }}
-                      onProgress={() => {
-                        console.log('📶 Progresso de carregamento para:', media[currentIndex]);
-                      }}
-                    >
-                      <source src={media[currentIndex]} type="video/mp4" />
-                      <source src={media[currentIndex]} type="video/webm" />
-                      <source src={media[currentIndex]} type="video/quicktime" />
-                      <source src={media[currentIndex]} type="video/x-msvideo" />
-                      <source src={media[currentIndex]} type="video/ogg" />
-                      Seu navegador não suporta este formato de vídeo.
-                    </video>
+                    <div className="relative">
+                      <video
+                        key={`video-${currentIndex}-${media[currentIndex]}`}
+                        className="w-full h-auto max-h-[70vh] bg-black rounded"
+                        controls
+                        preload="metadata"
+                        playsInline
+                        muted
+                        onLoadStart={() => {
+                          console.log('🎬 Iniciando carregamento do vídeo:', media[currentIndex]);
+                          setIsLoading(true);
+                          setVideoError(false);
+                        }}
+                        onLoadedMetadata={() => {
+                          console.log('📊 Metadata carregada para:', media[currentIndex]);
+                          setIsLoading(false);
+                        }}
+                        onCanPlay={() => {
+                          console.log('✅ Vídeo pode ser reproduzido:', media[currentIndex]);
+                          setIsLoading(false);
+                        }}
+                        onError={(e) => {
+                          console.error('❌ Erro no vídeo:', media[currentIndex]);
+                          console.error('Event details:', e);
+                          console.error('Video element:', e.currentTarget);
+                          setVideoError(true);
+                          setIsLoading(false);
+                        }}
+                        onLoadedData={() => {
+                          console.log('📁 Dados do vídeo carregados:', media[currentIndex]);
+                          setIsLoading(false);
+                        }}
+                        onProgress={() => {
+                          console.log('📶 Progresso de carregamento para:', media[currentIndex]);
+                        }}
+                        style={{ maxHeight: 'calc(70vh)' }}
+                      >
+                        {/* Fallback iframe para formatos não suportados */}
+                        <iframe
+                          src={media[currentIndex]}
+                          width="100%"
+                          height="400"
+                          style={{ border: 'none' }}
+                          title="Video Player"
+                          onError={() => {
+                            console.error('❌ Iframe também falhou:', media[currentIndex]);
+                            setVideoError(true);
+                          }}
+                        />
+                        Seu navegador não suporta este formato de vídeo.
+                      </video>
+                    </div>
                   ) : (
                     <div className="w-full h-64 bg-gray-800 rounded flex items-center justify-center">
                       <div className="text-center text-white p-8">
                         <AlertCircle className="h-12 w-12 mx-auto mb-4 text-yellow-400" />
-                        <h3 className="text-lg font-semibold mb-2">Erro no vídeo</h3>
+                        <h3 className="text-lg font-semibold mb-2">Vídeo não suportado</h3>
                         <p className="text-sm text-gray-300 mb-4">
-                          Não foi possível reproduzir o vídeo
+                          O formato {media[currentIndex].split('.').pop()?.toUpperCase()} pode não ser compatível com este navegador.
                         </p>
-                        <p className="text-xs text-gray-400 mb-2">
-                          URL: {media[currentIndex]}
+                        <p className="text-xs text-gray-400 mb-2 break-all">
+                          {media[currentIndex]}
                         </p>
                         <p className="text-xs text-gray-400">
                           Arquivo: {media[currentIndex].split('/').pop()}
@@ -162,13 +173,13 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                 </div>
 
                 {/* Botões de ação */}
-                <div className="flex gap-2 mt-4">
+                <div className="flex flex-wrap gap-2 mt-4 justify-center">
                   <Button
                     variant="secondary"
                     size="sm"
                     className="bg-white/10 hover:bg-white/20 text-white border-white/20"
                     onClick={() => {
-                      console.log('🔗 Testando URL diretamente:', media[currentIndex]);
+                      console.log('🔗 Download direto:', media[currentIndex]);
                       const link = document.createElement('a');
                       link.href = media[currentIndex];
                       link.download = media[currentIndex].split('/').pop() || 'video';
@@ -180,18 +191,43 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                     <Download className="h-4 w-4 mr-2" />
                     Download
                   </Button>
+                  
                   <Button
                     variant="secondary"
                     size="sm"
                     className="bg-white/10 hover:bg-white/20 text-white border-white/20"
                     onClick={() => {
-                      console.log('🌐 Abrindo URL em nova aba:', media[currentIndex]);
+                      console.log('🌐 Abrindo em nova aba:', media[currentIndex]);
                       window.open(media[currentIndex], '_blank');
                     }}
                   >
                     <Play className="h-4 w-4 mr-2" />
                     Nova Aba
                   </Button>
+                  
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+                    onClick={() => {
+                      console.log('🧪 Testando URL com fetch:', media[currentIndex]);
+                      fetch(media[currentIndex], { 
+                        method: 'HEAD',
+                        mode: 'cors'
+                      })
+                        .then(response => {
+                          console.log('📡 Resposta do fetch:', response.status, response.statusText);
+                          console.log('🎯 Content-Type:', response.headers.get('content-type'));
+                          console.log('📏 Content-Length:', response.headers.get('content-length'));
+                        })
+                        .catch(error => {
+                          console.error('💥 Erro no fetch:', error);
+                        });
+                    }}
+                  >
+                    Testar URL
+                  </Button>
+                  
                   {videoError && (
                     <Button
                       variant="secondary"
@@ -206,23 +242,35 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                       Tentar Novamente
                     </Button>
                   )}
+                  
                   <Button
                     variant="secondary"
                     size="sm"
                     className="bg-white/10 hover:bg-white/20 text-white border-white/20"
                     onClick={() => {
-                      console.log('🧪 Testando URL com fetch:', media[currentIndex]);
-                      fetch(media[currentIndex], { method: 'HEAD' })
-                        .then(response => {
-                          console.log('📡 Resposta do fetch:', response.status, response.statusText);
-                          console.log('🎯 Content-Type:', response.headers.get('content-type'));
-                        })
-                        .catch(error => {
-                          console.error('💥 Erro no fetch:', error);
-                        });
+                      // Criar um player alternativo usando object tag
+                      const objectElement = document.createElement('object');
+                      objectElement.data = media[currentIndex];
+                      objectElement.type = 'video/quicktime';
+                      objectElement.style.width = '100%';
+                      objectElement.style.height = '400px';
+                      
+                      const newWindow = window.open('', '_blank');
+                      if (newWindow) {
+                        newWindow.document.write(`
+                          <html>
+                            <head><title>Player de Vídeo</title></head>
+                            <body style="margin:0; background:#000;">
+                              <object data="${media[currentIndex]}" type="video/quicktime" width="100%" height="100%">
+                                <p>Seu navegador não suporta este tipo de vídeo.</p>
+                              </object>
+                            </body>
+                          </html>
+                        `);
+                      }
                     }}
                   >
-                    Testar URL
+                    Player Alternativo
                   </Button>
                 </div>
               </div>
