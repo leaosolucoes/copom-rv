@@ -152,18 +152,36 @@ export function ApiManagement() {
 
   const generateToken = async () => {
     try {
+      console.log('🔄 Iniciando geração de token...');
+      console.log('📋 Dados do token:', newTokenData);
+
+      const { data: session } = await supabase.auth.getSession();
+      
+      if (!session?.session?.access_token) {
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+
+      console.log('🔐 Token de sessão encontrado');
+
       const response = await supabase.functions.invoke('api-auth', {
+        headers: {
+          Authorization: `Bearer ${session.session.access_token}`
+        },
         body: { 
           action: 'generate-token',
           ...newTokenData 
         }
       });
 
+      console.log('📡 Resposta da função:', response);
+
       if (response.error) {
-        throw new Error(response.error.message);
+        console.error('❌ Erro na função:', response.error);
+        throw new Error(response.error.message || 'Erro na função edge');
       }
 
-      if (response.data.success) {
+      if (response.data?.success) {
+        console.log('✅ Token gerado com sucesso!');
         setGeneratedToken(response.data.token);
         setShowGeneratedToken(true);
         setShowTokenDialog(false);
@@ -179,9 +197,12 @@ export function ApiManagement() {
           title: "Sucesso",
           description: "Token gerado com sucesso!",
         });
+      } else {
+        console.error('❌ Resposta sem sucesso:', response.data);
+        throw new Error(response.data?.error || 'Falha na geração do token');
       }
     } catch (error: any) {
-      console.error('Erro ao gerar token:', error);
+      console.error('💥 Erro completo ao gerar token:', error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao gerar token",

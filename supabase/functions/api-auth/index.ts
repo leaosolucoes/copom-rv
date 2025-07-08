@@ -7,58 +7,36 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  console.log('🚀 API AUTH STARTED')
+  console.log('🚀 API AUTH - NEW REQUEST')
   console.log('Method:', req.method)
-  console.log('URL:', req.url)
+  console.log('Headers:', Object.fromEntries(req.headers.entries()))
 
   if (req.method === 'OPTIONS') {
-    console.log('✅ CORS preflight handled')
+    console.log('✅ CORS preflight')
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Criar cliente Supabase com service role
+    // Configuração do Supabase
     const supabaseUrl = 'https://smytdnkylauxocqrkchn.supabase.co'
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     
-    console.log('🔑 Service key exists:', !!serviceKey)
-    console.log('🔑 Service key length:', serviceKey?.length || 0)
+    console.log('🔑 Service key available:', !!serviceKey)
     
     if (!serviceKey) {
-      console.error('❌ NO SERVICE KEY FOUND')
+      console.error('❌ NO SERVICE KEY')
       return new Response(
         JSON.stringify({ error: 'Service key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const supabase = createClient(supabaseUrl, serviceKey, {
+    // Cliente Supabase para operações administrativas
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    console.log('✅ Supabase client created')
-
-    // Parse body
-    let body: any = {}
-    if (req.method === 'POST') {
-      const rawBody = await req.text()
-      console.log('📥 Raw body:', rawBody)
-      body = JSON.parse(rawBody)
-      console.log('📦 Parsed body:', body)
-    }
-
-    const action = body.action
-    console.log('🎯 Action:', action)
-
-    if (action !== 'generate-token') {
-      console.log('❌ Invalid action')
-      return new Response(
-        JSON.stringify({ error: 'Invalid action: ' + action }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Verificar auth header
+    // Cliente Supabase para validação do usuário
     const authHeader = req.headers.get('authorization')
     console.log('🔐 Auth header present:', !!authHeader)
     
@@ -73,22 +51,30 @@ serve(async (req) => {
     const userToken = authHeader.replace('Bearer ', '')
     console.log('🎟️ User token length:', userToken.length)
 
-    // Verificar usuário
-    const { data: { user }, error: userError } = await supabase.auth.getUser(userToken)
-    console.log('👤 User ID:', user?.id)
-    console.log('👤 User error:', userError?.message)
+    // Verificar usuário usando o token
+    const supabaseUser = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: {
+        headers: {
+          Authorization: authHeader
+        }
+      }
+    })
+
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
+    console.log('👤 User check:', { userId: user?.id, error: userError?.message })
 
     if (userError || !user) {
       console.log('❌ User authentication failed')
       return new Response(
-        JSON.stringify({ error: 'Invalid user token' }),
+        JSON.stringify({ error: 'Invalid user token: ' + (userError?.message || 'User not found') }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Verificar se é super admin DIRETAMENTE
+    // Verificar se é super admin
     const isKnownSuperAdmin = user.id === '7c67cbf3-b43a-40ca-9adf-d78484ce3549'
-    console.log('👑 Is known super admin:', isKnownSuperAdmin)
+    console.log('👑 Is super admin:', isKnownSuperAdmin)
 
     if (!isKnownSuperAdmin) {
       console.log('❌ Not super admin')
@@ -98,53 +84,79 @@ serve(async (req) => {
       )
     }
 
-    // Gerar token
+    // Parse do body
+    let body: any = {}
+    try {
+      const rawBody = await req.text()
+      console.log('📥 Raw body:', rawBody)
+      if (rawBody) {
+        body = JSON.parse(rawBody)
+        console.log('📦 Parsed body:', body)
+      }
+    } catch (parseError) {
+      console.error('❌ Body parse error:', parseError)
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const action = body.action
+    console.log('🎯 Action:', action)
+
+    if (action !== 'generate-token') {
+      console.log('❌ Invalid action:', action)
+      return new Response(
+        JSON.stringify({ error: 'Invalid action: ' + action }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Gerar token único
     const tokenString = `sat_${body.token_type || 'production'}_${crypto.randomUUID().replace(/-/g, '')}`
-    console.log('🎫 Generated token prefix:', tokenString.substring(0, 20))
+    console.log('🎫 Generated token:', tokenString.substring(0, 25) + '...')
     
-    // Hash token
+    // Hash do token
     const encoder = new TextEncoder()
     const tokenData = encoder.encode(tokenString)
     const hashBuffer = await crypto.subtle.digest('SHA-256', tokenData)
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     const tokenHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-    console.log('🔒 Token hash length:', tokenHash.length)
+    console.log('🔒 Token hash generated')
 
-    // Preparar dados para inserção
+    // Dados para inserção
     const insertData = {
       user_id: user.id,
       token_name: body.token_name || 'API Token',
       token_hash: tokenHash,
       token_type: body.token_type || 'production',
-      scopes: body.scopes || ['*'],
-      rate_limit_per_hour: body.rate_limit_per_hour || 1000,
+      scopes: Array.isArray(body.scopes) ? body.scopes : ['*'],
+      rate_limit_per_hour: parseInt(body.rate_limit_per_hour) || 1000,
       expires_at: body.expires_at || null
     }
-    console.log('💾 Insert data:', insertData)
+    console.log('💾 Insert data:', { ...insertData, token_hash: 'hidden' })
 
-    // Inserir token
-    const { data: newToken, error: insertError } = await supabase
+    // Inserir token usando cliente admin
+    const { data: newToken, error: insertError } = await supabaseAdmin
       .from('api_tokens')
       .insert(insertData)
       .select()
       .single()
 
-    console.log('💾 Insert success:', !!newToken)
-    console.log('💾 Insert error:', insertError?.message)
+    console.log('💾 Insert result:', { success: !!newToken, error: insertError?.message })
 
     if (insertError) {
-      console.error('❌ DATABASE INSERT FAILED:', insertError)
+      console.error('❌ INSERT FAILED:', insertError)
       return new Response(
         JSON.stringify({ 
           error: 'Failed to create token', 
-          details: insertError.message,
-          code: insertError.code 
+          details: insertError.message 
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('🎉 TOKEN CREATED SUCCESSFULLY!')
+    console.log('🎉 TOKEN CREATED SUCCESS!')
     
     return new Response(
       JSON.stringify({
@@ -164,13 +176,11 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('💥 FATAL ERROR:', error)
-    console.error('💥 Error stack:', error.stack)
     
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error', 
-        details: error.message,
-        stack: error.stack 
+        details: error.message 
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
