@@ -80,56 +80,78 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
             ) : (
               <>
                 {!videoError ? (
-                  <video
-                    key={media[currentIndex]} // Force re-render when video changes
-                    src={media[currentIndex]}
-                    controls
-                    preload="metadata"
-                    className="max-w-full max-h-full"
-                    style={{ maxHeight: 'calc(90vh - 4rem)' }}
-                    onError={(e) => {
-                      console.error('Erro ao carregar vídeo no modal:', media[currentIndex]);
-                      console.error('Video error event:', e);
-                      setVideoError(true);
-                    }}
-                    onLoadStart={() => {
-                      console.log('Carregando vídeo no modal:', media[currentIndex]);
-                      setVideoError(false);
-                    }}
-                    onCanPlay={() => {
-                      console.log('Vídeo pronto para reproduzir no modal:', media[currentIndex]);
-                    }}
-                  >
-                    <source src={media[currentIndex]} type="video/mp4" />
-                    <source src={media[currentIndex]} type="video/webm" />
-                    <source src={media[currentIndex]} type="video/quicktime" />
-                    <source src={media[currentIndex]} type="video/ogg" />
-                    Seu navegador não suporta o elemento de vídeo.
-                  </video>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-8 text-white">
-                    <AlertCircle className="h-16 w-16 mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Erro ao carregar vídeo</h3>
-                    <p className="text-sm text-gray-300 mb-4 text-center">
-                      O formato do vídeo pode não ser suportado pelo seu navegador.
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-white border-white hover:bg-white hover:text-black"
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = media[currentIndex];
-                        link.download = media[currentIndex].split('/').pop() || 'video';
-                        link.target = '_blank';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <video
+                      key={media[currentIndex]} // Force re-render when video changes
+                      className="max-w-full max-h-full"
+                      style={{ maxHeight: 'calc(90vh - 4rem)' }}
+                      controls
+                      preload="metadata"
+                      onError={(e) => {
+                        console.error('Erro ao carregar vídeo no modal:', media[currentIndex]);
+                        console.error('Video error event:', e);
+                        setVideoError(true);
+                      }}
+                      onLoadStart={() => {
+                        console.log('Carregando vídeo no modal:', media[currentIndex]);
+                        setVideoError(false);
+                      }}
+                      onCanPlay={() => {
+                        console.log('Vídeo pronto para reproduzir no modal:', media[currentIndex]);
                       }}
                     >
-                      <Download className="h-4 w-4 mr-2" />
-                      Baixar Vídeo
-                    </Button>
+                      {/* Múltiplas sources para diferentes formatos */}
+                      <source src={media[currentIndex]} type="video/mp4" />
+                      <source src={media[currentIndex]} type="video/webm" />
+                      <source src={media[currentIndex]} type="video/quicktime" />
+                      <source src={media[currentIndex]} type="video/x-msvideo" />
+                      <source src={media[currentIndex]} type="video/ogg" />
+                      <source src={media[currentIndex]} type="video/3gpp" />
+                      <source src={media[currentIndex]} type="video/x-ms-wmv" />
+                      {/* Fallback genérico - força o navegador a tentar reproduzir */}
+                      <source src={media[currentIndex]} />
+                      Seu navegador não suporta o elemento de vídeo.
+                    </video>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-8 text-white max-w-md mx-auto">
+                    <AlertCircle className="h-16 w-16 mb-4 text-yellow-400" />
+                    <h3 className="text-lg font-semibold mb-2">Formato não suportado</h3>
+                    <p className="text-sm text-gray-300 mb-4 text-center">
+                      O formato {media[currentIndex].split('.').pop()?.toUpperCase()} pode não ser suportado pelo seu navegador.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-white border-white hover:bg-white hover:text-black"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = media[currentIndex];
+                          link.download = media[currentIndex].split('/').pop() || 'video';
+                          link.target = '_blank';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Baixar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-white border-white hover:bg-white hover:text-black"
+                        onClick={() => {
+                          window.open(media[currentIndex], '_blank');
+                        }}
+                      >
+                        Abrir em nova aba
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-4 text-center">
+                      Dica: Tente baixar o arquivo ou usar um player de vídeo externo
+                    </p>
                   </div>
                 )}
               </>

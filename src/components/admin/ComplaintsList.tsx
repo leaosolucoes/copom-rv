@@ -39,6 +39,34 @@ const VideoPreview = ({ video, index, onOpenModal }: VideoPreviewProps) => {
 
   console.log('VideoPreview renderizando:', video);
 
+  // Função para detectar o formato do vídeo
+  const getVideoFormat = (url: string) => {
+    const extension = url.split('.').pop()?.toLowerCase();
+    return extension || 'unknown';
+  };
+
+  // Função para verificar se o formato é suportado pelo navegador
+  const isFormatSupported = (url: string) => {
+    const video = document.createElement('video');
+    const format = getVideoFormat(url);
+    
+    switch (format) {
+      case 'mp4':
+        return video.canPlayType('video/mp4') !== '';
+      case 'webm':
+        return video.canPlayType('video/webm') !== '';
+      case 'ogg':
+        return video.canPlayType('video/ogg') !== '';
+      case 'mov':
+      case 'quicktime':
+        return video.canPlayType('video/quicktime') !== '';
+      case 'avi':
+        return video.canPlayType('video/x-msvideo') !== '';
+      default:
+        return false;
+    }
+  };
+
   const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     console.error('Erro ao carregar vídeo:', video, e);
     setVideoError(true);
@@ -49,9 +77,12 @@ const VideoPreview = ({ video, index, onOpenModal }: VideoPreviewProps) => {
     setVideoLoaded(true);
   };
 
+  const videoFormat = getVideoFormat(video);
+  const formatSupported = isFormatSupported(video);
+
   return (
     <div className="relative cursor-pointer group border rounded overflow-hidden bg-gray-100">
-      {!videoError ? (
+      {!videoError && formatSupported ? (
         <>
           <video 
             src={video} 
@@ -70,12 +101,12 @@ const VideoPreview = ({ video, index, onOpenModal }: VideoPreviewProps) => {
         </>
       ) : (
         <div className="w-full h-32 flex flex-col items-center justify-center bg-gray-200 text-gray-500">
-          <AlertCircle className="h-6 w-6 mb-1" />
-          <span className="text-xs text-center px-2">
-            Erro ao carregar vídeo
+          <Video className="h-8 w-8 mb-2" />
+          <span className="text-xs text-center px-2 font-medium">
+            Vídeo {videoFormat.toUpperCase()}
           </span>
-          <span className="text-xs text-center px-2 mt-1">
-            {video.split('/').pop()?.split('.').pop()?.toUpperCase()} 
+          <span className="text-xs text-center px-2 text-gray-400">
+            {!formatSupported ? 'Formato não suportado' : 'Erro no carregamento'}
           </span>
         </div>
       )}
@@ -90,7 +121,7 @@ const VideoPreview = ({ video, index, onOpenModal }: VideoPreviewProps) => {
       </div>
       
       <div className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1 rounded">
-        Vídeo {index + 1}
+        {videoFormat.toUpperCase()}
       </div>
     </div>
   );
