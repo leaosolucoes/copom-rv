@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -50,6 +50,8 @@ interface Complaint {
   occurrence_time?: string;
   classification: string;
   assigned_to?: string;
+  photos?: string[];
+  videos?: string[];
   
   // Controle interno
   status: ComplaintStatus;
@@ -1122,12 +1124,63 @@ export const ComplaintsList = () => {
                                    <div className="space-y-4">
                                      <h3 className="text-lg font-semibold">Dados da Reclamação</h3>
                                      
-                                     <div>
-                                       <strong>Narrativa:</strong>
-                                       <p className="mt-2 p-3 bg-gray-50 rounded-md">{selectedComplaint.narrative}</p>
-                                     </div>
-                                     
-                                     <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <strong>Narrativa:</strong>
+                                        <p className="mt-2 p-3 bg-gray-50 rounded-md">{selectedComplaint.narrative}</p>
+                                      </div>
+
+                                      {/* Seção de Mídias */}
+                                      {(selectedComplaint.photos?.length || selectedComplaint.videos?.length) && (
+                                        <div className="space-y-3">
+                                          <strong>Mídias Anexadas:</strong>
+                                          
+                                          {/* Fotos */}
+                                          {selectedComplaint.photos && selectedComplaint.photos.length > 0 && (
+                                            <div className="space-y-2">
+                                              <div className="flex items-center gap-2 text-sm font-medium">
+                                                <Image className="h-4 w-4" />
+                                                Fotos ({selectedComplaint.photos.length})
+                                              </div>
+                                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                {selectedComplaint.photos.map((photo, index) => (
+                                                  <div key={index} className="relative group">
+                                                    <img 
+                                                      src={photo} 
+                                                      alt={`Foto ${index + 1}`} 
+                                                      className="w-full h-20 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                                                      onClick={() => window.open(photo, '_blank')}
+                                                    />
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {/* Vídeos */}
+                                          {selectedComplaint.videos && selectedComplaint.videos.length > 0 && (
+                                            <div className="space-y-2">
+                                              <div className="flex items-center gap-2 text-sm font-medium">
+                                                <Video className="h-4 w-4" />
+                                                Vídeos ({selectedComplaint.videos.length})
+                                              </div>
+                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                {selectedComplaint.videos.map((video, index) => (
+                                                  <div key={index} className="relative">
+                                                    <video 
+                                                      src={video} 
+                                                      className="w-full h-32 object-cover rounded border"
+                                                      controls
+                                                      preload="metadata"
+                                                    />
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                      
+                                      <div className="grid grid-cols-2 gap-4">
                                        <div>
                                          <strong>Classificação:</strong> {selectedComplaint.classification}
                                        </div>

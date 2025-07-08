@@ -87,10 +87,12 @@ export type Database = {
           occurrence_reference: string | null
           occurrence_time: string | null
           occurrence_type: string
+          photos: string[] | null
           processed_at: string | null
           status: Database["public"]["Enums"]["complaint_status"]
           system_identifier: string | null
           updated_at: string
+          videos: string[] | null
           whatsapp_sent: boolean | null
         }
         Insert: {
@@ -118,10 +120,12 @@ export type Database = {
           occurrence_reference?: string | null
           occurrence_time?: string | null
           occurrence_type: string
+          photos?: string[] | null
           processed_at?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
           system_identifier?: string | null
           updated_at?: string
+          videos?: string[] | null
           whatsapp_sent?: boolean | null
         }
         Update: {
@@ -149,10 +153,12 @@ export type Database = {
           occurrence_reference?: string | null
           occurrence_time?: string | null
           occurrence_type?: string
+          photos?: string[] | null
           processed_at?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
           system_identifier?: string | null
           updated_at?: string
+          videos?: string[] | null
           whatsapp_sent?: boolean | null
         }
         Relationships: [

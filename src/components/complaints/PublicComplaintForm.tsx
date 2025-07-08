@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Send, AlertTriangle } from "lucide-react";
+import { Send, AlertTriangle, Upload, X, Image, Video } from "lucide-react";
 
 interface FormData {
   // Dados do reclamante
@@ -67,6 +67,9 @@ export const PublicComplaintForm = () => {
     public_classifications: []
   });
   const [fieldConfig, setFieldConfig] = useState<FormField[]>([]);
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  const [uploadedVideos, setUploadedVideos] = useState<string[]>([]);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     complainant_name: "",
@@ -138,6 +141,88 @@ export const PublicComplaintForm = () => {
       setFieldConfig(fieldsConfig);
     } catch (error) {
       console.error('Erro ao processar configurações:', error);
+    }
+  };
+
+  const handleFileUpload = async (files: FileList, type: 'photo' | 'video') => {
+    if (!files || files.length === 0) return;
+
+    setUploadingMedia(true);
+    
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        // Validar tipo de arquivo
+        const isPhoto = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        
+        if (type === 'photo' && !isPhoto) {
+          throw new Error('Por favor, selecione apenas arquivos de imagem');
+        }
+        
+        if (type === 'video' && !isVideo) {
+          throw new Error('Por favor, selecione apenas arquivos de vídeo');
+        }
+
+        // Validar tamanho do arquivo
+        const maxSize = type === 'photo' ? 5 * 1024 * 1024 : 50 * 1024 * 1024; // 5MB para fotos, 50MB para vídeos
+        if (file.size > maxSize) {
+          throw new Error(`Arquivo muito grande. Tamanho máximo: ${type === 'photo' ? '5MB' : '50MB'}`);
+        }
+
+        // Gerar nome único para o arquivo
+        const timestamp = Date.now();
+        const randomStr = Math.random().toString(36).substring(2, 15);
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${type}-${timestamp}-${randomStr}.${fileExt}`;
+
+        // Upload para o Supabase Storage
+        const { data, error } = await supabase.storage
+          .from('complaint-media')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (error) throw error;
+
+        // Obter URL pública
+        const { data: { publicUrl } } = supabase.storage
+          .from('complaint-media')
+          .getPublicUrl(data.path);
+
+        return publicUrl;
+      });
+
+      const urls = await Promise.all(uploadPromises);
+      
+      if (type === 'photo') {
+        setUploadedPhotos(prev => [...prev, ...urls]);
+      } else {
+        setUploadedVideos(prev => [...prev, ...urls]);
+      }
+
+      toast({
+        title: "Upload realizado com sucesso!",
+        description: `${urls.length} arquivo(s) ${type === 'photo' ? 'de imagem' : 'de vídeo'} enviado(s).`,
+      });
+
+    } catch (error: any) {
+      console.error('Erro no upload:', error);
+      toast({
+        title: "Erro no upload",
+        description: error.message || "Erro ao fazer upload do arquivo",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingMedia(false);
+    }
+  };
+
+  const removeMedia = (url: string, type: 'photo' | 'video') => {
+    if (type === 'photo') {
+      setUploadedPhotos(prev => prev.filter(photo => photo !== url));
+    } else {
+      setUploadedVideos(prev => prev.filter(video => video !== url));
     }
   };
 
@@ -315,6 +400,106 @@ export const PublicComplaintForm = () => {
             }
             return renderedField;
           })}
+
+          {/* Campos de mídia apenas na seção de reclamação */}
+          {sectionType === 'complaint' && (
+            <>
+              {/* Campo de upload de fotos */}
+              <div className="md:col-span-2 space-y-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Image className="h-4 w-4" />
+                    Adicionar Fotos (opcional)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => e.target.files && handleFileUpload(e.target.files, 'photo')}
+                      disabled={uploadingMedia}
+                      className="flex-1"
+                    />
+                    <span className="text-xs text-muted-foreground">Máx: 5MB cada</span>
+                  </div>
+                  
+                  {/* Preview das fotos */}
+                  {uploadedPhotos.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
+                      {uploadedPhotos.map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <img 
+                            src={photo} 
+                            alt={`Foto ${index + 1}`} 
+                            className="w-full h-20 object-cover rounded border"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeMedia(photo, 'photo')}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Campo de upload de vídeos */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Video className="h-4 w-4" />
+                    Adicionar Vídeos (opcional)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept="video/*"
+                      multiple
+                      onChange={(e) => e.target.files && handleFileUpload(e.target.files, 'video')}
+                      disabled={uploadingMedia}
+                      className="flex-1"
+                    />
+                    <span className="text-xs text-muted-foreground">Máx: 50MB cada</span>
+                  </div>
+                  
+                  {/* Preview dos vídeos */}
+                  {uploadedVideos.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                      {uploadedVideos.map((video, index) => (
+                        <div key={index} className="relative group">
+                          <video 
+                            src={video} 
+                            className="w-full h-32 object-cover rounded border"
+                            controls
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeMedia(video, 'video')}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {uploadingMedia && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    Fazendo upload...
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     );
@@ -335,7 +520,7 @@ export const PublicComplaintForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Preparar dados para inserção
+      // Preparar dados para inserção (incluindo mídias)
       const dataToInsert = {
         complainant_name: formData.complainant_name.trim(),
         complainant_phone: formData.complainant_phone.trim(),
@@ -356,7 +541,9 @@ export const PublicComplaintForm = () => {
         occurrence_date: formData.occurrence_date || null,
         occurrence_time: formData.occurrence_time || null,
         classification: formData.classification,
-        assigned_to: formData.assigned_to?.trim() || null
+        assigned_to: formData.assigned_to?.trim() || null,
+        photos: uploadedPhotos.length > 0 ? uploadedPhotos : null,
+        videos: uploadedVideos.length > 0 ? uploadedVideos : null
       };
       
       console.log('🔄 Dados que serão enviados:', dataToInsert);
@@ -402,6 +589,10 @@ export const PublicComplaintForm = () => {
         classification: "",
         assigned_to: ""
       });
+
+      // Limpar uploads
+      setUploadedPhotos([]);
+      setUploadedVideos([]);
 
     } catch (error) {
       console.error('Erro ao enviar denúncia:', error);
