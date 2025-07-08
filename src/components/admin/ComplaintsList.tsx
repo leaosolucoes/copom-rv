@@ -70,6 +70,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
   // Debug info
   console.log('🔍 ComplaintsList - userRole:', userRole);
   console.log('🔍 ComplaintsList - complaints:', complaints?.length || 0);
+  console.log('🔍 ComplaintsList - classifications:', classifications);
 
   const fetchComplaints = async () => {
     try {
@@ -557,42 +558,83 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                                 {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
                                   <Button 
                                     onClick={() => {
-                                      const rai = window.prompt('Digite o RAI:');
-                                      if (rai) {
-                                        // Criar um select de classificações
-                                        const selectDiv = document.createElement('div');
-                                        selectDiv.innerHTML = `
-                                          <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-                                            <div style="background: white; padding: 20px; border-radius: 8px; min-width: 300px;">
-                                              <h3 style="margin-bottom: 15px;">Selecione a Classificação:</h3>
-                                              <select id="classificationSelect" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;">
+                                      // Criar modal para RAI e Classificação
+                                      const modalDiv = document.createElement('div');
+                                      modalDiv.innerHTML = `
+                                        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+                                          <div style="background: white; padding: 30px; border-radius: 12px; min-width: 400px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+                                            <h3 style="margin-bottom: 20px; font-size: 18px; font-weight: 600; color: #1f2937;">Cadastrar Denúncia</h3>
+                                            
+                                            <div style="margin-bottom: 20px;">
+                                              <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Número RAI *</label>
+                                              <input id="raiInput" type="text" placeholder="Digite o número RAI" 
+                                                style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;" />
+                                            </div>
+                                            
+                                            <div style="margin-bottom: 25px;">
+                                              <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Classificação *</label>
+                                              <select id="classificationSelect" 
+                                                style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; background: white;">
                                                 <option value="">Selecione uma classificação...</option>
                                                 ${classifications.map(c => `<option value="${c}">${c}</option>`).join('')}
                                               </select>
-                                              <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                                                <button id="cancelBtn" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
-                                                <button id="confirmBtn" style="padding: 8px 16px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer;">Confirmar</button>
-                                              </div>
+                                            </div>
+                                            
+                                            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                                              <button id="cancelBtn" 
+                                                style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+                                                Cancelar
+                                              </button>
+                                              <button id="confirmBtn" 
+                                                style="padding: 10px 20px; background: #059669; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+                                                Cadastrar
+                                              </button>
                                             </div>
                                           </div>
-                                        `;
-                                        document.body.appendChild(selectDiv);
+                                        </div>
+                                      `;
+                                      document.body.appendChild(modalDiv);
+                                      
+                                      // Focar no input RAI
+                                      setTimeout(() => {
+                                        document.getElementById('raiInput')?.focus();
+                                      }, 100);
+                                      
+                                      document.getElementById('cancelBtn')?.addEventListener('click', () => {
+                                        document.body.removeChild(modalDiv);
+                                      });
+                                      
+                                      document.getElementById('confirmBtn')?.addEventListener('click', () => {
+                                        const raiInput = document.getElementById('raiInput') as HTMLInputElement;
+                                        const classificationSelect = document.getElementById('classificationSelect') as HTMLSelectElement;
                                         
-                                        document.getElementById('cancelBtn')?.addEventListener('click', () => {
-                                          document.body.removeChild(selectDiv);
-                                        });
+                                        const rai = raiInput.value.trim();
+                                        const classification = classificationSelect.value;
                                         
-                                        document.getElementById('confirmBtn')?.addEventListener('click', () => {
-                                          const select = document.getElementById('classificationSelect') as HTMLSelectElement;
-                                          const classification = select.value;
-                                          if (classification) {
-                                            updateComplaintStatus(selectedComplaint.id, 'cadastrada', rai);
-                                            document.body.removeChild(selectDiv);
-                                          } else {
-                                            alert('Por favor, selecione uma classificação');
-                                          }
-                                        });
-                                      }
+                                        if (!rai) {
+                                          alert('Por favor, digite o número RAI');
+                                          raiInput.focus();
+                                          return;
+                                        }
+                                        
+                                        if (!classification) {
+                                          alert('Por favor, selecione uma classificação');
+                                          classificationSelect.focus();
+                                          return;
+                                        }
+                                        
+                                        updateComplaintStatus(selectedComplaint.id, 'cadastrada', rai);
+                                        document.body.removeChild(modalDiv);
+                                      });
+                                      
+                                      // Fechar com ESC
+                                      const escHandler = (e: KeyboardEvent) => {
+                                        if (e.key === 'Escape' && document.body.contains(modalDiv)) {
+                                          document.body.removeChild(modalDiv);
+                                          document.removeEventListener('keydown', escHandler);
+                                        }
+                                      };
+                                      document.addEventListener('keydown', escHandler);
                                     }}
                                     variant="default"
                                   >
