@@ -115,22 +115,38 @@ export function ApiManagement() {
     try {
       console.log('🔄 Carregando tokens...');
       
+      // Primeiro verificar se o usuário pode acessar
+      const { data: authCheck, error: authError } = await supabase
+        .rpc('is_current_user_super_admin_safe');
+      
+      console.log('👑 Verificação de super admin:', { result: authCheck, error: authError });
+      
       const { data, error } = await supabase
         .from('api_tokens')
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('📋 Resultado do carregamento:', { data, error });
+      console.log('📋 Resultado do carregamento:', { data, error, count: data?.length });
 
       if (error) {
         console.error('❌ Erro ao carregar tokens:', error);
-        throw error;
+        toast({
+          title: "Erro",
+          description: `Erro ao carregar tokens: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
       }
       
       console.log('✅ Tokens carregados:', data);
       setTokens((data || []) as ApiToken[]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('💥 Erro na função loadTokens:', error);
+      toast({
+        title: "Erro",
+        description: `Erro inesperado: ${error.message}`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -349,6 +365,9 @@ export function ApiManagement() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={loadTokens} variant="outline" size="sm">
+            Recarregar Tokens
+          </Button>
           <Button onClick={exportPostmanCollection} variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Exportar Postman
