@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, Trash2, Image } from 'lucide-react';
+import { Upload, Trash2, Image, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface LogoUploadProps {
@@ -15,6 +15,13 @@ interface LogoUploadProps {
 export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string>('');
   const [uploading, setUploading] = useState(false);
+  const [colors, setColors] = useState({
+    primary: '#228B22',
+    secondary: '#1F4E79', 
+    accent: '#FF6B35',
+    background: '#F8F9FA'
+  });
+  const [savingColors, setSavingColors] = useState(false);
   const { toast } = useToast();
 
   const fetchCurrentLogo = async () => {
@@ -36,8 +43,59 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
     }
   };
 
+  const fetchSystemColors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'system_colors')
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data?.value) {
+        setColors(data.value as any);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar cores:', error);
+    }
+  };
+
+  const saveSystemColors = async () => {
+    try {
+      setSavingColors(true);
+
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert({
+          key: 'system_colors',
+          value: colors,
+          description: 'Cores personalizadas do sistema'
+        }, {
+          onConflict: 'key'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Cores do sistema atualizadas com sucesso!",
+      });
+    } catch (error: any) {
+      console.error('Erro ao salvar cores:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar cores do sistema",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingColors(false);
+    }
+  };
+
   useEffect(() => {
     fetchCurrentLogo();
+    fetchSystemColors();
   }, []);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -223,6 +281,140 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
                 <span className="text-sm">Fazendo upload...</span>
               </div>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            Cores do Sistema
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="primary-color">Cor Primária</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="primary-color"
+                    type="color"
+                    value={colors.primary}
+                    onChange={(e) => setColors(prev => ({ ...prev, primary: e.target.value }))}
+                    className="w-16 h-10 p-1 rounded cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={colors.primary}
+                    onChange={(e) => setColors(prev => ({ ...prev, primary: e.target.value }))}
+                    placeholder="#228B22"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="secondary-color">Cor Secundária</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="secondary-color"
+                    type="color"
+                    value={colors.secondary}
+                    onChange={(e) => setColors(prev => ({ ...prev, secondary: e.target.value }))}
+                    className="w-16 h-10 p-1 rounded cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={colors.secondary}
+                    onChange={(e) => setColors(prev => ({ ...prev, secondary: e.target.value }))}
+                    placeholder="#1F4E79"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accent-color">Cor de Destaque</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="accent-color"
+                    type="color"
+                    value={colors.accent}
+                    onChange={(e) => setColors(prev => ({ ...prev, accent: e.target.value }))}
+                    className="w-16 h-10 p-1 rounded cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={colors.accent}
+                    onChange={(e) => setColors(prev => ({ ...prev, accent: e.target.value }))}
+                    placeholder="#FF6B35"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="background-color">Cor de Fundo</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="background-color"
+                    type="color"
+                    value={colors.background}
+                    onChange={(e) => setColors(prev => ({ ...prev, background: e.target.value }))}
+                    className="w-16 h-10 p-1 rounded cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={colors.background}
+                    onChange={(e) => setColors(prev => ({ ...prev, background: e.target.value }))}
+                    placeholder="#F8F9FA"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-center pt-4">
+              <Button 
+                onClick={saveSystemColors}
+                disabled={savingColors}
+                variant="default"
+              >
+                {savingColors ? "Salvando..." : "Salvar Cores"}
+              </Button>
+            </div>
+
+            <div className="bg-amber-50 p-4 rounded-lg">
+              <h4 className="font-medium text-amber-900 mb-2">Preview das Cores:</h4>
+              <div className="flex gap-2 flex-wrap">
+                <div 
+                  className="w-16 h-8 rounded border border-gray-300 flex items-center justify-center text-xs font-medium"
+                  style={{ backgroundColor: colors.primary, color: '#fff' }}
+                >
+                  Primária
+                </div>
+                <div 
+                  className="w-16 h-8 rounded border border-gray-300 flex items-center justify-center text-xs font-medium"
+                  style={{ backgroundColor: colors.secondary, color: '#fff' }}
+                >
+                  Secund.
+                </div>
+                <div 
+                  className="w-16 h-8 rounded border border-gray-300 flex items-center justify-center text-xs font-medium"
+                  style={{ backgroundColor: colors.accent, color: '#fff' }}
+                >
+                  Destaque
+                </div>
+                <div 
+                  className="w-16 h-8 rounded border border-gray-300 flex items-center justify-center text-xs font-medium"
+                  style={{ backgroundColor: colors.background, color: '#333' }}
+                >
+                  Fundo
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
