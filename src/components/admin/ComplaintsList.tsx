@@ -780,11 +780,11 @@ export const ComplaintsList = () => {
                                           Enviar WhatsApp
                                         </Button>
                                       )}
-                                    </div>
-                               </div>
+                                     </div>
+                                 </div>
                                )}
-                              </DialogContent>
-                            </Dialog>
+                               </DialogContent>
+                             </Dialog>
                             
                             {userRole === 'atendente' && complaint.status === 'nova' && (
                               <Button 
