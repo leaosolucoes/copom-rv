@@ -30,7 +30,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showLoginButton={true} logoUrl={logoUrl} />
+      <Header showLoginButton={false} logoUrl={logoUrl} />
       <main className="py-8">
         <div className="container mx-auto">
           <PublicComplaintForm />
