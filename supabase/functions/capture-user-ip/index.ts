@@ -50,10 +50,17 @@ Deno.serve(async (req) => {
       throw new Error('Method not allowed')
     }
 
-    // Capturar IP do usuário
-    const clientIP = req.headers.get('x-forwarded-for') || 
-                     req.headers.get('x-real-ip') || 
-                     'unknown'
+    // Capturar IP do usuário - pegar apenas o primeiro IP válido
+    const forwardedFor = req.headers.get('x-forwarded-for')
+    const realIP = req.headers.get('x-real-ip')
+    
+    let clientIP = 'unknown'
+    if (forwardedFor) {
+      // Pegar apenas o primeiro IP da lista (formato: "ip1, ip2, ip3")
+      clientIP = forwardedFor.split(',')[0].trim()
+    } else if (realIP) {
+      clientIP = realIP
+    }
 
     console.log('IP capturado:', clientIP)
 
