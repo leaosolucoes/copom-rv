@@ -87,54 +87,41 @@ export function ApiManagement() {
   ];
 
   useEffect(() => {
-    console.log('🎯 Componente ApiManagement montado, carregando dados...');
-    
-    // Verificar estado da autenticação primeiro
-    const checkAuthAndLoad = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        console.log('🔐 Estado da sessão:', { 
-          hasSession: !!session, 
-          hasUser: !!session?.user, 
-          userId: session?.user?.id,
-          error 
-        });
-        
-        if (session?.user) {
-          console.log('✅ Usuário autenticado, carregando dados...');
-          loadData();
-        } else {
-          console.log('❌ Usuário não autenticado');
-          // Tentar carregar dados usando service role temporariamente
-          loadTokensWithServiceRole();
-        }
-      } catch (err) {
-        console.error('💥 Erro ao verificar autenticação:', err);
-        loadData(); // Tentar carregar mesmo assim
-      }
-    };
-    
-    checkAuthAndLoad();
+    console.log('🎯 Componente ApiManagement montado');
+    setIsLoading(false); // Parar o loading imediatamente
+    loadTokensDirectly(); // Carregar tokens diretamente
   }, []);
 
-  const loadData = async () => {
-    setIsLoading(true);
+  const loadTokensDirectly = async () => {
     try {
-      await Promise.all([
-        loadTokens(),
-        loadLogs(),
-        loadEndpoints()
-      ]);
-    } catch (error) {
-      console.error('Erro ao carregar dados da API:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar dados da API",
-        variant: "destructive",
+      console.log('🔄 Carregando tokens diretamente...');
+      
+      // Usar edge function para carregar tokens
+      const response = await supabase.functions.invoke('api-auth', {
+        body: { 
+          action: 'list-tokens'
+        }
       });
-    } finally {
-      setIsLoading(false);
+      
+      console.log('📋 Resposta:', response);
+      
+      if (response.data?.tokens) {
+        setTokens(response.data.tokens);
+        console.log('✅ Tokens carregados:', response.data.tokens.length);
+      } else {
+        console.log('⚠️ Nenhum token encontrado');
+        setTokens([]);
+      }
+    } catch (error) {
+      console.error('💥 Erro ao carregar tokens:', error);
+      setTokens([]);
     }
+  };
+
+  const loadData = async () => {
+    console.log('🔄 Função loadData chamada');
+    setIsLoading(false); // Garantir que pare o loading
+    await loadTokensDirectly();
   };
 
   const loadTokensWithServiceRole = async () => {
@@ -410,7 +397,7 @@ export function ApiManagement() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={loadTokens} variant="outline" size="sm">
+          <Button onClick={loadTokensDirectly} variant="outline" size="sm">
             Recarregar Tokens
           </Button>
           <Button onClick={exportPostmanCollection} variant="outline">
