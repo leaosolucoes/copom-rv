@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, AlertCircle, Download, Play } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 interface MediaModalProps {
@@ -49,6 +49,13 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
         className="max-w-4xl max-h-[90vh] p-0 bg-black/95 border-none"
         onKeyDown={handleKeyDown}
       >
+        {/* Elementos obrigatórios de acessibilidade */}
+        <DialogTitle className="sr-only">
+          {type === 'photo' ? `Visualizando foto ${currentIndex + 1} de ${media.length}` : `Reproduzindo vídeo ${currentIndex + 1} de ${media.length}`}
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          {type === 'photo' ? 'Modal para visualização de imagem' : 'Modal para reprodução de vídeo'}
+        </DialogDescription>
         <div className="relative w-full h-full flex items-center justify-center">
           {/* Botão de fechar */}
           <Button
