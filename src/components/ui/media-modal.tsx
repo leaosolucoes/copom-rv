@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, AlertCircle, Download, Play } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import ReactPlayer from 'react-player';
 
 interface MediaModalProps {
   isOpen: boolean;
@@ -16,6 +15,7 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [videoError, setVideoError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   console.log('MediaModal props:', { isOpen, media, initialIndex, type });
 
@@ -108,53 +108,74 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                     </div>
                   )}
                   
-                  {/* ReactPlayer - Player muito mais robusto */}
+                  {/* Player HTML5 robusto para arquivos .MOV */}
                   <div className="w-full max-w-4xl mx-auto">
-                     <ReactPlayer
-                       url={media[currentIndex]}
-                       width="100%"
-                       height="70vh"
-                       controls
-                       onReady={() => {
-                         console.log('✅ ReactPlayer pronto para:', media[currentIndex]);
-                         setIsLoading(false);
-                         setVideoError(false);
-                       }}
-                       onStart={() => {
-                         console.log('▶️ Reprodução iniciada:', media[currentIndex]);
-                         setIsLoading(false);
-                       }}
-                       onError={(error) => {
-                         console.error('❌ Erro no ReactPlayer:', error);
-                         console.log('🔄 Tentando fallback HTML5...');
-                         setVideoError(true);
-                         setIsLoading(false);
-                       }}
-                     />
-                    
-                    {/* Fallback HTML5 se ReactPlayer falhar */}
-                    {videoError && (
-                      <div className="mt-4">
-                        <p className="text-white text-center mb-4">Tentando player alternativo...</p>
-                        <video
-                          key={`fallback-${currentIndex}`}
-                          className="w-full h-auto max-h-[50vh] bg-black rounded"
-                          controls
-                          preload="metadata"
-                          playsInline
-                          onError={() => {
-                            console.error('❌ Player HTML5 também falhou para:', media[currentIndex]);
-                          }}
-                          style={{ maxHeight: 'calc(50vh)' }}
+                    <video
+                      ref={videoRef}
+                      key={`video-${currentIndex}-${media[currentIndex]}`}
+                      className="w-full h-auto max-h-[70vh] bg-black rounded"
+                      controls
+                      preload="metadata"
+                      playsInline
+                      autoPlay={false}
+                      muted={false}
+                      onLoadStart={() => {
+                        console.log('🎬 Iniciando carregamento:', media[currentIndex]);
+                        setIsLoading(true);
+                        setVideoError(false);
+                      }}
+                      onLoadedMetadata={() => {
+                        console.log('📊 Metadata carregada:', media[currentIndex]);
+                        setIsLoading(false);
+                      }}
+                      onCanPlay={() => {
+                        console.log('✅ Vídeo pronto para reprodução:', media[currentIndex]);
+                        setIsLoading(false);
+                      }}
+                      onError={(e) => {
+                        console.error('❌ Erro no vídeo HTML5:', media[currentIndex]);
+                        const error = e.currentTarget.error;
+                        if (error) {
+                          console.error('Código do erro:', error.code);
+                          console.error('Mensagem:', error.message);
+                        }
+                        setVideoError(true);
+                        setIsLoading(false);
+                      }}
+                      style={{ maxHeight: 'calc(70vh)' }}
+                    >
+                      {/* Múltiplas sources para compatibilidade */}
+                      <source src={media[currentIndex]} type="video/quicktime" />
+                      <source src={media[currentIndex]} type="video/mp4" />
+                      <source src={media[currentIndex]} type="video/webm" />
+                      <source src={media[currentIndex]} type="video/ogg" />
+                      
+                      {/* Fallback para navegadores que não suportam video */}
+                      <p className="text-white text-center p-4">
+                        Seu navegador não suporta reprodução de vídeo HTML5.
+                        <br />
+                        <a 
+                          href={media[currentIndex]} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-400 underline"
                         >
-                          <source src={media[currentIndex]} type="video/quicktime" />
-                          <source src={media[currentIndex]} type="video/mp4" />
-                          <source src={media[currentIndex]} type="video/webm" />
-                          Seu navegador não suporta este formato de vídeo.
-                        </video>
-                      </div>
-                    )}
-                </div>
+                          Clique aqui para baixar o vídeo
+                        </a>
+                      </p>
+                    </video>
+                    
+                    {/* Informações de debug específicas para .MOV */}
+                    <div className="mt-2 text-xs text-gray-400 text-center">
+                      <p>Arquivo: {media[currentIndex].split('/').pop()}</p>
+                      <p>Formato detectado: {media[currentIndex].split('.').pop()?.toUpperCase()}</p>
+                      {videoError && (
+                        <p className="text-red-400 mt-1">
+                          ⚠️ Erro de reprodução. Tente o botão "Nova Aba" ou "Download"
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Botões de ação */}
