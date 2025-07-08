@@ -905,7 +905,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
 
       {/* Modal RAI */}
       {showRaiModal && selectedComplaint && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
           <div className="bg-background p-6 rounded-lg min-w-[400px] shadow-xl">
             <h3 className="text-lg font-semibold mb-4">Cadastrar Denúncia</h3>
             
