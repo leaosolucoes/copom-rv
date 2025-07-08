@@ -446,14 +446,16 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
       nova: 'bg-yellow-500',
       cadastrada: 'bg-blue-500',
       finalizada: 'bg-green-500',
-      a_verificar: 'bg-red-500'
+      a_verificar: 'bg-red-500',
+      verificado: 'bg-purple-500'
     };
     
     const labels = {
       nova: 'Nova',
       cadastrada: 'Cadastrada',
       finalizada: 'Finalizada',
-      a_verificar: 'A Verificar'
+      a_verificar: 'A Verificar',
+      verificado: 'Verificado'
     };
 
     return (
