@@ -84,6 +84,11 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center p-4">
                 <div className="relative w-full max-w-4xl">
+                  {/* Debug info */}
+                  <div className="absolute top-2 left-2 bg-black/75 text-white text-xs p-2 rounded z-20">
+                    URL: {media[currentIndex]}
+                  </div>
+                  
                   {/* Loading indicator */}
                   {isLoading && !videoError && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded z-10">
@@ -103,26 +108,31 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                       playsInline
                       crossOrigin="anonymous"
                       onLoadStart={() => {
-                        console.log('Iniciando carregamento:', media[currentIndex]);
+                        console.log('🎬 Iniciando carregamento do vídeo:', media[currentIndex]);
                         setIsLoading(true);
                         setVideoError(false);
                       }}
                       onLoadedMetadata={() => {
-                        console.log('Metadata carregada:', media[currentIndex]);
+                        console.log('📊 Metadata carregada para:', media[currentIndex]);
                         setIsLoading(false);
                       }}
                       onCanPlay={() => {
-                        console.log('Vídeo pode ser reproduzido:', media[currentIndex]);
+                        console.log('✅ Vídeo pode ser reproduzido:', media[currentIndex]);
                         setIsLoading(false);
                       }}
                       onError={(e) => {
-                        console.error('Erro no vídeo:', media[currentIndex], e);
+                        console.error('❌ Erro no vídeo:', media[currentIndex]);
+                        console.error('Event details:', e);
+                        console.error('Video element:', e.currentTarget);
                         setVideoError(true);
                         setIsLoading(false);
                       }}
                       onLoadedData={() => {
-                        console.log('Dados carregados:', media[currentIndex]);
+                        console.log('📁 Dados do vídeo carregados:', media[currentIndex]);
                         setIsLoading(false);
+                      }}
+                      onProgress={() => {
+                        console.log('📶 Progresso de carregamento para:', media[currentIndex]);
                       }}
                     >
                       <source src={media[currentIndex]} type="video/mp4" />
@@ -140,6 +150,9 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                         <p className="text-sm text-gray-300 mb-4">
                           Não foi possível reproduzir o vídeo
                         </p>
+                        <p className="text-xs text-gray-400 mb-2">
+                          URL: {media[currentIndex]}
+                        </p>
                         <p className="text-xs text-gray-400">
                           Arquivo: {media[currentIndex].split('/').pop()}
                         </p>
@@ -155,6 +168,7 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                     size="sm"
                     className="bg-white/10 hover:bg-white/20 text-white border-white/20"
                     onClick={() => {
+                      console.log('🔗 Testando URL diretamente:', media[currentIndex]);
                       const link = document.createElement('a');
                       link.href = media[currentIndex];
                       link.download = media[currentIndex].split('/').pop() || 'video';
@@ -171,6 +185,7 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                     size="sm"
                     className="bg-white/10 hover:bg-white/20 text-white border-white/20"
                     onClick={() => {
+                      console.log('🌐 Abrindo URL em nova aba:', media[currentIndex]);
                       window.open(media[currentIndex], '_blank');
                     }}
                   >
@@ -183,6 +198,7 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                       size="sm"
                       className="bg-white/10 hover:bg-white/20 text-white border-white/20"
                       onClick={() => {
+                        console.log('🔄 Tentando recarregar vídeo:', media[currentIndex]);
                         setVideoError(false);
                         setIsLoading(true);
                       }}
@@ -190,6 +206,24 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                       Tentar Novamente
                     </Button>
                   )}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+                    onClick={() => {
+                      console.log('🧪 Testando URL com fetch:', media[currentIndex]);
+                      fetch(media[currentIndex], { method: 'HEAD' })
+                        .then(response => {
+                          console.log('📡 Resposta do fetch:', response.status, response.statusText);
+                          console.log('🎯 Content-Type:', response.headers.get('content-type'));
+                        })
+                        .catch(error => {
+                          console.error('💥 Erro no fetch:', error);
+                        });
+                    }}
+                  >
+                    Testar URL
+                  </Button>
                 </div>
               </div>
             )}
