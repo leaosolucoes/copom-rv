@@ -20,9 +20,14 @@ serve(async (req) => {
   try {
     const startTime = Date.now()
     
+    console.log('Iniciando validação do token...')
+    console.log('URL:', req.url)
+    console.log('Method:', req.method)
+    
     // Validar token da API
     const tokenValidation = await validateApiToken(req, supabase)
     if (!tokenValidation.valid) {
+      console.log('Token inválido, retornando erro 401')
       return tokenValidation.response
     }
 
