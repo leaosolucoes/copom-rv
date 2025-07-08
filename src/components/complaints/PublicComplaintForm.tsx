@@ -274,7 +274,27 @@ export const PublicComplaintForm = () => {
       case 'occurrence_neighborhood':
         return settings.public_neighborhoods;
       case 'occurrence_type':
-        return settings.public_occurrence_types;
+        // Filtrar apenas tipos visíveis
+        if (Array.isArray(settings.public_occurrence_types) && settings.public_occurrence_types.length > 0) {
+          try {
+            // Verificar se está no novo formato (objetos com name e visible)
+            const hasNewFormat = settings.public_occurrence_types.some((item: any) => 
+              item && typeof item === 'object' && 'name' in item && 'visible' in item
+            );
+            
+            if (hasNewFormat) {
+              // Novo formato com objetos
+              return settings.public_occurrence_types
+                .filter((type: any) => type && type.visible)
+                .map((type: any) => type.name);
+            }
+          } catch (e) {
+            // Em caso de erro, usar formato antigo
+          }
+          // Formato antigo com strings (compatibilidade)
+          return settings.public_occurrence_types as string[];
+        }
+        return [];
       case 'classification':
         return settings.public_classifications;
       default:

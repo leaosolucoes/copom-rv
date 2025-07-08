@@ -5,11 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Save, Settings } from 'lucide-react';
+import { Plus, Trash2, Save, Settings, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+interface OccurrenceType {
+  name: string;
+  visible: boolean;
+}
+
 export const OccurrenceTypesConfig = () => {
-  const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
+  const [occurrenceTypes, setOccurrenceTypes] = useState<OccurrenceType[]>([]);
   const [newType, setNewType] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,19 +33,30 @@ export const OccurrenceTypesConfig = () => {
 
       if (data?.value) {
         const types = Array.isArray(data.value) ? data.value : JSON.parse(data.value as string);
-        setOccurrenceTypes(types);
+        
+        // Verificar se os dados já estão no novo formato (objetos com name e visible)
+        if (types.length > 0 && typeof types[0] === 'object' && 'name' in types[0]) {
+          setOccurrenceTypes(types as OccurrenceType[]);
+        } else {
+          // Converter formato antigo (array de strings) para novo formato
+          const convertedTypes: OccurrenceType[] = types.map((type: string) => ({
+            name: type,
+            visible: true
+          }));
+          setOccurrenceTypes(convertedTypes);
+        }
       } else {
         // Tipos padrão se não existir configuração
-        const defaultTypes = [
-          'Som Alto',
-          'Música Alta',
-          'Festa',
-          'Construção Civil',
-          'Comércio Irregular',
-          'Estacionamento Irregular',
-          'Lixo em Local Inadequado',
-          'Poluição Sonora',
-          'Outros'
+        const defaultTypes: OccurrenceType[] = [
+          { name: 'Som Alto', visible: true },
+          { name: 'Música Alta', visible: true },
+          { name: 'Festa', visible: true },
+          { name: 'Construção Civil', visible: true },
+          { name: 'Comércio Irregular', visible: true },
+          { name: 'Estacionamento Irregular', visible: true },
+          { name: 'Lixo em Local Inadequado', visible: true },
+          { name: 'Poluição Sonora', visible: true },
+          { name: 'Outros', visible: true }
         ];
         setOccurrenceTypes(defaultTypes);
       }
@@ -70,7 +86,7 @@ export const OccurrenceTypesConfig = () => {
       return;
     }
 
-    if (occurrenceTypes.includes(newType.trim())) {
+    if (occurrenceTypes.some(type => type.name === newType.trim())) {
       toast({
         title: "Erro",
         description: "Este tipo de ocorrência já existe",
@@ -79,12 +95,22 @@ export const OccurrenceTypesConfig = () => {
       return;
     }
 
-    setOccurrenceTypes(prev => [...prev, newType.trim()]);
+    setOccurrenceTypes(prev => [...prev, { name: newType.trim(), visible: true }]);
     setNewType('');
   };
 
   const removeType = (typeToRemove: string) => {
-    setOccurrenceTypes(prev => prev.filter(type => type !== typeToRemove));
+    setOccurrenceTypes(prev => prev.filter(type => type.name !== typeToRemove));
+  };
+
+  const toggleVisibility = (typeName: string) => {
+    setOccurrenceTypes(prev => 
+      prev.map(type => 
+        type.name === typeName 
+          ? { ...type, visible: !type.visible }
+          : type
+      )
+    );
   };
 
   const saveOccurrenceTypes = async () => {
@@ -95,7 +121,7 @@ export const OccurrenceTypesConfig = () => {
         .from('system_settings')
         .upsert({
           key: 'public_occurrence_types',
-          value: occurrenceTypes,
+          value: occurrenceTypes as any,
           description: 'Tipos de ocorrência disponíveis no formulário público'
         }, {
           onConflict: 'key'
@@ -162,17 +188,37 @@ export const OccurrenceTypesConfig = () => {
               <div className="space-y-2">
                 {occurrenceTypes.map((type, index) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                    <Badge variant="secondary" className="text-sm">
-                      {type}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeType(type)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={type.visible ? "default" : "secondary"} 
+                        className={`text-sm ${type.visible ? '' : 'opacity-50'}`}
+                      >
+                        {type.name}
+                      </Badge>
+                      {!type.visible && (
+                        <span className="text-xs text-muted-foreground">(Oculto)</span>
+                      )}
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleVisibility(type.name)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        title={type.visible ? "Ocultar tipo" : "Mostrar tipo"}
+                      >
+                        {type.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeType(type.name)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title="Excluir tipo"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -194,9 +240,10 @@ export const OccurrenceTypesConfig = () => {
           <h4 className="font-medium text-blue-900 mb-2">Instruções:</h4>
           <ul className="text-sm text-blue-800 space-y-1">
             <li>• Os tipos configurados aqui aparecerão no formulário público de denúncias</li>
-            <li>• É recomendado manter o tipo "Outros" para casos não especificados</li>
+            <li>• Use o botão <Eye className="h-3 w-3 inline mx-1" /> para ocultar/mostrar tipos no formulário</li>
+            <li>• Use o botão <Trash2 className="h-3 w-3 inline mx-1" /> para excluir permanentemente</li>
+            <li>• Tipos ocultos não aparecem no formulário mas mantêm dados existentes</li>
             <li>• As alterações serão aplicadas imediatamente ao formulário público</li>
-            <li>• Tipos removidos não afetarão denúncias já cadastradas</li>
           </ul>
         </div>
       </CardContent>
