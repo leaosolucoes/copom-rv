@@ -102,6 +102,7 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                   
                   {!videoError ? (
                     <div className="relative">
+                      {/* Primeiro, tentar com video element normal */}
                       <video
                         key={`video-${currentIndex}-${media[currentIndex]}`}
                         className="w-full h-auto max-h-[70vh] bg-black rounded"
@@ -123,34 +124,50 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                           setIsLoading(false);
                         }}
                         onError={(e) => {
-                          console.error('❌ Erro no vídeo:', media[currentIndex]);
-                          console.error('Event details:', e);
-                          console.error('Video element:', e.currentTarget);
-                          setVideoError(true);
+                          console.error('❌ Erro no vídeo HTML5:', media[currentIndex]);
+                          console.error('Tentando fallback...');
+                          // Não setar erro ainda, vamos tentar fallbacks
                           setIsLoading(false);
                         }}
                         onLoadedData={() => {
                           console.log('📁 Dados do vídeo carregados:', media[currentIndex]);
                           setIsLoading(false);
                         }}
-                        onProgress={() => {
-                          console.log('📶 Progresso de carregamento para:', media[currentIndex]);
-                        }}
                         style={{ maxHeight: 'calc(70vh)' }}
                       >
-                        {/* Fallback iframe para formatos não suportados */}
-                        <iframe
-                          src={media[currentIndex]}
+                        {/* Sources específicos para QuickTime */}
+                        <source src={media[currentIndex]} type="video/quicktime" />
+                        <source src={media[currentIndex]} type="video/mp4" />
+                        <source src={media[currentIndex]} type="video/webm" />
+                        <source src={media[currentIndex]} type="video/x-msvideo" />
+                        
+                        {/* Fallback: Object element para QuickTime */}
+                        <object
+                          data={media[currentIndex]}
+                          type="video/quicktime"
                           width="100%"
                           height="400"
-                          style={{ border: 'none' }}
-                          title="Video Player"
-                          onError={() => {
-                            console.error('❌ Iframe também falhou:', media[currentIndex]);
-                            setVideoError(true);
-                          }}
-                        />
-                        Seu navegador não suporta este formato de vídeo.
+                          style={{ background: '#000' }}
+                        >
+                          {/* Fallback: Embed element */}
+                          <embed
+                            src={media[currentIndex]}
+                            type="video/quicktime"
+                            width="100%"
+                            height="400"
+                          />
+                          
+                          {/* Último fallback: Link direto */}
+                          <div className="text-center text-white p-8">
+                            <p className="mb-4">Seu navegador não suporta reprodução deste vídeo.</p>
+                            <Button
+                              onClick={() => window.open(media[currentIndex], '_blank')}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              Abrir vídeo em nova aba
+                            </Button>
+                          </div>
+                        </object>
                       </video>
                     </div>
                   ) : (
