@@ -232,14 +232,18 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
     fetchSoundSetting();
     fetchClassifications();
     
-    console.log('🚀 Iniciando configuração do realtime...');
+    console.log('🚀 Iniciando configuração do realtime para:', userRole);
+    console.log('🔧 Profile atual:', profile?.full_name || 'Não identificado');
     
     // Setup realtime updates para denúncias
+    const channelName = `complaints-realtime-${userRole}-${Date.now()}`;
+    console.log('📡 Criando canal:', channelName);
+    
     const complaintsChannel = supabase
-      .channel('complaints-realtime-v2', {
+      .channel(channelName, {
         config: {
           broadcast: { self: true },
-          presence: { key: userRole }
+          presence: { key: `${userRole}_${profile?.id || 'unknown'}` }
         }
       })
       .on(
@@ -250,18 +254,18 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
           table: 'complaints'
         },
         (payload) => {
-          console.log('📢 REALTIME UPDATE RECEBIDO:', payload);
-          console.log('📢 Event Type:', payload.eventType);
-          console.log('📢 Novo dados:', payload.new);
+          console.log(`📢 REALTIME UPDATE RECEBIDO (${userRole}):`, payload);
+          console.log(`📢 Event Type (${userRole}):`, payload.eventType);
+          console.log(`📢 Novos dados (${userRole}):`, payload.new);
           
           // Tocar som apenas para novas denúncias
           if (payload.eventType === 'INSERT' && soundEnabled) {
-            console.log('🔊 Tocando som para nova denúncia...');
+            console.log(`🔊 Tocando som para nova denúncia (${userRole})...`);
             playNotificationSound();
           }
           
           // Atualizar lista de denúncias
-          console.log('🔄 Atualizando lista de denúncias...');
+          console.log(`🔄 Atualizando lista de denúncias (${userRole})...`);
           fetchComplaints();
         }
       )
