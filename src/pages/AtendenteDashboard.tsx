@@ -43,7 +43,7 @@ export default function AtendenteDashboard() {
           </Button>
         </div>
 
-        <ComplaintsList userRole="atendente" />
+        <ComplaintsList />
       </div>
     </div>
   );

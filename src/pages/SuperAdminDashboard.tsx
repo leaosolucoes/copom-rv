@@ -109,7 +109,7 @@ const SuperAdminDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ComplaintsList userRole="super_admin" />
+                <ComplaintsList />
               </CardContent>
             </Card>
           </TabsContent>

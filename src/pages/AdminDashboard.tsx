@@ -83,7 +83,7 @@ const AdminDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ComplaintsList userRole="admin" />
+                <ComplaintsList />
               </CardContent>
             </Card>
           </TabsContent>

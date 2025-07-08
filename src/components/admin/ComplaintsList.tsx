@@ -48,74 +48,115 @@ interface Complaint {
   
   // Controle interno
   status: ComplaintStatus;
-  system_identifier?: string;
+  created_at: string;
+  updated_at: string;
   processed_at?: string;
   attendant_id?: string;
+  system_identifier?: string;
   whatsapp_sent?: boolean;
-  created_at: string;
 }
 
-interface ComplaintsListProps {
-  userRole: 'super_admin' | 'admin' | 'atendente';
-}
-
-export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
+export const ComplaintsList = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('todos');
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [classifications, setClassifications] = useState<string[]>([]);
-  
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [raiData, setRaiData] = useState({ rai: '', classification: '' });
   const { toast } = useToast();
-  const { profile } = useSupabaseAuth();
+  const { user } = useSupabaseAuth();
+  
+  // Get user role from the user object
+  const userRole = user?.role || 'atendente';
 
-  // Debug info
-  console.log('🔍 ComplaintsList - userRole:', userRole);
-  console.log('🔍 ComplaintsList - complaints:', complaints?.length || 0);
-  console.log('🔍 ComplaintsList - classifications:', classifications);
+  useEffect(() => {
+    fetchComplaints();
+    fetchClassifications();
+    fetchSoundSettings();
+  }, [userRole]);
 
-  const fetchComplaints = async () => {
+  useEffect(() => {
+    const subscription = setupRealtimeUpdates();
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [userRole]);
+
+  const setupRealtimeUpdates = () => {
+    console.log(`🔗 Configurando realtime para: ${userRole}`);
+    
+    const channel = supabase
+      .channel(`complaints-changes-${userRole}-${Math.random()}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'complaints'
+        },
+        (payload) => {
+          console.log(`📢 REALTIME UPDATE RECEBIDO (${userRole}):`, payload);
+          console.log(`📢 Event Type (${userRole}):`, payload.eventType);
+          console.log(`📢 Novos dados (${userRole}):`, payload.new);
+          
+          if (payload.eventType === 'INSERT' && payload.new && payload.new.status === 'nova') {
+            console.log(`🔊 Nova denúncia detectada para ${userRole}, tocando som...`);
+            playNotificationSound();
+          }
+          
+          console.log(`🔄 Atualizando lista de denúncias (${userRole})...`);
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return channel;
+  };
+
+  const refetch = async () => {
     try {
-      setLoading(true);
-      let query = supabase
+      const { data, error } = await supabase
         .from('complaints')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Filter by status if selected
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter as ComplaintStatus);
-      }
+      if (error) throw error;
+      
+      console.log(`🔍 ComplaintsList - userRole: ${userRole}`);
+      console.log(`🔍 ComplaintsList - complaints: ${data?.length || 0}`);
+      console.log(`🔍 ComplaintsList - classifications: ${JSON.stringify(classifications)}`);
+      
+      setComplaints(data as Complaint[]);
+    } catch (error) {
+      console.error('Erro ao recarregar denúncias:', error);
+    }
+  };
 
-      // Filter by date if selected
-      if (dateFilter) {
-        const startDate = new Date(dateFilter);
-        const endDate = new Date(dateFilter);
-        endDate.setDate(endDate.getDate() + 1);
-        query = query.gte('created_at', startDate.toISOString()).lt('created_at', endDate.toISOString());
-      }
-
-      const { data, error } = await query;
+  const fetchComplaints = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setComplaints(data || []);
+      
+      console.log(`🔍 ComplaintsList - userRole: ${userRole}`);
+      console.log(`🔍 ComplaintsList - complaints: ${data?.length || 0}`);
+      console.log(`🔍 ComplaintsList - classifications: ${JSON.stringify(classifications)}`);
+      
+      setComplaints(data as Complaint[]);
     } catch (error) {
       console.error('Erro ao carregar denúncias:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar denúncias",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchSoundSetting = async () => {
+  const fetchSoundSettings = async () => {
     try {
       const { data, error } = await supabase
         .from('system_settings')
@@ -123,10 +164,13 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
         .eq('key', 'sound_notifications_enabled')
         .single();
 
-      if (error) throw error;
-      setSoundEnabled(data.value === true);
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+      
+      setSoundEnabled(data?.value === true);
     } catch (error) {
-      console.error('Erro ao carregar configuração de som:', error);
+      console.error('Erro ao carregar configurações de som:', error);
     }
   };
 
@@ -135,7 +179,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
       const { data, error } = await supabase
         .from('system_settings')
         .select('value')
-        .eq('key', 'public_classifications')
+        .eq('key', 'classifications')
         .single();
 
       if (error) throw error;
@@ -169,30 +213,34 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
             console.log('✅ Som tocado com sucesso!');
           })
           .catch((error) => {
-            console.error('❌ Erro ao tocar som:', error);
-            console.log('🔄 Tentando som alternativo...');
+            console.log('❌ Erro ao tocar som principal, tentando fallback:', error);
             
-            // Fallback: tentar um beep simples
-            const context = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const oscillator = context.createOscillator();
-            const gainNode = context.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(context.destination);
-            
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            gainNode.gain.setValueAtTime(0.3, context.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 1);
-            
-            oscillator.start();
-            oscillator.stop(context.currentTime + 1);
-            
-            console.log('🔔 Som alternativo tocado!');
+            // Fallback: criar som usando Web Audio API
+            try {
+              const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+              const oscillator = audioContext.createOscillator();
+              const gainNode = audioContext.createGain();
+              
+              oscillator.connect(gainNode);
+              gainNode.connect(audioContext.destination);
+              
+              oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+              oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
+              
+              gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+              gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+              
+              oscillator.start(audioContext.currentTime);
+              oscillator.stop(audioContext.currentTime + 0.5);
+              
+              console.log('✅ Som fallback tocado com sucesso!');
+            } catch (fallbackError) {
+              console.log('❌ Erro no fallback também:', fallbackError);
+            }
           });
       }
     } catch (error) {
-      console.error('💥 Erro geral ao tocar som:', error);
+      console.log('❌ Erro ao criar áudio:', error);
     }
   };
 
@@ -201,7 +249,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
       const { error } = await supabase
         .from('complaints')
         .update({ 
-          status: 'a_verificar' as ComplaintStatus,
+          status: 'a_verificar',
           processed_at: new Date().toISOString()
         })
         .eq('id', complaintId);
@@ -224,102 +272,38 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
     }
   };
 
-  useEffect(() => {
-    fetchComplaints();
-  }, [statusFilter, dateFilter]);
-
-  useEffect(() => {
-    fetchSoundSetting();
-    fetchClassifications();
-    
-    console.log('🚀 Iniciando configuração do realtime para:', userRole);
-    console.log('🔧 Profile atual:', profile?.full_name || 'Não identificado');
-    
-    // Setup realtime updates para denúncias
-    const channelName = `complaints-realtime-${userRole}-${Date.now()}`;
-    console.log('📡 Criando canal:', channelName);
-    
-    const complaintsChannel = supabase
-      .channel(channelName, {
-        config: {
-          broadcast: { self: true },
-          presence: { key: `${userRole}_${profile?.id || 'unknown'}` }
-        }
-      })
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Escuta INSERT, UPDATE e DELETE
-          schema: 'public',
-          table: 'complaints'
-        },
-        (payload) => {
-          console.log(`📢 REALTIME UPDATE RECEBIDO (${userRole}):`, payload);
-          console.log(`📢 Event Type (${userRole}):`, payload.eventType);
-          console.log(`📢 Novos dados (${userRole}):`, payload.new);
-          
-          // Tocar som apenas para novas denúncias
-          if (payload.eventType === 'INSERT' && soundEnabled) {
-            console.log(`🔊 Tocando som para nova denúncia (${userRole})...`);
-            playNotificationSound();
-          }
-          
-          // Atualizar lista de denúncias
-          console.log(`🔄 Atualizando lista de denúncias (${userRole})...`);
-          fetchComplaints();
-        }
-      )
-      .subscribe((status) => {
-        console.log('📡 Realtime status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Realtime conectado com sucesso!');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Erro no canal realtime');
-        } else if (status === 'TIMED_OUT') {
-          console.error('⏰ Timeout no realtime');
-        }
-      });
-
-    return () => {
-      console.log('🔌 Desconectando realtime...');
-      supabase.removeChannel(complaintsChannel);
-    };
-  }, [soundEnabled, userRole]);
-
-  const updateComplaintStatus = async (complaintId: string, newStatus: ComplaintStatus, systemIdentifier?: string) => {
+  const updateComplaintStatus = async (id: string, status: ComplaintStatus, systemIdentifier?: string) => {
     try {
       const updateData: any = {
-        status: newStatus,
-        processed_at: new Date().toISOString()
+        status,
+        attendant_id: user?.id,
+        processed_at: new Date().toISOString(),
+        classification: raiData.classification || ''
       };
 
       if (systemIdentifier) {
         updateData.system_identifier = systemIdentifier;
       }
 
-      // Se for cadastrada, adicionar o nome do atendente atual
-      if (newStatus === 'cadastrada' && profile) {
-        updateData.assigned_to = profile.full_name;
-      }
-
       const { error } = await supabase
         .from('complaints')
         .update(updateData)
-        .eq('id', complaintId);
+        .eq('id', id);
 
       if (error) throw error;
-
+      
       toast({
         title: "Sucesso",
-        description: `Denúncia marcada como ${newStatus}!`,
+        description: `Denúncia ${status === 'cadastrada' ? 'cadastrada' : 'atualizada'} com sucesso!`,
       });
       
+      setSelectedComplaint(null);
       fetchComplaints();
     } catch (error: any) {
       console.error('Erro ao atualizar status:', error);
       toast({
         title: "Erro",
-        description: "Erro ao atualizar status da denúncia",
+        description: "Erro ao atualizar denúncia",
         variant: "destructive",
       });
     }
@@ -331,8 +315,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
         .from('complaints')
         .update({ 
           status: 'finalizada' as ComplaintStatus,
-          processed_at: new Date().toISOString(),
-          assigned_to: profile?.full_name || 'Admin'
+          processed_at: new Date().toISOString()
         })
         .eq('id', complaintId);
 
@@ -340,11 +323,12 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
 
       toast({
         title: "Sucesso",
-        description: "Denúncia arquivada no histórico!",
+        description: "Denúncia arquivada no histórico",
       });
       
-      fetchComplaints();
-    } catch (error: any) {
+      setSelectedComplaint(null);
+      refetch();
+    } catch (error) {
       console.error('Erro ao arquivar denúncia:', error);
       toast({
         title: "Erro",
@@ -380,13 +364,16 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
         variant: "destructive",
       });
     }
-
   };
 
   const sendWhatsAppMessage = async (complaint: Complaint) => {
     try {
-      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-        body: { complaintId: complaint.id }
+      const { data, error } = await supabase.functions.invoke('send-whatsapp-secure', {
+        body: { 
+          phone: complaint.complainant_phone,
+          complaintId: complaint.id,
+          message: `Olá ${complaint.complainant_name}, sua denúncia foi registrada com sucesso!`
+        }
       });
 
       if (error) throw error;
@@ -419,13 +406,13 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
       // Create download link
       const blob = new Blob([data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `denuncias-${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(a);
-      a.click();
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `denuncias-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
 
       toast({
         title: "Sucesso",
@@ -477,57 +464,35 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Filters and Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="flex flex-col sm:flex-row gap-4 flex-1">
+    <div className="space-y-6">
+      {/* Search and filter controls */}
+      <div className="flex gap-4 mb-6">
+        <div className="flex-1">
           <Input
-            placeholder="Buscar denúncias..."
+            placeholder="Buscar por nome, endereço ou classificação..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-          />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Status</SelectItem>
-              <SelectItem value="nova">Novas</SelectItem>
-              <SelectItem value="cadastrada">Cadastradas</SelectItem>
-              <SelectItem value="finalizada">Finalizadas</SelectItem>
-              {userRole !== 'atendente' && (
-                <SelectItem value="a_verificar">A Verificar</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-          <Input
-            type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            className="w-[180px]"
-            placeholder="Filtrar por data"
           />
         </div>
-        
-        {userRole === 'super_admin' && (
-          <Button onClick={exportComplaintsPDF}>
-            <Download className="h-4 w-4 mr-2" />
-            Exportar PDF
-          </Button>
-        )}
+        <Button onClick={exportComplaintsPDF} variant="outline">
+          <Download className="h-4 w-4 mr-2" />
+          Exportar PDF
+        </Button>
       </div>
 
-      {/* Tabs for Complaints */}
       <Tabs defaultValue="novas" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="novas">Novas</TabsTrigger>
           <TabsTrigger value="historico">Histórico</TabsTrigger>
         </TabsList>
         
+        {/* Tab Novas */}
         <TabsContent value="novas">
           <Card>
-            <CardContent className="p-0">
+            <CardHeader>
+              <CardTitle>Denúncias Novas</CardTitle>
+            </CardHeader>
+            <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -541,14 +506,14 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                 </TableHeader>
                 <TableBody>
                   {filteredComplaints
-                     .filter(complaint => {
-                       // Para admin e super_admin, mostrar "nova", "a_verificar" e "verificado" na aba Novas
-                       if (userRole === 'admin' || userRole === 'super_admin') {
-                         return complaint.status === 'nova' || complaint.status === 'a_verificar' || complaint.status === 'verificado';
-                       }
-                       // Para atendentes, mostrar "nova" e "verificado"
-                       return complaint.status === 'nova' || complaint.status === 'verificado';
-                     })
+                    .filter(complaint => {
+                      // Para admin e super_admin, mostrar "nova", "a_verificar" e "verificado" na aba Novas
+                      if (userRole === 'admin' || userRole === 'super_admin') {
+                        return complaint.status === 'nova' || complaint.status === 'a_verificar' || complaint.status === 'verificado';
+                      }
+                      // Para atendentes, mostrar "nova" e "verificado"
+                      return complaint.status === 'nova' || complaint.status === 'verificado';
+                    })
                     .map((complaint) => (
                     <TableRow key={complaint.id}>
                       <TableCell>
@@ -559,7 +524,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{complaint.occurrence_type}</div>
+                          <div>{complaint.occurrence_type}</div>
                           <div className="text-sm text-gray-500">{complaint.classification}</div>
                         </div>
                       </TableCell>
@@ -580,519 +545,440 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                          <div className="flex space-x-2">
                             <Dialog>
                               <DialogTrigger asChild>
-                                <Button size="sm" variant="outline" onClick={() => setSelectedComplaint(complaint)}>
-                                  <Eye className="h-4 w-4" />
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => setSelectedComplaint(complaint)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Ver
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle>Detalhes da Denúncia</DialogTitle>
-                              </DialogHeader>
-                              {selectedComplaint && (
-                                <div className="space-y-6">
-                                  {/* Dados do Reclamante */}
-                                  <div className="space-y-3">
-                                    <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados do Reclamante</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <strong>Nome:</strong> {selectedComplaint.complainant_name}
-                                      </div>
-                                      <div>
-                                        <strong>Telefone:</strong> {selectedComplaint.complainant_phone}
-                                      </div>
-                                      <div>
-                                        <strong>Tipo:</strong> {selectedComplaint.complainant_type}
-                                      </div>
-                                      <div>
-                                        <strong>Bairro:</strong> {selectedComplaint.complainant_neighborhood}
-                                      </div>
-                                    </div>
-                                    <div className="grid grid-cols-4 gap-4">
-                                      <div className="col-span-2">
-                                        <strong>Endereço:</strong> {selectedComplaint.complainant_address}
-                                      </div>
-                                      <div>
-                                        <strong>Número:</strong> {selectedComplaint.complainant_number || 'N/A'}
-                                      </div>
-                                      <div>
-                                        <strong>Quadra:</strong> {selectedComplaint.complainant_block || 'N/A'}
-                                      </div>
-                                    </div>
-                                    {selectedComplaint.complainant_lot && (
-                                      <div>
-                                        <strong>Lote:</strong> {selectedComplaint.complainant_lot}
-                                      </div>
-                                    )}
-                                  </div>
+                              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle>Detalhes da Denúncia</DialogTitle>
+                                </DialogHeader>
+                               {selectedComplaint && (
+                                 <div className="space-y-6">
+                                   <div className="space-y-4">
+                                     <h3 className="text-lg font-semibold">Dados do Denunciante</h3>
+                                     <div className="grid grid-cols-2 gap-4">
+                                       <div>
+                                         <strong>Nome:</strong> {selectedComplaint.complainant_name}
+                                       </div>
+                                       <div>
+                                         <strong>Telefone:</strong> {selectedComplaint.complainant_phone}
+                                       </div>
+                                       <div>
+                                         <strong>Tipo:</strong> {selectedComplaint.complainant_type}
+                                       </div>
+                                       <div>
+                                         <strong>Bairro:</strong> {selectedComplaint.complainant_neighborhood}
+                                       </div>
+                                     </div>
+                                     
+                                     <div>
+                                       <strong>Endereço:</strong> {selectedComplaint.complainant_address}
+                                       {selectedComplaint.complainant_number && ` nº ${selectedComplaint.complainant_number}`}
+                                       {selectedComplaint.complainant_block && `, Quadra ${selectedComplaint.complainant_block}`}
+                                       {selectedComplaint.complainant_lot && `, Lote ${selectedComplaint.complainant_lot}`}
+                                     </div>
+                                   </div>
 
-                                  {/* Endereço da Ocorrência */}
-                                  <div className="space-y-3">
-                                    <h3 className="text-lg font-semibold text-primary border-b pb-2">Endereço da Ocorrência</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <strong>Tipo de Ocorrência:</strong> {selectedComplaint.occurrence_type}
-                                      </div>
-                                      <div>
-                                        <strong>Bairro:</strong> {selectedComplaint.occurrence_neighborhood}
-                                      </div>
-                                    </div>
-                                    <div className="grid grid-cols-4 gap-4">
-                                      <div className="col-span-2">
-                                        <strong>Endereço:</strong> {selectedComplaint.occurrence_address}
-                                      </div>
-                                      <div>
-                                        <strong>Número:</strong> {selectedComplaint.occurrence_number || 'N/A'}
-                                      </div>
-                                      <div>
-                                        <strong>Quadra:</strong> {selectedComplaint.occurrence_block || 'N/A'}
-                                      </div>
-                                    </div>
-                                    {selectedComplaint.occurrence_lot && (
-                                      <div>
-                                        <strong>Lote:</strong> {selectedComplaint.occurrence_lot}
-                                      </div>
-                                    )}
-                                    {selectedComplaint.occurrence_reference && (
-                                      <div>
-                                        <strong>Referência:</strong>
-                                        <p className="text-sm bg-muted p-2 rounded mt-1">{selectedComplaint.occurrence_reference}</p>
-                                      </div>
-                                    )}
-                                  </div>
+                                   <div className="space-y-4">
+                                     <h3 className="text-lg font-semibold">Endereço da Ocorrência</h3>
+                                     <div className="grid grid-cols-2 gap-4">
+                                       <div>
+                                         <strong>Tipo de Ocorrência:</strong> {selectedComplaint.occurrence_type}
+                                       </div>
+                                       <div>
+                                         <strong>Bairro:</strong> {selectedComplaint.occurrence_neighborhood}
+                                       </div>
+                                     </div>
+                                     
+                                     <div>
+                                       <strong>Endereço:</strong> {selectedComplaint.occurrence_address}
+                                       {selectedComplaint.occurrence_number && ` nº ${selectedComplaint.occurrence_number}`}
+                                       {selectedComplaint.occurrence_block && `, Quadra ${selectedComplaint.occurrence_block}`}
+                                       {selectedComplaint.occurrence_lot && `, Lote ${selectedComplaint.occurrence_lot}`}
+                                     </div>
+                                     
+                                     {selectedComplaint.occurrence_reference && (
+                                       <div>
+                                         <strong>Referência:</strong> {selectedComplaint.occurrence_reference}
+                                       </div>
+                                     )}
+                                   </div>
 
-                                  {/* Dados da Reclamação */}
-                                  <div className="space-y-3">
-                                    <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados da Reclamação</h3>
-                                    <div>
-                                      <strong>Narrativa:</strong>
-                                      <p className="text-sm bg-muted p-3 rounded mt-1">{selectedComplaint.narrative}</p>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      {selectedComplaint.occurrence_date && (
-                                        <div>
-                                          <strong>Data:</strong> {format(new Date(selectedComplaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}
-                                        </div>
-                                      )}
-                                      {selectedComplaint.occurrence_time && (
-                                        <div>
-                                          <strong>Hora:</strong> {selectedComplaint.occurrence_time}
-                                        </div>
-                                      )}
-                                      <div>
-                                        <strong>Classificação:</strong> {selectedComplaint.classification}
-                                      </div>
-                                      {selectedComplaint.assigned_to && (
-                                        <div>
-                                          <strong>Atribuído a:</strong> {selectedComplaint.assigned_to}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <strong>Status:</strong> {selectedComplaint.status}
-                                      </div>
-                                      {selectedComplaint.system_identifier && (
-                                        <div>
-                                          <strong>Identificador do Sistema:</strong> {selectedComplaint.system_identifier}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  
+                                   <div className="space-y-4">
+                                     <h3 className="text-lg font-semibold">Dados da Reclamação</h3>
+                                     
+                                     <div>
+                                       <strong>Narrativa:</strong>
+                                       <p className="mt-2 p-3 bg-gray-50 rounded-md">{selectedComplaint.narrative}</p>
+                                     </div>
+                                     
+                                     <div className="grid grid-cols-2 gap-4">
+                                       <div>
+                                         <strong>Classificação:</strong> {selectedComplaint.classification}
+                                       </div>
+                                       {selectedComplaint.assigned_to && (
+                                         <div>
+                                           <strong>Atribuído a:</strong> {selectedComplaint.assigned_to}
+                                         </div>
+                                       )}
+                                     </div>
+                                     <div className="grid grid-cols-2 gap-4">
+                                       <div>
+                                         <strong>Status:</strong> {selectedComplaint.status}
+                                       </div>
+                                       {selectedComplaint.system_identifier && (
+                                         <div>
+                                           <strong>Identificador do Sistema:</strong> {selectedComplaint.system_identifier}
+                                         </div>
+                                       )}
+                                     </div>
+                                   </div>
+                                   
                                    {/* Formulário RAI - mostrar para atendente e denúncia nova ou verificada */}
                                    {userRole === 'atendente' && (selectedComplaint.status === 'nova' || selectedComplaint.status === 'verificado') && (
-                                    <div className="space-y-4 border-t pt-4">
-                                      <h4 className="text-md font-semibold text-primary">Cadastrar com RAI</h4>
-                                      <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                          <Label htmlFor="rai-input">Número RAI *</Label>
-                                          <Input
-                                            id="rai-input"
-                                            type="text"
-                                            placeholder="Digite o número RAI"
-                                            value={raiData.rai}
-                                            onChange={(e) => setRaiData({ ...raiData, rai: e.target.value })}
-                                            className="mt-1"
-                                          />
-                                        </div>
-                                        
-                                        <div>
-                                          <Label htmlFor="classification-select">Classificação *</Label>
-                                          <Select 
-                                            value={raiData.classification} 
-                                            onValueChange={(value) => setRaiData({ ...raiData, classification: value })}
-                                          >
-                                            <SelectTrigger className="mt-1">
-                                              <SelectValue placeholder="Selecione uma classificação..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              {classifications.map((classification) => (
-                                                <SelectItem key={classification} value={classification}>
-                                                  {classification}
-                                                </SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
+                                     <div className="space-y-4 border-t pt-4">
+                                       <h4 className="text-md font-semibold text-primary">Cadastrar com RAI</h4>
+                                       <div className="grid grid-cols-2 gap-4">
+                                         <div>
+                                           <Label htmlFor="rai-input">Número RAI *</Label>
+                                           <Input
+                                             id="rai-input"
+                                             type="text"
+                                             placeholder="Digite o número RAI"
+                                             value={raiData.rai}
+                                             onChange={(e) => setRaiData(prev => ({ ...prev, rai: e.target.value }))}
+                                           />
+                                         </div>
+                                         <div>
+                                           <Label htmlFor="classification-select">Classificação *</Label>
+                                           <Select 
+                                             value={raiData.classification} 
+                                             onValueChange={(value) => setRaiData(prev => ({ ...prev, classification: value }))}
+                                           >
+                                             <SelectTrigger>
+                                               <SelectValue placeholder="Selecione uma classificação..." />
+                                             </SelectTrigger>
+                                             <SelectContent>
+                                               {classifications.map((classification) => (
+                                                 <SelectItem key={classification} value={classification}>
+                                                   {classification}
+                                                 </SelectItem>
+                                               ))}
+                                             </SelectContent>
+                                           </Select>
+                                         </div>
+                                       </div>
+                                     </div>
+                                   )}
 
-                                    <div className="flex space-x-2">
-                                      {userRole === 'atendente' && (selectedComplaint.status === 'nova' || selectedComplaint.status === 'verificado') && (
-                                        <>
-                                          <Button 
-                                            onClick={() => sendToAdmin(selectedComplaint.id)}
-                                            variant="secondary"
-                                          >
-                                            <Send className="h-4 w-4 mr-2" />
-                                            Enviar para Admin
-                                          </Button>
-                                          
-                                          <Button 
-                                            onClick={() => {
-                                              if (!raiData.rai.trim()) {
-                                                toast({
-                                                  title: "Erro",
-                                                  description: "Por favor, digite o número RAI",
-                                                  variant: "destructive",
-                                                });
-                                                return;
-                                              }
-                                              
-                                              if (!raiData.classification) {
-                                                toast({
-                                                  title: "Erro", 
-                                                  description: "Por favor, selecione uma classificação",
-                                                  variant: "destructive",
-                                                });
-                                                return;
-                                              }
-                                              
-                                              updateComplaintStatus(selectedComplaint.id, 'cadastrada', raiData.rai);
-                                              setRaiData({ rai: '', classification: '' });
-                                            }}
-                                            variant="default"
-                                          >
-                                            <Calendar className="h-4 w-4 mr-2" />
-                                            Cadastrar com RAI
-                                          </Button>
-                                        </>
-                                      )}
-                                      
-                                      {/* Botões para admin/super_admin quando status for "a_verificar" */}
-                                      {(userRole === 'admin' || userRole === 'super_admin') && selectedComplaint.status === 'a_verificar' && (
-                                        <>
-                                          <Button 
-                                            onClick={() => archiveComplaint(selectedComplaint.id)}
-                                            variant="destructive"
-                                          >
-                                            <Archive className="h-4 w-4 mr-2" />
-                                            Arquivar
-                                          </Button>
-                                          
-                                          <Button 
-                                            onClick={() => markAsVerified(selectedComplaint.id)}
-                                            variant="default"
-                                          >
-                                            <Check className="h-4 w-4 mr-2" />
-                                            Verificado
-                                          </Button>
-                                        </>
-                                      )}
-                                      
-                                      {userRole !== 'admin' && selectedComplaint.status === 'nova' && userRole !== 'atendente' && (
-                                        <Button 
-                                          onClick={() => {
-                                            const identifier = window.prompt('Digite o identificador do sistema:');
-                                            if (identifier) {
-                                              updateComplaintStatus(selectedComplaint.id, 'cadastrada', identifier);
-                                            }
-                                          }}
-                                        >
-                                          <Calendar className="h-4 w-4 mr-2" />
-                                          Marcar como Cadastrada
-                                        </Button>
-                                      )}
-                                      {userRole === 'super_admin' && (
-                                        <Button onClick={() => sendWhatsAppMessage(selectedComplaint)}>
-                                          <MessageSquare className="h-4 w-4 mr-2" />
-                                          Enviar WhatsApp
-                                        </Button>
-                                      )}
-                                    </div>
-                                </div>
-                              )}
-                             </DialogContent>
-                           </Dialog>
-                           
-                             {userRole === 'atendente' && (complaint.status === 'nova' || complaint.status === 'verificado') && (
-                               <Button 
-                                 size="sm" 
-                                 variant="secondary"
-                                 onClick={() => sendToAdmin(complaint.id)}
-                                 title="Enviar para Admin"
-                               >
-                                 <Send className="h-4 w-4 mr-1" />
-                                 Enviar
-                               </Button>
-                             )}
-                             
+                                   <div className="flex space-x-2">
+                                     {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
+                                       <Button 
+                                         onClick={() => sendToAdmin(selectedComplaint.id)}
+                                         variant="secondary"
+                                       >
+                                         <Send className="h-4 w-4 mr-2" />
+                                         Enviar para Admin
+                                       </Button>
+                                     )}
+                                       
+                                     {userRole === 'atendente' && (selectedComplaint.status === 'nova' || selectedComplaint.status === 'verificado') && (
+                                       <Button 
+                                         onClick={() => {
+                                           if (!raiData.rai.trim()) {
+                                             toast({
+                                               title: "Erro",
+                                               description: "Por favor, digite o número RAI",
+                                               variant: "destructive",
+                                             });
+                                             return;
+                                           }
+                                           
+                                           if (!raiData.classification) {
+                                             toast({
+                                               title: "Erro", 
+                                               description: "Por favor, selecione uma classificação",
+                                               variant: "destructive",
+                                             });
+                                             return;
+                                           }
+                                           
+                                           updateComplaintStatus(selectedComplaint.id, 'cadastrada', raiData.rai);
+                                           setRaiData({ rai: '', classification: '' });
+                                         }}
+                                         variant="default"
+                                       >
+                                         <Calendar className="h-4 w-4 mr-2" />
+                                         Cadastrar com RAI
+                                       </Button>
+                                     )}
+                                       
+                                     {/* Botões para admin/super_admin quando status for "a_verificar" */}
+                                     {(userRole === 'admin' || userRole === 'super_admin') && selectedComplaint.status === 'a_verificar' && (
+                                       <>
+                                         <Button 
+                                           onClick={() => archiveComplaint(selectedComplaint.id)}
+                                           variant="destructive"
+                                         >
+                                           <Archive className="h-4 w-4 mr-2" />
+                                           Arquivar
+                                         </Button>
+                                         
+                                         <Button 
+                                           onClick={() => markAsVerified(selectedComplaint.id)}
+                                           variant="default"
+                                         >
+                                           <Check className="h-4 w-4 mr-2" />
+                                           Verificado
+                                         </Button>
+                                       </>
+                                     )}
+                                     
+                                     {userRole !== 'admin' && selectedComplaint.status === 'nova' && userRole !== 'atendente' && (
+                                       <Button 
+                                         onClick={() => {
+                                           const identifier = window.prompt('Digite o identificador do sistema:');
+                                           if (identifier) {
+                                             updateComplaintStatus(selectedComplaint.id, 'cadastrada', identifier);
+                                           }
+                                         }}
+                                       >
+                                         <Calendar className="h-4 w-4 mr-2" />
+                                         Marcar como Cadastrada
+                                       </Button>
+                                     )}
+                                     {userRole === 'super_admin' && (
+                                       <Button onClick={() => sendWhatsAppMessage(selectedComplaint)}>
+                                         <MessageSquare className="h-4 w-4 mr-2" />
+                                         Enviar WhatsApp
+                                       </Button>
+                                     )}
+                                   </div>
+                               </div>
+                               )}
+                              </DialogContent>
+                            </Dialog>
+                            
+                            {userRole === 'atendente' && complaint.status === 'nova' && (
+                              <Button 
+                                size="sm" 
+                                variant="secondary"
+                                onClick={() => sendToAdmin(complaint.id)}
+                                title="Enviar para Admin"
+                              >
+                                <Send className="h-4 w-4 mr-1" />
+                                Enviar
+                              </Button>
+                            )}
+                            
+                        </div>
+                     </TableCell>
+                   </TableRow>
+                 ))}
+               </TableBody>
+             </Table>
+           </CardContent>
+         </Card>
+       </TabsContent>
+
+       {/* Tab Histórico */}
+       <TabsContent value="historico">
+         <Card>
+           <CardHeader>
+             <CardTitle>Histórico de Denúncias</CardTitle>
+           </CardHeader>
+           <CardContent>
+             <Table>
+               <TableHeader>
+                 <TableRow>
+                   <TableHead>Denunciante</TableHead>
+                   <TableHead>Ocorrência</TableHead>
+                   <TableHead>Endereço</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Data Recebida</TableHead>
+                   <TableHead>Data Cadastro</TableHead>
+                   <TableHead>Atendente</TableHead>
+                   <TableHead>Ações</TableHead>
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+                 {filteredComplaints
+                   .filter(complaint => {
+                     // Excluir "nova" e "verificado" da aba histórico
+                     if (complaint.status === 'nova' || complaint.status === 'verificado') return false;
+                     // Para admin e super_admin, excluir "a_verificar" do histórico (pois aparece em Novas)
+                     if ((userRole === 'admin' || userRole === 'super_admin') && complaint.status === 'a_verificar') return false;
+                     // Para atendentes, ocultar denúncias "A Verificar" e "finalizada"
+                     if (userRole === 'atendente' && (complaint.status === 'a_verificar' || complaint.status === 'finalizada')) return false;
+                     return true;
+                   })
+                   .map((complaint) => (
+                   <TableRow key={complaint.id}>
+                     <TableCell>
+                       <div>
+                         <div className="font-medium">{complaint.complainant_name}</div>
+                         <div className="text-sm text-gray-500">{complaint.complainant_phone}</div>
+                       </div>
+                     </TableCell>
+                     <TableCell>
+                       <div>
+                         <div>{complaint.occurrence_type}</div>
+                         <div className="text-sm text-gray-500">{complaint.classification}</div>
+                       </div>
+                     </TableCell>
+                     <TableCell>
+                       <div>
+                         <div>{complaint.occurrence_address}</div>
+                         <div className="text-sm text-gray-500">{complaint.occurrence_neighborhood}</div>
+                       </div>
+                     </TableCell>
+                     <TableCell>{getStatusBadge(complaint.status)}</TableCell>
+                     <TableCell>
+                       <div>
+                         <div>{new Date(complaint.created_at).toLocaleDateString('pt-BR')}</div>
+                         <div className="text-sm text-gray-500">{new Date(complaint.created_at).toLocaleTimeString('pt-BR')}</div>
+                       </div>
+                     </TableCell>
+                     <TableCell>
+                       {complaint.processed_at ? (
+                         <div>
+                           <div>{new Date(complaint.processed_at).toLocaleDateString('pt-BR')}</div>
+                           <div className="text-sm text-gray-500">{new Date(complaint.processed_at).toLocaleTimeString('pt-BR')}</div>
                          </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                       ) : (
+                         <span className="text-gray-400">-</span>
+                       )}
+                     </TableCell>
+                     <TableCell>
+                       {complaint.attendant_id ? (
+                         <span className="text-sm">{complaint.attendant_id}</span>
+                       ) : (
+                         <span className="text-gray-400">-</span>
+                       )}
+                     </TableCell>
+                     <TableCell>
+                       <Dialog>
+                         <DialogTrigger asChild>
+                           <Button 
+                             size="sm" 
+                             variant="outline" 
+                             onClick={() => setSelectedComplaint(complaint)}
+                           >
+                             <Eye className="h-4 w-4 mr-1" />
+                             Ver
+                           </Button>
+                         </DialogTrigger>
+                         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                           <DialogHeader>
+                             <DialogTitle>Detalhes da Denúncia</DialogTitle>
+                           </DialogHeader>
+                           {selectedComplaint && (
+                             <div className="space-y-6">
+                               <div className="space-y-4">
+                                 <h3 className="text-lg font-semibold">Dados do Denunciante</h3>
+                                 <div className="grid grid-cols-2 gap-4">
+                                   <div>
+                                     <strong>Nome:</strong> {selectedComplaint.complainant_name}
+                                   </div>
+                                   <div>
+                                     <strong>Telefone:</strong> {selectedComplaint.complainant_phone}
+                                   </div>
+                                   <div>
+                                     <strong>Tipo:</strong> {selectedComplaint.complainant_type}
+                                   </div>
+                                   <div>
+                                     <strong>Bairro:</strong> {selectedComplaint.complainant_neighborhood}
+                                   </div>
+                                 </div>
+                                 
+                                 <div>
+                                   <strong>Endereço:</strong> {selectedComplaint.complainant_address}
+                                   {selectedComplaint.complainant_number && ` nº ${selectedComplaint.complainant_number}`}
+                                   {selectedComplaint.complainant_block && `, Quadra ${selectedComplaint.complainant_block}`}
+                                   {selectedComplaint.complainant_lot && `, Lote ${selectedComplaint.complainant_lot}`}
+                                 </div>
+                               </div>
 
-        <TabsContent value="historico">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Denunciante</TableHead>
-                    <TableHead>Ocorrência</TableHead>
-                    <TableHead>Endereço</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Data Recebida</TableHead>
-                    <TableHead>Data Cadastro</TableHead>
-                    <TableHead>Atendente</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                   {filteredComplaints
-                     .filter(complaint => {
-                       // Excluir "nova" e "verificado" da aba histórico
-                       if (complaint.status === 'nova' || complaint.status === 'verificado') return false;
-                       // Para admin e super_admin, excluir "a_verificar" do histórico (pois aparece em Novas)
-                       if ((userRole === 'admin' || userRole === 'super_admin') && complaint.status === 'a_verificar') return false;
-                       // Para atendentes, ocultar denúncias "A Verificar" e "finalizada"
-                       if (userRole === 'atendente' && (complaint.status === 'a_verificar' || complaint.status === 'finalizada')) return false;
-                       return true;
-                     })
-                    .map((complaint) => (
-                    <TableRow key={complaint.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{complaint.complainant_name}</div>
-                          <div className="text-sm text-gray-500">{complaint.complainant_phone}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{complaint.occurrence_type}</div>
-                          <div className="text-sm text-gray-500">{complaint.classification}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div>{complaint.occurrence_address}</div>
-                          <div className="text-sm text-gray-500">{complaint.occurrence_neighborhood}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(complaint.status)}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div>{new Date(complaint.created_at).toLocaleDateString('pt-BR')}</div>
-                          <div className="text-sm text-gray-500">{new Date(complaint.created_at).toLocaleTimeString('pt-BR')}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {complaint.processed_at ? (
-                          <div>
-                            <div>{new Date(complaint.processed_at).toLocaleDateString('pt-BR')}</div>
-                            <div className="text-sm text-gray-500">{new Date(complaint.processed_at).toLocaleTimeString('pt-BR')}</div>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {complaint.assigned_to || <span className="text-gray-400">-</span>}
-                      </TableCell>
-                       <TableCell>
-                         <div className="flex space-x-2">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button size="sm" variant="outline" onClick={() => setSelectedComplaint(complaint)}>
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle>Detalhes da Denúncia</DialogTitle>
-                              </DialogHeader>
-                              {selectedComplaint && (
-                                <div className="space-y-6">
-                                  {/* Informações de Controle - mostrar apenas no histórico */}
-                                  {selectedComplaint.status !== 'nova' && (
-                                    <div className="space-y-3 bg-muted/30 p-4 rounded-lg">
-                                      <h3 className="text-lg font-semibold text-primary border-b pb-2">Informações de Controle</h3>
-                                      <div className="grid grid-cols-3 gap-4">
-                                        <div>
-                                          <strong>Data/Hora Recebida:</strong>
-                                          <div className="text-sm">
-                                            <div>{new Date(selectedComplaint.created_at).toLocaleDateString('pt-BR')}</div>
-                                            <div className="text-gray-500">{new Date(selectedComplaint.created_at).toLocaleTimeString('pt-BR')}</div>
-                                          </div>
-                                        </div>
-                                        <div>
-                                          <strong>Data/Hora Cadastro:</strong>
-                                          <div className="text-sm">
-                                            {selectedComplaint.processed_at ? (
-                                              <>
-                                                <div>{new Date(selectedComplaint.processed_at).toLocaleDateString('pt-BR')}</div>
-                                                <div className="text-gray-500">{new Date(selectedComplaint.processed_at).toLocaleTimeString('pt-BR')}</div>
-                                              </>
-                                            ) : (
-                                              <span className="text-gray-400">-</span>
-                                            )}
-                                          </div>
-                                        </div>
-                                        <div>
-                                          <strong>Atendente:</strong>
-                                          <div className="text-sm">
-                                            {selectedComplaint.assigned_to || <span className="text-gray-400">-</span>}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
+                               <div className="space-y-4">
+                                 <h3 className="text-lg font-semibold">Endereço da Ocorrência</h3>
+                                 <div className="grid grid-cols-2 gap-4">
+                                   <div>
+                                     <strong>Tipo de Ocorrência:</strong> {selectedComplaint.occurrence_type}
+                                   </div>
+                                   <div>
+                                     <strong>Bairro:</strong> {selectedComplaint.occurrence_neighborhood}
+                                   </div>
+                                 </div>
+                                 
+                                 <div>
+                                   <strong>Endereço:</strong> {selectedComplaint.occurrence_address}
+                                   {selectedComplaint.occurrence_number && ` nº ${selectedComplaint.occurrence_number}`}
+                                   {selectedComplaint.occurrence_block && `, Quadra ${selectedComplaint.occurrence_block}`}
+                                   {selectedComplaint.occurrence_lot && `, Lote ${selectedComplaint.occurrence_lot}`}
+                                 </div>
+                                 
+                                 {selectedComplaint.occurrence_reference && (
+                                   <div>
+                                     <strong>Referência:</strong> {selectedComplaint.occurrence_reference}
+                                   </div>
+                                 )}
+                               </div>
 
-                                  {/* Dados do Reclamante */}
-                                  <div className="space-y-3">
-                                    <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados do Reclamante</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <strong>Nome:</strong> {selectedComplaint.complainant_name}
-                                      </div>
-                                      <div>
-                                        <strong>Telefone:</strong> {selectedComplaint.complainant_phone}
-                                      </div>
-                                      <div>
-                                        <strong>Tipo:</strong> {selectedComplaint.complainant_type}
-                                      </div>
-                                      <div>
-                                        <strong>Bairro:</strong> {selectedComplaint.complainant_neighborhood}
-                                      </div>
-                                    </div>
-                                    <div className="grid grid-cols-4 gap-4">
-                                      <div className="col-span-2">
-                                        <strong>Endereço:</strong> {selectedComplaint.complainant_address}
-                                      </div>
-                                      <div>
-                                        <strong>Número:</strong> {selectedComplaint.complainant_number || 'N/A'}
-                                      </div>
-                                      <div>
-                                        <strong>Quadra:</strong> {selectedComplaint.complainant_block || 'N/A'}
-                                      </div>
-                                    </div>
-                                    {selectedComplaint.complainant_lot && (
-                                      <div>
-                                        <strong>Lote:</strong> {selectedComplaint.complainant_lot}
-                                      </div>
-                                    )}
-                                  </div>
+                               <div className="space-y-4">
+                                 <h3 className="text-lg font-semibold">Dados da Reclamação</h3>
+                                 
+                                 <div>
+                                   <strong>Narrativa:</strong>
+                                   <p className="mt-2 p-3 bg-gray-50 rounded-md">{selectedComplaint.narrative}</p>
+                                 </div>
+                                 
+                                 <div className="grid grid-cols-2 gap-4">
+                                   <div>
+                                     <strong>Classificação:</strong> {selectedComplaint.classification}
+                                   </div>
+                                   {selectedComplaint.assigned_to && (
+                                     <div>
+                                       <strong>Atribuído a:</strong> {selectedComplaint.assigned_to}
+                                     </div>
+                                   )}
+                                 </div>
+                                 <div className="grid grid-cols-2 gap-4">
+                                   <div>
+                                     <strong>Status:</strong> {selectedComplaint.status}
+                                   </div>
+                                   {selectedComplaint.system_identifier && (
+                                     <div>
+                                       <strong>Identificador do Sistema:</strong> {selectedComplaint.system_identifier}
+                                     </div>
+                                   )}
+                                 </div>
+                               </div>
+                             </div>
+                           )}
+                         </DialogContent>
+                       </Dialog>
+                     </TableCell>
+                   </TableRow>
+                 ))}
+               </TableBody>
+             </Table>
+           </CardContent>
+         </Card>
+       </TabsContent>
+     </Tabs>
 
-                                  {/* Endereço da Ocorrência */}
-                                  <div className="space-y-3">
-                                    <h3 className="text-lg font-semibold text-primary border-b pb-2">Endereço da Ocorrência</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <strong>Tipo de Ocorrência:</strong> {selectedComplaint.occurrence_type}
-                                      </div>
-                                      <div>
-                                        <strong>Bairro:</strong> {selectedComplaint.occurrence_neighborhood}
-                                      </div>
-                                    </div>
-                                    <div className="grid grid-cols-4 gap-4">
-                                      <div className="col-span-2">
-                                        <strong>Endereço:</strong> {selectedComplaint.occurrence_address}
-                                      </div>
-                                      <div>
-                                        <strong>Número:</strong> {selectedComplaint.occurrence_number || 'N/A'}
-                                      </div>
-                                      <div>
-                                        <strong>Quadra:</strong> {selectedComplaint.occurrence_block || 'N/A'}
-                                      </div>
-                                    </div>
-                                    {selectedComplaint.occurrence_lot && (
-                                      <div>
-                                        <strong>Lote:</strong> {selectedComplaint.occurrence_lot}
-                                      </div>
-                                    )}
-                                    {selectedComplaint.occurrence_reference && (
-                                      <div>
-                                        <strong>Referência:</strong>
-                                        <p className="text-sm bg-muted p-2 rounded mt-1">{selectedComplaint.occurrence_reference}</p>
-                                      </div>
-                                    )}
-                                  </div>
+     {filteredComplaints.length === 0 && (
+       <div className="text-center py-8 text-gray-500">
+         Nenhuma denúncia encontrada com os filtros aplicados.
+       </div>
+     )}
 
-                                  {/* Dados da Reclamação */}
-                                  <div className="space-y-3">
-                                    <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados da Reclamação</h3>
-                                    <div>
-                                      <strong>Narrativa:</strong>
-                                      <p className="text-sm bg-muted p-3 rounded mt-1">{selectedComplaint.narrative}</p>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      {selectedComplaint.occurrence_date && (
-                                        <div>
-                                          <strong>Data:</strong> {format(new Date(selectedComplaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}
-                                        </div>
-                                      )}
-                                      {selectedComplaint.occurrence_time && (
-                                        <div>
-                                          <strong>Hora:</strong> {selectedComplaint.occurrence_time}
-                                        </div>
-                                      )}
-                                      <div>
-                                        <strong>Classificação:</strong> {selectedComplaint.classification}
-                                      </div>
-                                      {selectedComplaint.assigned_to && (
-                                        <div>
-                                          <strong>Atribuído a:</strong> {selectedComplaint.assigned_to}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <strong>Status:</strong> {selectedComplaint.status}
-                                      </div>
-                                      {selectedComplaint.system_identifier && (
-                                        <div>
-                                          <strong>Identificador do Sistema:</strong> {selectedComplaint.system_identifier}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                             </DialogContent>
-                           </Dialog>
-                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {filteredComplaints.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          Nenhuma denúncia encontrada com os filtros aplicados.
-        </div>
-      )}
-
-    </div>
-  );
+   </div>
+ );
 };
