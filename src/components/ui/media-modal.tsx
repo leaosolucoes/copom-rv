@@ -91,18 +91,23 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center p-4">
-                {/* Video HTML5 que reproduz melhor .MOV */}
-                <div className="w-full max-w-4xl h-[70vh] bg-black rounded overflow-hidden">
+                {/* Video HTML5 com thumbnail/preview */}
+                <div className="relative w-full max-w-4xl h-[70vh] bg-black rounded overflow-hidden">
                   <video
                     key={media[currentIndex]}
                     className="w-full h-full object-contain"
                     controls
                     preload="metadata"
                     playsInline
+                    poster={media[currentIndex] + "#t=1"} // Gera thumbnail do segundo 1
                     onLoadStart={() => {
                       console.log('🎬 Carregando vídeo:', media[currentIndex]);
                       setIsLoading(true);
                       setVideoError(false);
+                    }}
+                    onLoadedMetadata={() => {
+                      console.log('📊 Metadata carregada:', media[currentIndex]);
+                      setIsLoading(false);
                     }}
                     onCanPlay={() => {
                       console.log('✅ Vídeo pronto:', media[currentIndex]);
@@ -125,17 +130,26 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                     Seu navegador não suporta reprodução deste vídeo.
                   </video>
                   
+                  {/* Overlay de thumbnail customizado caso o poster não funcione */}
                   {isLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/75">
-                      <div className="text-white text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-900/90 backdrop-blur-sm">
+                      <div className="text-center text-white">
+                        <div className="relative">
+                          <div className="w-24 h-24 bg-black/50 rounded-full flex items-center justify-center mb-4 mx-auto">
+                            <Play className="h-8 w-8 text-white ml-1" />
+                          </div>
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
+                        </div>
                         <p className="text-sm">Carregando vídeo...</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {media[currentIndex].split('/').pop()}
+                        </p>
                       </div>
                     </div>
                   )}
                   
                   {videoError && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/75">
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-900/90">
                       <div className="text-center text-white p-8">
                         <AlertCircle className="h-12 w-12 mx-auto mb-4 text-yellow-400" />
                         <h3 className="text-lg font-semibold mb-2">Erro na reprodução</h3>
