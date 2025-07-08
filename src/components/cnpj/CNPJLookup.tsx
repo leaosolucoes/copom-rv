@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,6 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Search, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 
 interface CNPJData {
   cnpj: string;
@@ -41,7 +44,30 @@ export function CNPJLookup() {
   const [cnpjData, setCnpjData] = useState<CNPJData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string>('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'public_logo_url')
+          .maybeSingle();
+
+        if (error) throw error;
+        
+        if (data?.value) {
+          setLogoUrl(data.value as string);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar logo:', error);
+      }
+    };
+
+    fetchLogo();
+  }, []);
 
   const formatCNPJ = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -106,103 +132,160 @@ export function CNPJLookup() {
     }
   };
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
     if (!cnpjData) return;
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    
-    // Título
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Consulta de CNPJ', pageWidth / 2, 20, { align: 'center' });
-    
-    // Informações principais
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    
-    let yPos = 40;
-    const lineHeight = 8;
-    
-    const addLine = (label: string, value: string) => {
-      doc.setFont('helvetica', 'bold');
-      doc.text(`${label}:`, 20, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(value || 'Não informado', 70, yPos);
-      yPos += lineHeight;
-    };
-    
-    addLine('CNPJ', formatCNPJ(cnpjData.cnpj));
-    addLine('Razão Social', cnpjData.nome);
-    addLine('Nome Fantasia', cnpjData.fantasia || 'Não informado');
-    addLine('Situação', cnpjData.situacao);
-    addLine('Data da Situação', cnpjData.data_situacao);
-    addLine('Tipo', cnpjData.tipo);
-    addLine('Porte', cnpjData.porte);
-    addLine('Natureza Jurídica', cnpjData.natureza_juridica);
-    
-    yPos += 5;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Endereço:', 20, yPos);
-    yPos += lineHeight;
-    
-    const endereco = `${cnpjData.logradouro}, ${cnpjData.numero}${cnpjData.complemento ? ` - ${cnpjData.complemento}` : ''}`;
-    const endereco2 = `${cnpjData.bairro} - ${cnpjData.municipio}/${cnpjData.uf}`;
-    const endereco3 = `CEP: ${cnpjData.cep}`;
-    
-    doc.setFont('helvetica', 'normal');
-    doc.text(endereco, 20, yPos);
-    yPos += lineHeight;
-    doc.text(endereco2, 20, yPos);
-    yPos += lineHeight;
-    doc.text(endereco3, 20, yPos);
-    yPos += lineHeight;
-    
-    if (cnpjData.telefone) {
-      addLine('Telefone', cnpjData.telefone);
-    }
-    if (cnpjData.email) {
-      addLine('E-mail', cnpjData.email);
-    }
-    
-    addLine('Capital Social', cnpjData.capital_social);
-    
-    yPos += 5;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Atividade Principal:', 20, yPos);
-    yPos += lineHeight;
-    
-    if (cnpjData.atividade_principal && cnpjData.atividade_principal.length > 0) {
-      doc.setFont('helvetica', 'normal');
-      doc.text(`${cnpjData.atividade_principal[0].code} - ${cnpjData.atividade_principal[0].text}`, 20, yPos);
-      yPos += lineHeight;
-    }
-    
-    if (cnpjData.atividades_secundarias && cnpjData.atividades_secundarias.length > 0) {
-      yPos += 5;
-      doc.setFont('helvetica', 'bold');
-      doc.text('Atividades Secundárias:', 20, yPos);
-      yPos += lineHeight;
+    try {
+      // Criar PDF usando jsPDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
       
-      doc.setFont('helvetica', 'normal');
-      cnpjData.atividades_secundarias.forEach(atividade => {
-        if (yPos > 270) {
-          doc.addPage();
-          yPos = 20;
+      // Configurar fontes
+      pdf.setFont('helvetica', 'bold');
+      
+      let yPosition = 30;
+      
+      // Adicionar logo se disponível
+      if (logoUrl) {
+        try {
+          const logoResponse = await fetch(logoUrl);
+          if (logoResponse.ok) {
+            const logoBlob = await logoResponse.blob();
+            const logoBase64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(logoBlob);
+            });
+            
+            const imageFormat = logoBlob.type.includes('png') ? 'PNG' : 
+                               logoBlob.type.includes('jpeg') || logoBlob.type.includes('jpg') ? 'JPEG' : 'PNG';
+            
+            pdf.addImage(logoBase64, imageFormat, 20, 10, 30, 30);
+          }
+          
+          pdf.setFontSize(18);
+          pdf.text('CONSULTA DE CNPJ', 60, 20);
+          yPosition = 50;
+        } catch (logoError) {
+          console.error('Erro ao carregar logo:', logoError);
+          pdf.setFontSize(18);
+          pdf.text('CONSULTA DE CNPJ', 20, 20);
+          yPosition = 30;
         }
-        doc.text(`${atividade.code} - ${atividade.text}`, 20, yPos);
-        yPos += lineHeight;
+      } else {
+        pdf.setFontSize(18);
+        pdf.text('CONSULTA DE CNPJ', 20, 20);
+        yPosition = 30;
+      }
+      
+      // Adicionar informações da consulta
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      
+      const today = new Date();
+      pdf.text(`Data da consulta: ${format(today, 'dd/MM/yyyy HH:mm')}`, 20, yPosition + 5);
+      
+      yPosition += 25;
+
+      // Dados da empresa
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14);
+      pdf.text('DADOS DA EMPRESA', 20, yPosition);
+      yPosition += 15;
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+
+      const empresaData = [
+        ['CNPJ', formatCNPJ(cnpjData.cnpj) || '-'],
+        ['Razão Social', cnpjData.nome || '-'],
+        ['Nome Fantasia', cnpjData.fantasia || '-'],
+        ['Situação', cnpjData.situacao || '-'],
+        ['Data da Situação', cnpjData.data_situacao || '-'],
+        ['Porte', cnpjData.porte || '-'],
+        ['Natureza Jurídica', cnpjData.natureza_juridica || '-'],
+        ['Capital Social', cnpjData.capital_social || '-'],
+        ['Tipo', cnpjData.tipo || '-'],
+        ['Telefone', cnpjData.telefone || '-'],
+        ['Email', cnpjData.email || '-'],
+        ['Endereço', `${cnpjData.logradouro || ''}, ${cnpjData.numero || ''}`],
+        ['Complemento', cnpjData.complemento || '-'],
+        ['Bairro', cnpjData.bairro || '-'],
+        ['Município', cnpjData.municipio || '-'],
+        ['UF', cnpjData.uf || '-'],
+        ['CEP', cnpjData.cep || '-'],
+      ];
+
+      // Adicionar dados usando autoTable
+      autoTable(pdf, {
+        body: empresaData,
+        startY: yPosition,
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+        },
+        columnStyles: {
+          0: { cellWidth: 40, fontStyle: 'bold' },
+          1: { cellWidth: 130 },
+        },
+        margin: { left: 20, right: 20 },
+      });
+
+      // Atividades (se existirem)
+      if (cnpjData.atividade_principal || cnpjData.atividades_secundarias) {
+        const finalY = (pdf as any).lastAutoTable.finalY + 20;
+        
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.text('ATIVIDADES', 20, finalY);
+        
+        let atividadesData = [];
+        
+        if (cnpjData.atividade_principal) {
+          atividadesData.push(['Principal', `${cnpjData.atividade_principal[0]?.code || ''} - ${cnpjData.atividade_principal[0]?.text || ''}`]);
+        }
+        
+        if (cnpjData.atividades_secundarias && cnpjData.atividades_secundarias.length > 0) {
+          cnpjData.atividades_secundarias.forEach((atividade: any, index: number) => {
+            atividadesData.push([
+              index === 0 ? 'Secundárias' : '',
+              `${atividade.code || ''} - ${atividade.text || ''}`
+            ]);
+          });
+        }
+
+        autoTable(pdf, {
+          body: atividadesData,
+          startY: finalY + 10,
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+          },
+          columnStyles: {
+            0: { cellWidth: 25, fontStyle: 'bold' },
+            1: { cellWidth: 145 },
+          },
+          margin: { left: 20, right: 20 },
+        });
+      }
+
+      // Salvar PDF
+      const fileName = `consulta-cnpj-${cnpjData.cnpj}-${format(today, 'yyyy-MM-dd')}.pdf`;
+      pdf.save(fileName);
+
+      toast({
+        title: "Sucesso",
+        description: "Relatório de CNPJ gerado com sucesso!",
+      });
+    } catch (error: any) {
+      console.error('Erro ao gerar PDF do CNPJ:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao gerar relatório PDF do CNPJ",
+        variant: "destructive",
       });
     }
-    
-    // Data da consulta
-    yPos += 10;
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(10);
-    doc.text(`Consulta realizada em: ${new Date().toLocaleString('pt-BR')}`, 20, yPos);
-    
-    // Salvar o PDF
-    doc.save(`CNPJ_${cnpjData.cnpj}.pdf`);
   };
 
   return (
