@@ -387,24 +387,25 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                   <TableCell>
                     {new Date(complaint.created_at).toLocaleDateString('pt-BR')}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline" onClick={() => setSelectedComplaint(complaint)}>
-                            <Eye className="h-4 w-4" />
+                   <TableCell>
+                     <div className="flex space-x-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" onClick={() => setSelectedComplaint(complaint)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                        
+                        {userRole === 'atendente' && complaint.status === 'nova' && (
+                          <Button 
+                            size="sm" 
+                            variant="secondary"
+                            onClick={() => sendToAdmin(complaint.id)}
+                          >
+                            <Send className="h-4 w-4" />
                           </Button>
-                        </DialogTrigger>
-                      {userRole === 'atendente' && complaint.status === 'nova' && (
-                        <Button 
-                          size="sm" 
-                          variant="secondary"
-                          onClick={() => sendToAdmin(complaint.id)}
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      )}
-                        <DialogContent className="max-w-2xl">
+                        )}
+                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
                             <DialogTitle>Detalhes da Denúncia</DialogTitle>
                           </DialogHeader>
