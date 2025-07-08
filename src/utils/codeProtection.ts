@@ -12,6 +12,8 @@ export const validateDomain = (): boolean => {
     'localhost',
     '127.0.0.1',
     'lovable.app',
+    'lovableproject.com',
+    '668e639d-dc0b-4b7a-ab49-c9f19cc751b2.lovableproject.com',
     // Adicione seus domínios autorizados aqui
   ];
 
@@ -113,9 +115,16 @@ export const initAntiTamper = () => {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             const element = node as Element;
-            if (element.tagName === 'SCRIPT' && !element.getAttribute('data-app-script')) {
-              // Script suspeito injetado
-              element.remove();
+            // Permitir elementos de mídia (vídeo/áudio) mas bloquear scripts suspeitos
+            if (element.tagName === 'SCRIPT') {
+              const scriptElement = element as HTMLScriptElement;
+              if (!element.getAttribute('data-app-script') &&
+                  scriptElement.src &&
+                  !scriptElement.src.includes('lovable') &&
+                  !scriptElement.src.includes('supabase')) {
+                // Script suspeito injetado
+                element.remove();
+              }
             }
           }
         });
