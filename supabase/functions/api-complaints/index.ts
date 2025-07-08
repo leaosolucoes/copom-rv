@@ -97,18 +97,28 @@ serve(async (req) => {
 })
 
 async function validateApiToken(req: Request, supabase: any) {
+  // Log de debugging - ver todos os headers
+  console.log('Headers recebidos:')
+  for (const [key, value] of req.headers.entries()) {
+    console.log(`${key}: ${value}`)
+  }
+  
   // Tentar pegar o token do header x-api-token primeiro
   let apiToken = req.headers.get('x-api-token')
+  console.log('x-api-token encontrado:', apiToken)
   
   // Se não encontrar, tentar pegar do Authorization header
   if (!apiToken) {
     const authHeader = req.headers.get('authorization')
+    console.log('Authorization header encontrado:', authHeader)
     if (authHeader && authHeader.startsWith('Bearer ')) {
       apiToken = authHeader.substring(7) // Remove "Bearer "
+      console.log('Token extraído do Authorization:', apiToken)
     }
   }
   
   if (!apiToken) {
+    console.log('Nenhum token encontrado!')
     return {
       valid: false,
       response: new Response(
