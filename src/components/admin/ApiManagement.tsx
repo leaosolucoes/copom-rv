@@ -96,24 +96,55 @@ export function ApiManagement() {
     try {
       console.log('🔄 Carregando tokens diretamente...');
       
-      // Usar edge function para carregar tokens
+      // Primeiro tentar carregar direto da API usando service role
       const response = await supabase.functions.invoke('api-auth', {
         body: { 
           action: 'list-tokens'
         }
       });
       
-      console.log('📋 Resposta:', response);
+      console.log('📋 Resposta da edge function:', response);
       
-      if (response.data?.tokens) {
+      if (response.data?.success && response.data?.tokens) {
         setTokens(response.data.tokens);
-        console.log('✅ Tokens carregados:', response.data.tokens.length);
-      } else {
-        console.log('⚠️ Nenhum token encontrado');
-        setTokens([]);
+        console.log('✅ Tokens carregados via edge function:', response.data.tokens.length);
+        return;
       }
+      
+      // Se não funcionou, tentar carregar diretamente da tabela (fallback)
+      console.log('🔄 Tentando carregar tokens diretamente da tabela...');
+      const { data: directTokens, error: directError } = await supabase
+        .from('api_tokens')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      console.log('📋 Tokens diretos da tabela:', { tokens: directTokens, error: directError });
+      
+      if (directError) {
+        console.error('❌ Erro ao carregar tokens diretamente:', directError);
+        // Mostrar erro detalhado no toast
+        toast({
+          title: "Erro ao carregar tokens",
+          description: `${directError.message}`,
+          variant: "destructive",
+        });
+        setTokens([]);
+        return;
+      }
+      
+      setTokens((directTokens || []).map(token => ({
+        ...token,
+        token_type: token.token_type as 'sandbox' | 'production'
+      })) as ApiToken[]);
+      console.log('✅ Tokens carregados diretamente:', directTokens?.length || 0);
+      
     } catch (error) {
-      console.error('💥 Erro ao carregar tokens:', error);
+      console.error('💥 Erro geral ao carregar tokens:', error);
+      toast({
+        title: "Erro",
+        description: `Erro inesperado: ${error.message}`,
+        variant: "destructive",
+      });
       setTokens([]);
     }
   };

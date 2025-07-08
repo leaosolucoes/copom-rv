@@ -558,6 +558,21 @@ export type Database = {
         Args: { password: string }
         Returns: string
       }
+      insert_api_log: {
+        Args: {
+          p_token_id: string
+          p_endpoint: string
+          p_method: string
+          p_status_code: number
+          p_execution_time_ms: number
+          p_ip_address: string
+          p_user_agent: string
+          p_request_body?: Json
+          p_response_body?: Json
+          p_error_message?: string
+        }
+        Returns: string
+      }
       is_admin_or_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
