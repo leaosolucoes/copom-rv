@@ -91,31 +91,57 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center p-4">
-                {/* Iframe que abre o vídeo diretamente */}
+                {/* Video HTML5 que reproduz melhor .MOV */}
                 <div className="w-full max-w-4xl h-[70vh] bg-black rounded overflow-hidden">
-                  <iframe
+                  <video
                     key={media[currentIndex]}
-                    src={media[currentIndex]}
-                    className="w-full h-full border-0"
-                    title={`Vídeo ${currentIndex + 1}`}
-                    allowFullScreen
-                    onLoad={() => {
-                      console.log('✅ Vídeo carregado via iframe:', media[currentIndex]);
+                    className="w-full h-full object-contain"
+                    controls
+                    preload="metadata"
+                    playsInline
+                    onLoadStart={() => {
+                      console.log('🎬 Carregando vídeo:', media[currentIndex]);
+                      setIsLoading(true);
+                      setVideoError(false);
+                    }}
+                    onCanPlay={() => {
+                      console.log('✅ Vídeo pronto:', media[currentIndex]);
                       setIsLoading(false);
                       setVideoError(false);
                     }}
-                    onError={() => {
-                      console.error('❌ Erro no iframe:', media[currentIndex]);
+                    onError={(e) => {
+                      console.error('❌ Erro no vídeo:', media[currentIndex]);
                       setVideoError(true);
                       setIsLoading(false);
                     }}
-                  />
+                    style={{ maxHeight: '70vh' }}
+                  >
+                    {/* Sources específicas para diferentes formatos */}
+                    <source src={media[currentIndex]} type="video/quicktime" />
+                    <source src={media[currentIndex]} type="video/mp4" />
+                    <source src={media[currentIndex]} type="video/x-msvideo" />
+                    <source src={media[currentIndex]} />
+                    
+                    Seu navegador não suporta reprodução deste vídeo.
+                  </video>
                   
                   {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/75">
                       <div className="text-white text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
                         <p className="text-sm">Carregando vídeo...</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {videoError && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/75">
+                      <div className="text-center text-white p-8">
+                        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-yellow-400" />
+                        <h3 className="text-lg font-semibold mb-2">Erro na reprodução</h3>
+                        <p className="text-sm text-gray-300 mb-4">
+                          Formato: {media[currentIndex].split('.').pop()?.toUpperCase()}
+                        </p>
                       </div>
                     </div>
                   )}
