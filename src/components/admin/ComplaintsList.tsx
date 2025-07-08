@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, Download, MessageSquare, Calendar, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -374,234 +375,443 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
         )}
       </div>
 
-      {/* Complaints Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Denunciante</TableHead>
-                <TableHead>Ocorrência</TableHead>
-                <TableHead>Endereço</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredComplaints.map((complaint) => (
-                <TableRow key={complaint.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{complaint.complainant_name}</div>
-                      <div className="text-sm text-gray-500">{complaint.complainant_phone}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{complaint.occurrence_type}</div>
-                      <div className="text-sm text-gray-500">{complaint.classification}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div>{complaint.occurrence_address}</div>
-                      <div className="text-sm text-gray-500">{complaint.occurrence_neighborhood}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(complaint.status)}</TableCell>
-                  <TableCell>
-                    {new Date(complaint.created_at).toLocaleDateString('pt-BR')}
-                  </TableCell>
-                   <TableCell>
-                     <div className="flex space-x-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button size="sm" variant="outline" onClick={() => setSelectedComplaint(complaint)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Detalhes da Denúncia</DialogTitle>
-                          </DialogHeader>
-                          {selectedComplaint && (
-                            <div className="space-y-6">
-                              {/* Dados do Reclamante */}
-                              <div className="space-y-3">
-                                <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados do Reclamante</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <strong>Nome:</strong> {selectedComplaint.complainant_name}
+      {/* Tabs for Complaints */}
+      <Tabs defaultValue="novas" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="novas">Novas</TabsTrigger>
+          <TabsTrigger value="historico">Histórico</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="novas">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Denunciante</TableHead>
+                    <TableHead>Ocorrência</TableHead>
+                    <TableHead>Endereço</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data Recebida</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredComplaints
+                    .filter(complaint => complaint.status === 'nova')
+                    .map((complaint) => (
+                    <TableRow key={complaint.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{complaint.complainant_name}</div>
+                          <div className="text-sm text-gray-500">{complaint.complainant_phone}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{complaint.occurrence_type}</div>
+                          <div className="text-sm text-gray-500">{complaint.classification}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div>{complaint.occurrence_address}</div>
+                          <div className="text-sm text-gray-500">{complaint.occurrence_neighborhood}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(complaint.status)}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div>{new Date(complaint.created_at).toLocaleDateString('pt-BR')}</div>
+                          <div className="text-sm text-gray-500">{new Date(complaint.created_at).toLocaleTimeString('pt-BR')}</div>
+                        </div>
+                      </TableCell>
+                       <TableCell>
+                         <div className="flex space-x-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button size="sm" variant="outline" onClick={() => setSelectedComplaint(complaint)}>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>Detalhes da Denúncia</DialogTitle>
+                              </DialogHeader>
+                              {selectedComplaint && (
+                                <div className="space-y-6">
+                                  {/* Dados do Reclamante */}
+                                  <div className="space-y-3">
+                                    <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados do Reclamante</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <strong>Nome:</strong> {selectedComplaint.complainant_name}
+                                      </div>
+                                      <div>
+                                        <strong>Telefone:</strong> {selectedComplaint.complainant_phone}
+                                      </div>
+                                      <div>
+                                        <strong>Tipo:</strong> {selectedComplaint.complainant_type}
+                                      </div>
+                                      <div>
+                                        <strong>Bairro:</strong> {selectedComplaint.complainant_neighborhood}
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-4">
+                                      <div className="col-span-2">
+                                        <strong>Endereço:</strong> {selectedComplaint.complainant_address}
+                                      </div>
+                                      <div>
+                                        <strong>Número:</strong> {selectedComplaint.complainant_number || 'N/A'}
+                                      </div>
+                                      <div>
+                                        <strong>Quadra:</strong> {selectedComplaint.complainant_block || 'N/A'}
+                                      </div>
+                                    </div>
+                                    {selectedComplaint.complainant_lot && (
+                                      <div>
+                                        <strong>Lote:</strong> {selectedComplaint.complainant_lot}
+                                      </div>
+                                    )}
                                   </div>
-                                  <div>
-                                    <strong>Telefone:</strong> {selectedComplaint.complainant_phone}
-                                  </div>
-                                  <div>
-                                    <strong>Tipo:</strong> {selectedComplaint.complainant_type}
-                                  </div>
-                                  <div>
-                                    <strong>Bairro:</strong> {selectedComplaint.complainant_neighborhood}
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-4 gap-4">
-                                  <div className="col-span-2">
-                                    <strong>Endereço:</strong> {selectedComplaint.complainant_address}
-                                  </div>
-                                  <div>
-                                    <strong>Número:</strong> {selectedComplaint.complainant_number || 'N/A'}
-                                  </div>
-                                  <div>
-                                    <strong>Quadra:</strong> {selectedComplaint.complainant_block || 'N/A'}
-                                  </div>
-                                </div>
-                                {selectedComplaint.complainant_lot && (
-                                  <div>
-                                    <strong>Lote:</strong> {selectedComplaint.complainant_lot}
-                                  </div>
-                                )}
-                              </div>
 
-                              {/* Endereço da Ocorrência */}
-                              <div className="space-y-3">
-                                <h3 className="text-lg font-semibold text-primary border-b pb-2">Endereço da Ocorrência</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <strong>Tipo de Ocorrência:</strong> {selectedComplaint.occurrence_type}
+                                  {/* Endereço da Ocorrência */}
+                                  <div className="space-y-3">
+                                    <h3 className="text-lg font-semibold text-primary border-b pb-2">Endereço da Ocorrência</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <strong>Tipo de Ocorrência:</strong> {selectedComplaint.occurrence_type}
+                                      </div>
+                                      <div>
+                                        <strong>Bairro:</strong> {selectedComplaint.occurrence_neighborhood}
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-4">
+                                      <div className="col-span-2">
+                                        <strong>Endereço:</strong> {selectedComplaint.occurrence_address}
+                                      </div>
+                                      <div>
+                                        <strong>Número:</strong> {selectedComplaint.occurrence_number || 'N/A'}
+                                      </div>
+                                      <div>
+                                        <strong>Quadra:</strong> {selectedComplaint.occurrence_block || 'N/A'}
+                                      </div>
+                                    </div>
+                                    {selectedComplaint.occurrence_lot && (
+                                      <div>
+                                        <strong>Lote:</strong> {selectedComplaint.occurrence_lot}
+                                      </div>
+                                    )}
+                                    {selectedComplaint.occurrence_reference && (
+                                      <div>
+                                        <strong>Referência:</strong>
+                                        <p className="text-sm bg-muted p-2 rounded mt-1">{selectedComplaint.occurrence_reference}</p>
+                                      </div>
+                                    )}
                                   </div>
-                                  <div>
-                                    <strong>Bairro:</strong> {selectedComplaint.occurrence_neighborhood}
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-4 gap-4">
-                                  <div className="col-span-2">
-                                    <strong>Endereço:</strong> {selectedComplaint.occurrence_address}
-                                  </div>
-                                  <div>
-                                    <strong>Número:</strong> {selectedComplaint.occurrence_number || 'N/A'}
-                                  </div>
-                                  <div>
-                                    <strong>Quadra:</strong> {selectedComplaint.occurrence_block || 'N/A'}
-                                  </div>
-                                </div>
-                                {selectedComplaint.occurrence_lot && (
-                                  <div>
-                                    <strong>Lote:</strong> {selectedComplaint.occurrence_lot}
-                                  </div>
-                                )}
-                                {selectedComplaint.occurrence_reference && (
-                                  <div>
-                                    <strong>Referência:</strong>
-                                    <p className="text-sm bg-muted p-2 rounded mt-1">{selectedComplaint.occurrence_reference}</p>
-                                  </div>
-                                )}
-                              </div>
 
-                              {/* Dados da Reclamação */}
-                              <div className="space-y-3">
-                                <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados da Reclamação</h3>
-                                <div>
-                                  <strong>Narrativa:</strong>
-                                  <p className="text-sm bg-muted p-3 rounded mt-1">{selectedComplaint.narrative}</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  {selectedComplaint.occurrence_date && (
+                                  {/* Dados da Reclamação */}
+                                  <div className="space-y-3">
+                                    <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados da Reclamação</h3>
                                     <div>
-                                      <strong>Data:</strong> {format(new Date(selectedComplaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}
+                                      <strong>Narrativa:</strong>
+                                      <p className="text-sm bg-muted p-3 rounded mt-1">{selectedComplaint.narrative}</p>
                                     </div>
-                                  )}
-                                  {selectedComplaint.occurrence_time && (
-                                    <div>
-                                      <strong>Hora:</strong> {selectedComplaint.occurrence_time}
+                                    <div className="grid grid-cols-2 gap-4">
+                                      {selectedComplaint.occurrence_date && (
+                                        <div>
+                                          <strong>Data:</strong> {format(new Date(selectedComplaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}
+                                        </div>
+                                      )}
+                                      {selectedComplaint.occurrence_time && (
+                                        <div>
+                                          <strong>Hora:</strong> {selectedComplaint.occurrence_time}
+                                        </div>
+                                      )}
+                                      <div>
+                                        <strong>Classificação:</strong> {selectedComplaint.classification}
+                                      </div>
+                                      {selectedComplaint.assigned_to && (
+                                        <div>
+                                          <strong>Atribuído a:</strong> {selectedComplaint.assigned_to}
+                                        </div>
+                                      )}
                                     </div>
-                                  )}
-                                  <div>
-                                    <strong>Classificação:</strong> {selectedComplaint.classification}
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <strong>Status:</strong> {selectedComplaint.status}
+                                      </div>
+                                      {selectedComplaint.system_identifier && (
+                                        <div>
+                                          <strong>Identificador do Sistema:</strong> {selectedComplaint.system_identifier}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                  {selectedComplaint.assigned_to && (
-                                    <div>
-                                      <strong>Atribuído a:</strong> {selectedComplaint.assigned_to}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <strong>Status:</strong> {selectedComplaint.status}
+                                  <div className="flex space-x-2">
+                                    {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
+                                      <Button 
+                                        onClick={() => sendToAdmin(selectedComplaint.id)}
+                                        variant="secondary"
+                                      >
+                                        <Send className="h-4 w-4 mr-2" />
+                                        Enviar para Admin
+                                      </Button>
+                                    )}
+                                    {userRole !== 'admin' && selectedComplaint.status === 'nova' && userRole !== 'atendente' && (
+                                      <Button 
+                                        onClick={() => {
+                                          const identifier = window.prompt('Digite o identificador do sistema:');
+                                          if (identifier) {
+                                            updateComplaintStatus(selectedComplaint.id, 'cadastrada', identifier);
+                                          }
+                                        }}
+                                      >
+                                        <Calendar className="h-4 w-4 mr-2" />
+                                        Marcar como Cadastrada
+                                      </Button>
+                                    )}
+                                    {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
+                                      <Button 
+                                        onClick={() => {
+                                          setRaiData({ rai: '', classification: '' });
+                                          setShowRaiModal(true);
+                                        }}
+                                        variant="default"
+                                      >
+                                        <Calendar className="h-4 w-4 mr-2" />
+                                        Cadastrar com RAI
+                                      </Button>
+                                    )}
+                                    {userRole === 'super_admin' && (
+                                      <Button onClick={() => sendWhatsAppMessage(selectedComplaint)}>
+                                        <MessageSquare className="h-4 w-4 mr-2" />
+                                        Enviar WhatsApp
+                                      </Button>
+                                    )}
                                   </div>
-                                  {selectedComplaint.system_identifier && (
-                                    <div>
-                                      <strong>Identificador do Sistema:</strong> {selectedComplaint.system_identifier}
-                                    </div>
-                                  )}
                                 </div>
-                              </div>
-                              <div className="flex space-x-2">
-                                {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
-                                  <Button 
-                                    onClick={() => sendToAdmin(selectedComplaint.id)}
-                                    variant="secondary"
-                                  >
-                                    <Send className="h-4 w-4 mr-2" />
-                                    Enviar para Admin
-                                  </Button>
-                                )}
-                                {userRole !== 'admin' && selectedComplaint.status === 'nova' && userRole !== 'atendente' && (
-                                  <Button 
-                                    onClick={() => {
-                                      const identifier = window.prompt('Digite o identificador do sistema:');
-                                      if (identifier) {
-                                        updateComplaintStatus(selectedComplaint.id, 'cadastrada', identifier);
-                                      }
-                                    }}
-                                  >
-                                    <Calendar className="h-4 w-4 mr-2" />
-                                    Marcar como Cadastrada
-                                  </Button>
-                                )}
-                                {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
-                                  <Button 
-                                    onClick={() => {
-                                      setRaiData({ rai: '', classification: '' });
-                                      setShowRaiModal(true);
-                                    }}
-                                    variant="default"
-                                  >
-                                    <Calendar className="h-4 w-4 mr-2" />
-                                    Cadastrar com RAI
-                                  </Button>
-                                )}
-                                {userRole === 'super_admin' && (
-                                  <Button onClick={() => sendWhatsAppMessage(selectedComplaint)}>
-                                    <MessageSquare className="h-4 w-4 mr-2" />
-                                    Enviar WhatsApp
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                         </DialogContent>
-                       </Dialog>
-                       
-                         {userRole === 'atendente' && complaint.status === 'nova' && (
-                           <Button 
-                             size="sm" 
-                             variant="secondary"
-                             onClick={() => sendToAdmin(complaint.id)}
-                             title="Enviar para Admin"
-                           >
-                             <Send className="h-4 w-4 mr-1" />
-                             Enviar
-                           </Button>
-                         )}
-                         
-                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                              )}
+                             </DialogContent>
+                           </Dialog>
+                           
+                             {userRole === 'atendente' && complaint.status === 'nova' && (
+                               <Button 
+                                 size="sm" 
+                                 variant="secondary"
+                                 onClick={() => sendToAdmin(complaint.id)}
+                                 title="Enviar para Admin"
+                               >
+                                 <Send className="h-4 w-4 mr-1" />
+                                 Enviar
+                               </Button>
+                             )}
+                             
+                         </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="historico">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Denunciante</TableHead>
+                    <TableHead>Ocorrência</TableHead>
+                    <TableHead>Endereço</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data Recebida</TableHead>
+                    <TableHead>Data Cadastro</TableHead>
+                    <TableHead>Atendente</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredComplaints
+                    .filter(complaint => complaint.status !== 'nova')
+                    .map((complaint) => (
+                    <TableRow key={complaint.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{complaint.complainant_name}</div>
+                          <div className="text-sm text-gray-500">{complaint.complainant_phone}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{complaint.occurrence_type}</div>
+                          <div className="text-sm text-gray-500">{complaint.classification}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div>{complaint.occurrence_address}</div>
+                          <div className="text-sm text-gray-500">{complaint.occurrence_neighborhood}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(complaint.status)}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div>{new Date(complaint.created_at).toLocaleDateString('pt-BR')}</div>
+                          <div className="text-sm text-gray-500">{new Date(complaint.created_at).toLocaleTimeString('pt-BR')}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {complaint.processed_at ? (
+                          <div>
+                            <div>{new Date(complaint.processed_at).toLocaleDateString('pt-BR')}</div>
+                            <div className="text-sm text-gray-500">{new Date(complaint.processed_at).toLocaleTimeString('pt-BR')}</div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {complaint.assigned_to || <span className="text-gray-400">-</span>}
+                      </TableCell>
+                       <TableCell>
+                         <div className="flex space-x-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button size="sm" variant="outline" onClick={() => setSelectedComplaint(complaint)}>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>Detalhes da Denúncia</DialogTitle>
+                              </DialogHeader>
+                              {selectedComplaint && (
+                                <div className="space-y-6">
+                                  {/* Dados do Reclamante */}
+                                  <div className="space-y-3">
+                                    <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados do Reclamante</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <strong>Nome:</strong> {selectedComplaint.complainant_name}
+                                      </div>
+                                      <div>
+                                        <strong>Telefone:</strong> {selectedComplaint.complainant_phone}
+                                      </div>
+                                      <div>
+                                        <strong>Tipo:</strong> {selectedComplaint.complainant_type}
+                                      </div>
+                                      <div>
+                                        <strong>Bairro:</strong> {selectedComplaint.complainant_neighborhood}
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-4">
+                                      <div className="col-span-2">
+                                        <strong>Endereço:</strong> {selectedComplaint.complainant_address}
+                                      </div>
+                                      <div>
+                                        <strong>Número:</strong> {selectedComplaint.complainant_number || 'N/A'}
+                                      </div>
+                                      <div>
+                                        <strong>Quadra:</strong> {selectedComplaint.complainant_block || 'N/A'}
+                                      </div>
+                                    </div>
+                                    {selectedComplaint.complainant_lot && (
+                                      <div>
+                                        <strong>Lote:</strong> {selectedComplaint.complainant_lot}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Endereço da Ocorrência */}
+                                  <div className="space-y-3">
+                                    <h3 className="text-lg font-semibold text-primary border-b pb-2">Endereço da Ocorrência</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <strong>Tipo de Ocorrência:</strong> {selectedComplaint.occurrence_type}
+                                      </div>
+                                      <div>
+                                        <strong>Bairro:</strong> {selectedComplaint.occurrence_neighborhood}
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-4">
+                                      <div className="col-span-2">
+                                        <strong>Endereço:</strong> {selectedComplaint.occurrence_address}
+                                      </div>
+                                      <div>
+                                        <strong>Número:</strong> {selectedComplaint.occurrence_number || 'N/A'}
+                                      </div>
+                                      <div>
+                                        <strong>Quadra:</strong> {selectedComplaint.occurrence_block || 'N/A'}
+                                      </div>
+                                    </div>
+                                    {selectedComplaint.occurrence_lot && (
+                                      <div>
+                                        <strong>Lote:</strong> {selectedComplaint.occurrence_lot}
+                                      </div>
+                                    )}
+                                    {selectedComplaint.occurrence_reference && (
+                                      <div>
+                                        <strong>Referência:</strong>
+                                        <p className="text-sm bg-muted p-2 rounded mt-1">{selectedComplaint.occurrence_reference}</p>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Dados da Reclamação */}
+                                  <div className="space-y-3">
+                                    <h3 className="text-lg font-semibold text-primary border-b pb-2">Dados da Reclamação</h3>
+                                    <div>
+                                      <strong>Narrativa:</strong>
+                                      <p className="text-sm bg-muted p-3 rounded mt-1">{selectedComplaint.narrative}</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      {selectedComplaint.occurrence_date && (
+                                        <div>
+                                          <strong>Data:</strong> {format(new Date(selectedComplaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}
+                                        </div>
+                                      )}
+                                      {selectedComplaint.occurrence_time && (
+                                        <div>
+                                          <strong>Hora:</strong> {selectedComplaint.occurrence_time}
+                                        </div>
+                                      )}
+                                      <div>
+                                        <strong>Classificação:</strong> {selectedComplaint.classification}
+                                      </div>
+                                      {selectedComplaint.assigned_to && (
+                                        <div>
+                                          <strong>Atribuído a:</strong> {selectedComplaint.assigned_to}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <strong>Status:</strong> {selectedComplaint.status}
+                                      </div>
+                                      {selectedComplaint.system_identifier && (
+                                        <div>
+                                          <strong>Identificador do Sistema:</strong> {selectedComplaint.system_identifier}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                             </DialogContent>
+                           </Dialog>
+                         </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {filteredComplaints.length === 0 && (
         <div className="text-center py-8 text-gray-500">
