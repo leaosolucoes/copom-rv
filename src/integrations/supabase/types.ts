@@ -92,6 +92,11 @@ export type Database = {
           status: Database["public"]["Enums"]["complaint_status"]
           system_identifier: string | null
           updated_at: string
+          user_agent: string | null
+          user_browser: string | null
+          user_device_type: string | null
+          user_ip: unknown | null
+          user_location: Json | null
           videos: string[] | null
           whatsapp_sent: boolean | null
         }
@@ -125,6 +130,11 @@ export type Database = {
           status?: Database["public"]["Enums"]["complaint_status"]
           system_identifier?: string | null
           updated_at?: string
+          user_agent?: string | null
+          user_browser?: string | null
+          user_device_type?: string | null
+          user_ip?: unknown | null
+          user_location?: Json | null
           videos?: string[] | null
           whatsapp_sent?: boolean | null
         }
@@ -158,6 +168,11 @@ export type Database = {
           status?: Database["public"]["Enums"]["complaint_status"]
           system_identifier?: string | null
           updated_at?: string
+          user_agent?: string | null
+          user_browser?: string | null
+          user_device_type?: string | null
+          user_ip?: unknown | null
+          user_location?: Json | null
           videos?: string[] | null
           whatsapp_sent?: boolean | null
         }

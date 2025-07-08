@@ -70,6 +70,12 @@ export const PublicComplaintForm = () => {
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
   const [uploadedVideos, setUploadedVideos] = useState<string[]>([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [userInfo, setUserInfo] = useState<{
+    location: any;
+    deviceType: string;
+    browser: string;
+    userAgent: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     complainant_name: "",
@@ -96,12 +102,73 @@ export const PublicComplaintForm = () => {
 
   useEffect(() => {
     loadSystemSettings();
+    collectUserInfo();
   }, []);
 
   // Adicionar efeito para recarregar quando houver mudanças nos tipos
   useEffect(() => {
     console.log('📊 Settings atualizados:', settings);
   }, [settings]);
+
+  const collectUserInfo = async () => {
+    try {
+      // Detectar tipo de dispositivo
+      const userAgent = navigator.userAgent;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const deviceType = isMobile ? 'Mobile' : 'Desktop';
+
+      // Detectar navegador
+      let browser = 'Unknown';
+      if (userAgent.indexOf('Chrome') > -1) browser = 'Chrome';
+      else if (userAgent.indexOf('Firefox') > -1) browser = 'Firefox';
+      else if (userAgent.indexOf('Safari') > -1) browser = 'Safari';
+      else if (userAgent.indexOf('Edge') > -1) browser = 'Edge';
+      else if (userAgent.indexOf('Opera') > -1) browser = 'Opera';
+
+      // Tentar obter localização
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy
+            };
+            setUserInfo({
+              location,
+              deviceType,
+              browser,
+              userAgent
+            });
+            console.log('📍 Informações do usuário coletadas:', { location, deviceType, browser });
+          },
+          (error) => {
+            console.warn('Erro ao obter localização:', error);
+            setUserInfo({
+              location: null,
+              deviceType,
+              browser,
+              userAgent
+            });
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000
+          }
+        );
+      } else {
+        setUserInfo({
+          location: null,
+          deviceType,
+          browser,
+          userAgent
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao coletar informações do usuário:', error);
+    }
+  };
 
   const loadSystemSettings = async () => {
     try {
@@ -563,7 +630,7 @@ export const PublicComplaintForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Preparar dados para inserção (incluindo mídias)
+      // Preparar dados para inserção (incluindo mídias e informações do usuário)
       const dataToInsert = {
         complainant_name: formData.complainant_name.trim(),
         complainant_phone: formData.complainant_phone.trim(),
@@ -586,20 +653,29 @@ export const PublicComplaintForm = () => {
         classification: formData.classification,
         assigned_to: formData.assigned_to?.trim() || null,
         photos: uploadedPhotos.length > 0 ? uploadedPhotos : null,
-        videos: uploadedVideos.length > 0 ? uploadedVideos : null
+        videos: uploadedVideos.length > 0 ? uploadedVideos : null,
+        // Informações do usuário coletadas
+        user_location: userInfo?.location || null,
+        user_device_type: userInfo?.deviceType || null,
+        user_browser: userInfo?.browser || null,
+        user_agent: userInfo?.userAgent || null
       };
       
       console.log('🔄 Dados que serão enviados:', dataToInsert);
-      console.log('📡 Fazendo requisição para Supabase...');
+      console.log('📡 Fazendo requisição para edge function...');
       
-      const { data, error } = await supabase
-        .from('complaints')
-        .insert([dataToInsert])
-        .select();
+      // Usar edge function para capturar IP e inserir denúncia
+      const { data, error } = await supabase.functions.invoke('capture-user-ip', {
+        body: dataToInsert
+      });
 
       if (error) {
-        console.error('Erro do Supabase:', error);
+        console.error('Erro da edge function:', error);
         throw error;
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Erro desconhecido');
       }
 
       console.log('Denúncia enviada com sucesso!');
@@ -680,6 +756,13 @@ export const PublicComplaintForm = () => {
             Preencha todos os campos obrigatórios para registrar sua denúncia de perturbação do sossego.
             Todas as informações serão tratadas com confidencialidade.
           </p>
+          <div className="mt-3 p-3 bg-muted rounded-md">
+            <p className="text-sm text-muted-foreground">
+              <strong>Informações coletadas:</strong> Para garantir a segurança e autenticidade das denúncias, 
+              coletamos automaticamente sua localização (com sua permissão), tipo de dispositivo, navegador e IP. 
+              Essas informações são usadas apenas para fins de validação e não são compartilhadas.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
