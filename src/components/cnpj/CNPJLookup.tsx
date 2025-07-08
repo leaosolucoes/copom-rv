@@ -77,10 +77,11 @@ export function CNPJLookup() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('/functions/v1/search-cnpj', {
+      const response = await fetch('https://smytdnkylauxocqrkchn.supabase.co/functions/v1/search-cnpj', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNteXRkbmt5bGF1eG9jcXJrY2huIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE3MzQ3OTAsImV4cCI6MjA2NzMxMDc5MH0.lw_fYUvIUY7Q9OPumJLD9rP-oG3p4OcLs_PKl6MgN0Y'
         },
         body: JSON.stringify({ cnpj: cleanCnpj }),
       });
