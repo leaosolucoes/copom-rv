@@ -9,7 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { format } from 'date-fns';
@@ -65,6 +70,9 @@ export const ComplaintsList = () => {
   const [classifications, setClassifications] = useState<string[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [raiData, setRaiData] = useState({ rai: '', classification: '' });
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+  const [logoUrl, setLogoUrl] = useState<string>('');
   const { toast } = useToast();
   const { user, profile } = useSupabaseAuth();
   
@@ -75,6 +83,7 @@ export const ComplaintsList = () => {
     fetchComplaints();
     fetchClassifications();
     fetchSoundSettings();
+    fetchLogo();
   }, [userRole]);
 
   useEffect(() => {
@@ -208,6 +217,26 @@ export const ComplaintsList = () => {
       setClassifications(Array.isArray(value) ? value.filter(item => typeof item === 'string') as string[] : []);
     } catch (error) {
       console.error('Erro ao carregar classificações:', error);
+    }
+  };
+
+  const fetchLogo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'public_logo_url')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+      
+      if (data?.value) {
+        setLogoUrl(data.value as string);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar logo:', error);
     }
   };
 
@@ -416,25 +445,146 @@ export const ComplaintsList = () => {
 
   const exportComplaintsPDF = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('export-complaints-pdf', {
-        body: { 
-          complaints: filteredComplaints,
-          filters: { status: statusFilter, search: searchTerm }
+      // Filtrar denúncias por data se especificado
+      let complaintsToExport = filteredComplaints;
+      
+      if (startDate || endDate) {
+        complaintsToExport = filteredComplaints.filter(complaint => {
+          const complaintDate = new Date(complaint.created_at);
+          
+          if (startDate && endDate) {
+            return complaintDate >= startDate && complaintDate <= endDate;
+          } else if (startDate) {
+            return complaintDate >= startDate;
+          } else if (endDate) {
+            return complaintDate <= endDate;
+          }
+          
+          return true;
+        });
+      }
+
+      if (complaintsToExport.length === 0) {
+        toast({
+          title: "Aviso",
+          description: "Nenhuma denúncia encontrada no período selecionado.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Criar PDF usando jsPDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      // Configurar fontes
+      pdf.setFont('helvetica', 'bold');
+      
+      let yPosition = 30;
+      
+      // Adicionar logo se disponível
+      if (logoUrl) {
+        try {
+          // Converter URL da logo para base64
+          const logoResponse = await fetch(logoUrl);
+          const logoBlob = await logoResponse.blob();
+          const logoBase64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(logoBlob);
+          });
+          
+          // Adicionar logo no cabeçalho
+          pdf.addImage(logoBase64, 'JPEG', 20, 10, 30, 30);
+          pdf.setFontSize(18);
+          pdf.text('RELATÓRIO DE DENÚNCIAS', 60, 25);
+        } catch (logoError) {
+          console.error('Erro ao carregar logo:', logoError);
+          pdf.setFontSize(18);
+          pdf.text('RELATÓRIO DE DENÚNCIAS', 20, 20);
+          yPosition = 30;
         }
+      } else {
+        pdf.setFontSize(18);
+        pdf.text('RELATÓRIO DE DENÚNCIAS', 20, 20);
+        yPosition = 30;
+      }
+      
+      // Adicionar informações do relatório
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      
+      const today = new Date();
+      const dateRange = startDate && endDate 
+        ? `${format(startDate, 'dd/MM/yyyy')} a ${format(endDate, 'dd/MM/yyyy')}`
+        : startDate 
+        ? `A partir de ${format(startDate, 'dd/MM/yyyy')}`
+        : endDate
+        ? `Até ${format(endDate, 'dd/MM/yyyy')}`
+        : 'Todas as datas';
+      
+      pdf.text(`Período: ${dateRange}`, 20, yPosition + 10);
+      pdf.text(`Data de geração: ${format(today, 'dd/MM/yyyy HH:mm')}`, 20, yPosition + 20);
+      pdf.text(`Total de denúncias: ${complaintsToExport.length}`, 20, yPosition + 30);
+      
+      yPosition += 50;
+
+      // Configurar tabela usando autoTable
+      const tableColumns = [
+        'Denunciante',
+        'Telefone',
+        'Ocorrência',
+        'Endereço',
+        'Status',
+        'Data Recebida',
+        'Atendente'
+      ];
+      
+      const tableRows = complaintsToExport.map(complaint => [
+        complaint.complainant_name,
+        complaint.complainant_phone,
+        complaint.occurrence_type,
+        `${complaint.occurrence_address}, ${complaint.occurrence_neighborhood}`,
+        complaint.status.charAt(0).toUpperCase() + complaint.status.slice(1),
+        format(new Date(complaint.created_at), 'dd/MM/yyyy'),
+        complaint.status === 'finalizada' 
+          ? (complaint as any).archived_by_user?.full_name || '-'
+          : (complaint as any).attendant?.full_name || '-'
+      ]);
+
+      // Adicionar tabela
+      (pdf as any).autoTable({
+        head: [tableColumns],
+        body: tableRows,
+        startY: yPosition,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+        },
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: 255,
+          fontStyle: 'bold',
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
+        columnStyles: {
+          0: { cellWidth: 25 }, // Denunciante
+          1: { cellWidth: 20 }, // Telefone
+          2: { cellWidth: 25 }, // Ocorrência
+          3: { cellWidth: 35 }, // Endereço
+          4: { cellWidth: 20 }, // Status
+          5: { cellWidth: 20 }, // Data
+          6: { cellWidth: 25 }, // Atendente
+        },
+        margin: { left: 20, right: 20 },
       });
 
-      if (error) throw error;
-
-      // Create download link
-      const blob = new Blob([data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `denuncias-${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      // Salvar PDF
+      const fileName = `relatorio-denuncias-${format(today, 'yyyy-MM-dd')}.pdf`;
+      pdf.save(fileName);
 
       toast({
         title: "Sucesso",
@@ -488,18 +638,87 @@ export const ComplaintsList = () => {
   return (
     <div className="space-y-6">
       {/* Search and filter controls */}
-      <div className="flex gap-4 mb-6">
-        <div className="flex-1">
-          <Input
-            placeholder="Buscar por nome, endereço ou classificação..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="Buscar por nome, endereço ou classificação..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
-        <Button onClick={exportComplaintsPDF} variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Exportar PDF
-        </Button>
+        
+        {/* Filtros de Data para PDF */}
+        <div className="flex gap-4 items-center flex-wrap">
+          <div className="flex gap-2 items-center">
+            <span className="text-sm font-medium">Filtros para PDF:</span>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[140px] justify-start text-left font-normal",
+                    !startDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {startDate ? format(startDate, "dd/MM/yyyy") : "Data inicial"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <CalendarComponent
+                  mode="single"
+                  selected={startDate}
+                  onSelect={setStartDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[140px] justify-start text-left font-normal",
+                    !endDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {endDate ? format(endDate, "dd/MM/yyyy") : "Data final"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <CalendarComponent
+                  mode="single"
+                  selected={endDate}
+                  onSelect={setEndDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setStartDate(undefined);
+                setEndDate(undefined);
+              }}
+              className="text-sm"
+            >
+              Limpar
+            </Button>
+          </div>
+
+          <Button onClick={exportComplaintsPDF} variant="default">
+            <Download className="h-4 w-4 mr-2" />
+            Exportar PDF
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="novas" className="w-full">
