@@ -677,7 +677,7 @@ export const ComplaintsList = () => {
                                      </div>
                                    )}
 
-                                   <div className="flex space-x-2">
+                                   <div className="flex space-x-2 pt-4 border-t">
                                      {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
                                        <Button 
                                          onClick={() => sendToAdmin(selectedComplaint.id)}
@@ -753,6 +753,7 @@ export const ComplaintsList = () => {
                                          Marcar como Cadastrada
                                        </Button>
                                      )}
+                                     
                                      {userRole === 'super_admin' && (
                                        <Button onClick={() => sendWhatsAppMessage(selectedComplaint)}>
                                          <MessageSquare className="h-4 w-4 mr-2" />
