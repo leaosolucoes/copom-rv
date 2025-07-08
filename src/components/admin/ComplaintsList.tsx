@@ -678,7 +678,6 @@ export const ComplaintsList = () => {
                                    )}
 
                                      <div className="flex flex-wrap gap-2 pt-4 border-t">
-                                       <p className="text-sm text-gray-500">UserRole: {userRole} | Status: {selectedComplaint.status}</p>
                                        {/* Botões para ATENDENTE com denúncia NOVA */}
                                        {(userRole === 'atendente' || userRole === 'authenticated') && selectedComplaint.status === 'nova' && (
                                         <>
