@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Download, MessageSquare, Calendar, Send } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { format } from 'date-fns';
@@ -323,6 +323,64 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
         variant: "destructive",
       });
     }
+  };
+
+  const archiveComplaint = async (complaintId: string) => {
+    try {
+      const { error } = await supabase
+        .from('complaints')
+        .update({ 
+          status: 'finalizada' as ComplaintStatus,
+          processed_at: new Date().toISOString(),
+          assigned_to: profile?.full_name || 'Admin'
+        })
+        .eq('id', complaintId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Denúncia arquivada no histórico!",
+      });
+      
+      fetchComplaints();
+    } catch (error: any) {
+      console.error('Erro ao arquivar denúncia:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao arquivar denúncia",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const markAsVerified = async (complaintId: string) => {
+    try {
+      const { error } = await supabase
+        .from('complaints')
+        .update({ 
+          status: 'nova' as ComplaintStatus,
+          processed_at: new Date().toISOString()
+        })
+        .eq('id', complaintId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Denúncia marcada como verificada e retornada para o atendente!",
+      });
+      
+      fetchComplaints();
+    } catch (error: any) {
+      console.error('Erro ao marcar como verificada:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao marcar denúncia como verificada",
+        variant: "destructive",
+      });
+    }
+
   };
 
   const sendWhatsAppMessage = async (complaint: Complaint) => {
@@ -678,67 +736,89 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                                     </div>
                                   )}
 
-                                   <div className="flex space-x-2">
-                                     {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
-                                       <>
-                                         <Button 
-                                           onClick={() => sendToAdmin(selectedComplaint.id)}
-                                           variant="secondary"
-                                         >
-                                           <Send className="h-4 w-4 mr-2" />
-                                           Enviar para Admin
-                                         </Button>
-                                         
-                                         <Button 
-                                           onClick={() => {
-                                             if (!raiData.rai.trim()) {
-                                               toast({
-                                                 title: "Erro",
-                                                 description: "Por favor, digite o número RAI",
-                                                 variant: "destructive",
-                                               });
-                                               return;
-                                             }
-                                             
-                                             if (!raiData.classification) {
-                                               toast({
-                                                 title: "Erro", 
-                                                 description: "Por favor, selecione uma classificação",
-                                                 variant: "destructive",
-                                               });
-                                               return;
-                                             }
-                                             
-                                             updateComplaintStatus(selectedComplaint.id, 'cadastrada', raiData.rai);
-                                             setRaiData({ rai: '', classification: '' });
-                                           }}
-                                           variant="default"
-                                         >
-                                           <Calendar className="h-4 w-4 mr-2" />
-                                           Cadastrar com RAI
-                                         </Button>
-                                       </>
-                                     )}
-                                     {userRole !== 'admin' && selectedComplaint.status === 'nova' && userRole !== 'atendente' && (
-                                       <Button 
-                                         onClick={() => {
-                                           const identifier = window.prompt('Digite o identificador do sistema:');
-                                           if (identifier) {
-                                             updateComplaintStatus(selectedComplaint.id, 'cadastrada', identifier);
-                                           }
-                                         }}
-                                       >
-                                         <Calendar className="h-4 w-4 mr-2" />
-                                         Marcar como Cadastrada
-                                       </Button>
-                                     )}
-                                     {userRole === 'super_admin' && (
-                                       <Button onClick={() => sendWhatsAppMessage(selectedComplaint)}>
-                                         <MessageSquare className="h-4 w-4 mr-2" />
-                                         Enviar WhatsApp
-                                       </Button>
-                                     )}
-                                   </div>
+                                    <div className="flex space-x-2">
+                                      {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
+                                        <>
+                                          <Button 
+                                            onClick={() => sendToAdmin(selectedComplaint.id)}
+                                            variant="secondary"
+                                          >
+                                            <Send className="h-4 w-4 mr-2" />
+                                            Enviar para Admin
+                                          </Button>
+                                          
+                                          <Button 
+                                            onClick={() => {
+                                              if (!raiData.rai.trim()) {
+                                                toast({
+                                                  title: "Erro",
+                                                  description: "Por favor, digite o número RAI",
+                                                  variant: "destructive",
+                                                });
+                                                return;
+                                              }
+                                              
+                                              if (!raiData.classification) {
+                                                toast({
+                                                  title: "Erro", 
+                                                  description: "Por favor, selecione uma classificação",
+                                                  variant: "destructive",
+                                                });
+                                                return;
+                                              }
+                                              
+                                              updateComplaintStatus(selectedComplaint.id, 'cadastrada', raiData.rai);
+                                              setRaiData({ rai: '', classification: '' });
+                                            }}
+                                            variant="default"
+                                          >
+                                            <Calendar className="h-4 w-4 mr-2" />
+                                            Cadastrar com RAI
+                                          </Button>
+                                        </>
+                                      )}
+                                      
+                                      {/* Botões para admin/super_admin quando status for "a_verificar" */}
+                                      {(userRole === 'admin' || userRole === 'super_admin') && selectedComplaint.status === 'a_verificar' && (
+                                        <>
+                                          <Button 
+                                            onClick={() => archiveComplaint(selectedComplaint.id)}
+                                            variant="destructive"
+                                          >
+                                            <Archive className="h-4 w-4 mr-2" />
+                                            Arquivar
+                                          </Button>
+                                          
+                                          <Button 
+                                            onClick={() => markAsVerified(selectedComplaint.id)}
+                                            variant="default"
+                                          >
+                                            <Check className="h-4 w-4 mr-2" />
+                                            Verificado
+                                          </Button>
+                                        </>
+                                      )}
+                                      
+                                      {userRole !== 'admin' && selectedComplaint.status === 'nova' && userRole !== 'atendente' && (
+                                        <Button 
+                                          onClick={() => {
+                                            const identifier = window.prompt('Digite o identificador do sistema:');
+                                            if (identifier) {
+                                              updateComplaintStatus(selectedComplaint.id, 'cadastrada', identifier);
+                                            }
+                                          }}
+                                        >
+                                          <Calendar className="h-4 w-4 mr-2" />
+                                          Marcar como Cadastrada
+                                        </Button>
+                                      )}
+                                      {userRole === 'super_admin' && (
+                                        <Button onClick={() => sendWhatsAppMessage(selectedComplaint)}>
+                                          <MessageSquare className="h-4 w-4 mr-2" />
+                                          Enviar WhatsApp
+                                        </Button>
+                                      )}
+                                    </div>
                                 </div>
                               )}
                              </DialogContent>
@@ -789,8 +869,8 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                       if (complaint.status === 'nova') return false;
                       // Para admin e super_admin, excluir "a_verificar" do histórico (pois aparece em Novas)
                       if ((userRole === 'admin' || userRole === 'super_admin') && complaint.status === 'a_verificar') return false;
-                      // Para atendentes, ocultar denúncias "A Verificar" 
-                      if (userRole === 'atendente' && complaint.status === 'a_verificar') return false;
+                      // Para atendentes, ocultar denúncias "A Verificar" e "finalizada"
+                      if (userRole === 'atendente' && (complaint.status === 'a_verificar' || complaint.status === 'finalizada')) return false;
                       return true;
                     })
                     .map((complaint) => (
