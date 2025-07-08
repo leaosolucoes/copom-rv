@@ -119,7 +119,10 @@ export const ComplaintsList = () => {
     try {
       const { data, error } = await supabase
         .from('complaints')
-        .select('*')
+        .select(`
+          *,
+          attendant:users!complaints_attendant_id_fkey(full_name)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
