@@ -17,6 +17,7 @@ serve(async (req) => {
   }
 
   try {
+    const startTime = Date.now()
     // Parse do body primeiro
     let body: any = {}
     try {
@@ -69,6 +70,16 @@ serve(async (req) => {
         .order('created_at', { ascending: false });
 
       console.log('📋 Tokens encontrados:', { count: tokens?.length, error: tokensError });
+
+      // Log da requisição
+      await logApiRequest(
+        req,
+        null, // Não tem token_id para list-tokens
+        tokensError ? 500 : 200,
+        Date.now() - startTime,
+        tokensError ? { error: 'Failed to load tokens' } : { success: true, tokens },
+        supabaseAdmin
+      )
 
       if (tokensError) {
         return new Response(
@@ -218,19 +229,31 @@ serve(async (req) => {
 
     console.log('🎉 TOKEN CRIADO COM SUCESSO!')
     
+    const responseData = {
+      success: true,
+      token: tokenString,
+      token_info: {
+        id: newToken.id,
+        name: newToken.token_name,
+        type: newToken.token_type,
+        scopes: newToken.scopes,
+        expires_at: newToken.expires_at,
+        rate_limit_per_hour: newToken.rate_limit_per_hour
+      }
+    }
+
+    // Log da requisição
+    await logApiRequest(
+      req,
+      newToken.id, // ID do token criado
+      200,
+      Date.now() - startTime,
+      { success: true, token_created: true },
+      supabaseAdmin
+    )
+    
     return new Response(
-      JSON.stringify({
-        success: true,
-        token: tokenString,
-        token_info: {
-          id: newToken.id,
-          name: newToken.token_name,
-          type: newToken.token_type,
-          scopes: newToken.scopes,
-          expires_at: newToken.expires_at,
-          rate_limit_per_hour: newToken.rate_limit_per_hour
-        }
-      }),
+      JSON.stringify(responseData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
@@ -246,3 +269,30 @@ serve(async (req) => {
     )
   }
 })
+
+async function logApiRequest(
+  req: Request,
+  tokenId: string | null,
+  statusCode: number,
+  executionTime: number,
+  responseData: any,
+  supabase: any
+) {
+  try {
+    const url = new URL(req.url)
+    
+    await supabase
+      .from('api_logs')
+      .insert({
+        token_id: tokenId,
+        endpoint: url.pathname,
+        method: req.method,
+        status_code: statusCode,
+        execution_time_ms: executionTime,
+        ip_address: req.headers.get('x-forwarded-for') || 'unknown',
+        user_agent: req.headers.get('user-agent') || 'unknown'
+      })
+  } catch (error) {
+    console.error('Erro ao registrar log da API:', error)
+  }
+}

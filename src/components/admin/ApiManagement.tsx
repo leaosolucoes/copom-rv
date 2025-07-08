@@ -279,6 +279,7 @@ export function ApiManagement() {
           rate_limit_per_hour: 1000
         });
         loadTokens();
+        loadLogs(); // Recarregar logs também
         toast({
           title: "Sucesso",
           description: "Token gerado com sucesso!",
