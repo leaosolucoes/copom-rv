@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,13 @@ interface MediaModalProps {
 
 export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: MediaModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  console.log('MediaModal props:', { isOpen, media, initialIndex, type });
+
+  // Atualizar currentIndex quando initialIndex mudar
+  useEffect(() => {
+    setCurrentIndex(initialIndex);
+  }, [initialIndex]);
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : media.length - 1));

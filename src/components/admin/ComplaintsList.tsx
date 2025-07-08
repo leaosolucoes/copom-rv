@@ -658,6 +658,7 @@ export const ComplaintsList = () => {
   };
 
   const openMediaModal = (media: string[], initialIndex: number, type: 'photo' | 'video') => {
+    console.log('openMediaModal called with:', { media, initialIndex, type });
     setMediaModal({
       isOpen: true,
       media,
@@ -1198,11 +1199,13 @@ export const ComplaintsList = () => {
                                                    <div key={index} className="relative cursor-pointer group">
                                                      <video 
                                                        src={video} 
-                                                       className="w-full h-32 object-cover rounded border hover:opacity-80 transition-opacity"
+                                                       className="w-full h-32 object-cover rounded border"
                                                        preload="metadata"
-                                                       onClick={() => openMediaModal(selectedComplaint.videos!, index, 'video')}
                                                      />
-                                                     <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded">
+                                                     <div 
+                                                       className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded cursor-pointer"
+                                                       onClick={() => openMediaModal(selectedComplaint.videos!, index, 'video')}
+                                                     >
                                                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                                                          <div className="w-0 h-0 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5"></div>
                                                        </div>
