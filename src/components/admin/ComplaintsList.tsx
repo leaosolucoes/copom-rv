@@ -139,7 +139,10 @@ export const ComplaintsList = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('complaints')
-        .select('*')
+        .select(`
+          *,
+          attendant:users!complaints_attendant_id_fkey(full_name)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -876,13 +879,13 @@ export const ComplaintsList = () => {
                          <span className="text-gray-400">-</span>
                        )}
                      </TableCell>
-                     <TableCell>
-                       {complaint.attendant_id ? (
-                         <span className="text-sm">{complaint.attendant_id}</span>
-                       ) : (
-                         <span className="text-gray-400">-</span>
-                       )}
-                     </TableCell>
+                      <TableCell>
+                        {(complaint as any).attendant?.full_name ? (
+                          <span className="text-sm">{(complaint as any).attendant.full_name}</span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </TableCell>
                      <TableCell>
                        <Dialog>
                          <DialogTrigger asChild>
@@ -899,8 +902,33 @@ export const ComplaintsList = () => {
                            <DialogHeader>
                              <DialogTitle>Detalhes da Denúncia</DialogTitle>
                            </DialogHeader>
-                           {selectedComplaint && (
-                             <div className="space-y-6">
+                            {selectedComplaint && (
+                              <div className="space-y-6">
+                                {/* Informações do topo para histórico */}
+                                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                                  <div>
+                                    <strong>Data Recebida:</strong>
+                                    <div>{new Date(selectedComplaint.created_at).toLocaleDateString('pt-BR')}</div>
+                                    <div className="text-sm text-gray-500">{new Date(selectedComplaint.created_at).toLocaleTimeString('pt-BR')}</div>
+                                  </div>
+                                  <div>
+                                    <strong>Data Cadastrada:</strong>
+                                    {selectedComplaint.processed_at ? (
+                                      <div>
+                                        <div>{new Date(selectedComplaint.processed_at).toLocaleDateString('pt-BR')}</div>
+                                        <div className="text-sm text-gray-500">{new Date(selectedComplaint.processed_at).toLocaleTimeString('pt-BR')}</div>
+                                      </div>
+                                    ) : (
+                                      <span className="text-gray-400">-</span>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <strong>Atendente:</strong>
+                                    <div>
+                                      {(selectedComplaint as any).attendant?.full_name || 'Não informado'}
+                                    </div>
+                                  </div>
+                                </div>
                                <div className="space-y-4">
                                  <h3 className="text-lg font-semibold">Dados do Denunciante</h3>
                                  <div className="grid grid-cols-2 gap-4">
