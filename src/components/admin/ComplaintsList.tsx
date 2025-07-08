@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,7 +68,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
   const [dateFilter, setDateFilter] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [classifications, setClassifications] = useState<string[]>([]);
-  const [showRaiModal, setShowRaiModal] = useState(false);
+  
   const [raiData, setRaiData] = useState({ rai: '', classification: '' });
   const { toast } = useToast();
   const { profile } = useSupabaseAuth();
@@ -590,48 +589,107 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                                       )}
                                     </div>
                                   </div>
-                                  <div className="flex space-x-2">
-                                    {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
-                                      <Button 
-                                        onClick={() => sendToAdmin(selectedComplaint.id)}
-                                        variant="secondary"
-                                      >
-                                        <Send className="h-4 w-4 mr-2" />
-                                        Enviar para Admin
-                                      </Button>
-                                    )}
-                                    {userRole !== 'admin' && selectedComplaint.status === 'nova' && userRole !== 'atendente' && (
-                                      <Button 
-                                        onClick={() => {
-                                          const identifier = window.prompt('Digite o identificador do sistema:');
-                                          if (identifier) {
-                                            updateComplaintStatus(selectedComplaint.id, 'cadastrada', identifier);
-                                          }
-                                        }}
-                                      >
-                                        <Calendar className="h-4 w-4 mr-2" />
-                                        Marcar como Cadastrada
-                                      </Button>
-                                    )}
-                                    {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
-                                      <Button 
-                                        onClick={() => {
-                                          setRaiData({ rai: '', classification: '' });
-                                          setShowRaiModal(true);
-                                        }}
-                                        variant="default"
-                                      >
-                                        <Calendar className="h-4 w-4 mr-2" />
-                                        Cadastrar com RAI
-                                      </Button>
-                                    )}
-                                    {userRole === 'super_admin' && (
-                                      <Button onClick={() => sendWhatsAppMessage(selectedComplaint)}>
-                                        <MessageSquare className="h-4 w-4 mr-2" />
-                                        Enviar WhatsApp
-                                      </Button>
-                                    )}
-                                  </div>
+                                  
+                                  {/* Formulário RAI - mostrar apenas para atendente e denúncia nova */}
+                                  {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
+                                    <div className="space-y-4 border-t pt-4">
+                                      <h4 className="text-md font-semibold text-primary">Cadastrar com RAI</h4>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <Label htmlFor="rai-input">Número RAI *</Label>
+                                          <Input
+                                            id="rai-input"
+                                            type="text"
+                                            placeholder="Digite o número RAI"
+                                            value={raiData.rai}
+                                            onChange={(e) => setRaiData({ ...raiData, rai: e.target.value })}
+                                            className="mt-1"
+                                          />
+                                        </div>
+                                        
+                                        <div>
+                                          <Label htmlFor="classification-select">Classificação *</Label>
+                                          <Select 
+                                            value={raiData.classification} 
+                                            onValueChange={(value) => setRaiData({ ...raiData, classification: value })}
+                                          >
+                                            <SelectTrigger className="mt-1">
+                                              <SelectValue placeholder="Selecione uma classificação..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {classifications.map((classification) => (
+                                                <SelectItem key={classification} value={classification}>
+                                                  {classification}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                   <div className="flex space-x-2">
+                                     {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
+                                       <>
+                                         <Button 
+                                           onClick={() => sendToAdmin(selectedComplaint.id)}
+                                           variant="secondary"
+                                         >
+                                           <Send className="h-4 w-4 mr-2" />
+                                           Enviar para Admin
+                                         </Button>
+                                         
+                                         <Button 
+                                           onClick={() => {
+                                             if (!raiData.rai.trim()) {
+                                               toast({
+                                                 title: "Erro",
+                                                 description: "Por favor, digite o número RAI",
+                                                 variant: "destructive",
+                                               });
+                                               return;
+                                             }
+                                             
+                                             if (!raiData.classification) {
+                                               toast({
+                                                 title: "Erro", 
+                                                 description: "Por favor, selecione uma classificação",
+                                                 variant: "destructive",
+                                               });
+                                               return;
+                                             }
+                                             
+                                             updateComplaintStatus(selectedComplaint.id, 'cadastrada', raiData.rai);
+                                             setRaiData({ rai: '', classification: '' });
+                                           }}
+                                           variant="default"
+                                         >
+                                           <Calendar className="h-4 w-4 mr-2" />
+                                           Cadastrar com RAI
+                                         </Button>
+                                       </>
+                                     )}
+                                     {userRole !== 'admin' && selectedComplaint.status === 'nova' && userRole !== 'atendente' && (
+                                       <Button 
+                                         onClick={() => {
+                                           const identifier = window.prompt('Digite o identificador do sistema:');
+                                           if (identifier) {
+                                             updateComplaintStatus(selectedComplaint.id, 'cadastrada', identifier);
+                                           }
+                                         }}
+                                       >
+                                         <Calendar className="h-4 w-4 mr-2" />
+                                         Marcar como Cadastrada
+                                       </Button>
+                                     )}
+                                     {userRole === 'super_admin' && (
+                                       <Button onClick={() => sendWhatsAppMessage(selectedComplaint)}>
+                                         <MessageSquare className="h-4 w-4 mr-2" />
+                                         Enviar WhatsApp
+                                       </Button>
+                                     )}
+                                   </div>
                                 </div>
                               )}
                              </DialogContent>
@@ -904,87 +962,6 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
         </div>
       )}
 
-      {/* Modal RAI usando createPortal para aparecer acima de tudo */}
-      {showRaiModal && selectedComplaint && createPortal(
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999]">
-          <div className="bg-background p-6 rounded-lg min-w-[400px] shadow-xl border">
-            <h3 className="text-lg font-semibold mb-4">Cadastrar Denúncia</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="rai-input">Número RAI *</Label>
-                <Input
-                  id="rai-input"
-                  type="text"
-                  placeholder="Digite o número RAI"
-                  value={raiData.rai}
-                  onChange={(e) => setRaiData({ ...raiData, rai: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="classification-select">Classificação *</Label>
-                <Select 
-                  value={raiData.classification} 
-                  onValueChange={(value) => setRaiData({ ...raiData, classification: value })}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Selecione uma classificação..." />
-                  </SelectTrigger>
-                  <SelectContent className="z-[10000]">
-                    {classifications.map((classification) => (
-                      <SelectItem key={classification} value={classification}>
-                        {classification}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="flex gap-3 justify-end mt-6">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setShowRaiModal(false);
-                  setRaiData({ rai: '', classification: '' });
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!raiData.rai.trim()) {
-                    toast({
-                      title: "Erro",
-                      description: "Por favor, digite o número RAI",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  
-                  if (!raiData.classification) {
-                    toast({
-                      title: "Erro", 
-                      description: "Por favor, selecione uma classificação",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  
-                  updateComplaintStatus(selectedComplaint.id, 'cadastrada', raiData.rai);
-                  setShowRaiModal(false);
-                  setRaiData({ rai: '', classification: '' });
-                }}
-              >
-                Cadastrar
-              </Button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </div>
   );
 };
