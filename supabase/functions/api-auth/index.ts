@@ -6,19 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface TokenGenerateRequest {
-  token_name: string
-  token_type: 'sandbox' | 'production'
-  scopes: string[]
-  expires_at?: string
-  rate_limit_per_hour?: number
-}
-
-interface TokenValidateRequest {
-  token: string
-}
-
 serve(async (req) => {
+  console.log('=== API AUTH REQUEST START ===')
+  console.log('Method:', req.method)
+  console.log('URL:', req.url)
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -30,53 +22,49 @@ serve(async (req) => {
   )
 
   try {
-    const url = new URL(req.url)
-    const path = url.pathname
+    // Parse request body once
+    let body: any = {}
+    const contentType = req.headers.get('content-type')
     
-    // Tentar extrair ação do corpo da requisição primeiro
-    let action = ''
-    if (req.method === 'POST') {
+    if (req.method === 'POST' && contentType?.includes('application/json')) {
       try {
-        const body = await req.clone().json()
-        action = body.action || ''
+        const text = await req.text()
+        console.log('Raw body text:', text)
+        body = JSON.parse(text)
+        console.log('Parsed body:', body)
       } catch (e) {
-        // Se não conseguir ler o body, tenta extrair do caminho
-      }
-    }
-    
-    // Se não tem ação no body, extrai do caminho
-    if (!action) {
-      if (path.includes('generate-token')) {
-        action = 'generate-token'
-      } else if (path.includes('validate-token')) {
-        action = 'validate-token'
-      } else if (path.includes('refresh-token')) {
-        action = 'refresh-token'
+        console.error('Error parsing body:', e)
+        return new Response(
+          JSON.stringify({ error: 'Invalid JSON in request body' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
       }
     }
 
-    console.log('API Auth - Ação:', action, 'Caminho:', path)
+    const action = body.action || 'unknown'
+    console.log('Action extracted:', action)
 
     switch (action) {
       case 'generate-token':
-        return await generateToken(req, supabase)
+        return await generateToken(body, req, supabase)
       case 'validate-token':
-        return await validateToken(req, supabase)
+        return await validateToken(body, req, supabase)
       case 'refresh-token':
-        return await refreshToken(req, supabase)
+        return await refreshToken(body, req, supabase)
       default:
+        console.log('Unknown action:', action)
         return new Response(
-          JSON.stringify({ error: 'Endpoint não encontrado', path, action }),
+          JSON.stringify({ error: 'Action not specified or invalid', received_action: action }),
           { 
-            status: 404, 
+            status: 400, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         )
     }
   } catch (error) {
-    console.error('Erro na API de autenticação:', error)
+    console.error('ERROR in main handler:', error)
     return new Response(
-      JSON.stringify({ error: 'Erro interno do servidor' }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -85,21 +73,15 @@ serve(async (req) => {
   }
 })
 
-async function generateToken(req: Request, supabase: any) {
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Método não permitido' }),
-      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
+async function generateToken(body: any, req: Request, supabase: any) {
+  console.log('=== GENERATE TOKEN START ===')
+  
   try {
-    const body = await req.json()
-    
-    // Log do body recebido
-    console.log('Body recebido:', body)
+    console.log('Body data:', body)
     
     const authHeader = req.headers.get('authorization')
+    console.log('Auth header present:', !!authHeader)
+    
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: 'Token de autorização necessário' }),
@@ -108,19 +90,19 @@ async function generateToken(req: Request, supabase: any) {
     }
 
     const token = authHeader.replace('Bearer ', '')
-    console.log('Token extraído:', token ? 'presente' : 'ausente')
+    console.log('Token extracted length:', token.length)
     
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+    console.log('Auth result - User:', !!user, 'Error:', userError?.message)
     
     if (userError || !user) {
-      console.log('Erro de autenticação:', userError)
       return new Response(
         JSON.stringify({ error: 'Token inválido', details: userError?.message }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('Usuário autenticado:', user.id)
+    console.log('User authenticated:', user.id)
 
     // Verificar se é super admin
     const { data: userData, error: roleError } = await supabase
@@ -129,7 +111,7 @@ async function generateToken(req: Request, supabase: any) {
       .eq('id', user.id)
       .single()
 
-    console.log('Dados do usuário:', userData, 'Erro:', roleError)
+    console.log('User role check - Data:', userData, 'Error:', roleError?.message)
 
     if (roleError || userData?.role !== 'super_admin') {
       return new Response(
@@ -138,11 +120,9 @@ async function generateToken(req: Request, supabase: any) {
       )
     }
 
-    // Usar os dados do token do body que já foi lido
-    console.log('Gerando token com dados:', body)
-    
     // Gerar token único
     const tokenString = `sat_${body.token_type}_${crypto.randomUUID().replace(/-/g, '')}`
+    console.log('Generated token string length:', tokenString.length)
     
     // Hash do token para armazenar no banco
     const encoder = new TextEncoder()
@@ -150,30 +130,37 @@ async function generateToken(req: Request, supabase: any) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', data)
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     const tokenHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    console.log('Token hash generated, length:', tokenHash.length)
 
     // Inserir no banco
+    const insertData = {
+      user_id: user.id,
+      token_name: body.token_name,
+      token_hash: tokenHash,
+      token_type: body.token_type,
+      scopes: body.scopes || [],
+      expires_at: body.expires_at || null,
+      rate_limit_per_hour: body.rate_limit_per_hour || 1000
+    }
+    console.log('Inserting token with data:', insertData)
+
     const { data: newToken, error: insertError } = await supabase
       .from('api_tokens')
-      .insert({
-        user_id: user.id,
-        token_name: body.token_name,
-        token_hash: tokenHash,
-        token_type: body.token_type,
-        scopes: body.scopes || [],
-        expires_at: body.expires_at || null,
-        rate_limit_per_hour: body.rate_limit_per_hour || 1000
-      })
+      .insert(insertData)
       .select()
       .single()
 
+    console.log('Insert result - Data:', !!newToken, 'Error:', insertError?.message)
+
     if (insertError) {
-      console.error('Erro ao inserir token:', insertError)
+      console.error('Insert error details:', insertError)
       return new Response(
-        JSON.stringify({ error: 'Erro ao criar token' }),
+        JSON.stringify({ error: 'Erro ao criar token', details: insertError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    console.log('Token created successfully!')
     return new Response(
       JSON.stringify({
         success: true,
@@ -190,7 +177,7 @@ async function generateToken(req: Request, supabase: any) {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error: any) {
-    console.error('Erro ao gerar token:', error)
+    console.error('CRITICAL ERROR in generateToken:', error)
     return new Response(
       JSON.stringify({ error: 'Erro interno do servidor', details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -198,15 +185,8 @@ async function generateToken(req: Request, supabase: any) {
   }
 }
 
-async function validateToken(req: Request, supabase: any) {
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Método não permitido' }),
-      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
-  const body: TokenValidateRequest = await req.json()
+async function validateToken(body: any, req: Request, supabase: any) {
+  console.log('=== VALIDATE TOKEN START ===')
   
   const { data: tokenData, error } = await supabase
     .rpc('validate_api_token', { token_string: body.token })
@@ -238,14 +218,9 @@ async function validateToken(req: Request, supabase: any) {
   )
 }
 
-async function refreshToken(req: Request, supabase: any) {
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Método não permitido' }),
-      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
+async function refreshToken(body: any, req: Request, supabase: any) {
+  console.log('=== REFRESH TOKEN START ===')
+  
   // Por simplicidade, refreshToken apenas estende a expiração
   // Em uma implementação mais robusta, poderia gerar um novo token
   
