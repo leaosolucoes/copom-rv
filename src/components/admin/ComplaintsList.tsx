@@ -539,14 +539,14 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                 </TableHeader>
                 <TableBody>
                   {filteredComplaints
-                    .filter(complaint => {
-                      // Para admin e super_admin, mostrar "nova" e "a_verificar" na aba Novas
-                      if (userRole === 'admin' || userRole === 'super_admin') {
-                        return complaint.status === 'nova' || complaint.status === 'a_verificar';
-                      }
-                      // Para atendentes, mostrar apenas "nova"
-                      return complaint.status === 'nova';
-                    })
+                     .filter(complaint => {
+                       // Para admin e super_admin, mostrar "nova", "a_verificar" e "verificado" na aba Novas
+                       if (userRole === 'admin' || userRole === 'super_admin') {
+                         return complaint.status === 'nova' || complaint.status === 'a_verificar' || complaint.status === 'verificado';
+                       }
+                       // Para atendentes, mostrar "nova" e "verificado"
+                       return complaint.status === 'nova' || complaint.status === 'verificado';
+                     })
                     .map((complaint) => (
                     <TableRow key={complaint.id}>
                       <TableCell>
@@ -863,16 +863,16 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredComplaints
-                    .filter(complaint => {
-                      // Excluir "nova" da aba histórico
-                      if (complaint.status === 'nova') return false;
-                      // Para admin e super_admin, excluir "a_verificar" do histórico (pois aparece em Novas)
-                      if ((userRole === 'admin' || userRole === 'super_admin') && complaint.status === 'a_verificar') return false;
-                      // Para atendentes, ocultar denúncias "A Verificar" e "finalizada"
-                      if (userRole === 'atendente' && (complaint.status === 'a_verificar' || complaint.status === 'finalizada')) return false;
-                      return true;
-                    })
+                   {filteredComplaints
+                     .filter(complaint => {
+                       // Excluir "nova" e "verificado" da aba histórico
+                       if (complaint.status === 'nova' || complaint.status === 'verificado') return false;
+                       // Para admin e super_admin, excluir "a_verificar" do histórico (pois aparece em Novas)
+                       if ((userRole === 'admin' || userRole === 'super_admin') && complaint.status === 'a_verificar') return false;
+                       // Para atendentes, ocultar denúncias "A Verificar" e "finalizada"
+                       if (userRole === 'atendente' && (complaint.status === 'a_verificar' || complaint.status === 'finalizada')) return false;
+                       return true;
+                     })
                     .map((complaint) => (
                     <TableRow key={complaint.id}>
                       <TableCell>
