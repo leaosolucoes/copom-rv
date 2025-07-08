@@ -89,7 +89,7 @@ export function ApiManagement() {
   useEffect(() => {
     console.log('🎯 Componente ApiManagement montado');
     setIsLoading(false); // Parar o loading imediatamente
-    loadTokensDirectly(); // Carregar tokens diretamente
+    loadData(); // Carregar todos os dados
   }, []);
 
   const loadTokensDirectly = async () => {
@@ -121,7 +121,11 @@ export function ApiManagement() {
   const loadData = async () => {
     console.log('🔄 Função loadData chamada');
     setIsLoading(false); // Garantir que pare o loading
-    await loadTokensDirectly();
+    await Promise.all([
+      loadTokensDirectly(),
+      loadLogs(),
+      loadEndpoints()
+    ]);
   };
 
   const loadTokensWithServiceRole = async () => {
@@ -199,15 +203,24 @@ export function ApiManagement() {
   };
 
   const loadEndpoints = async () => {
-    const { data, error } = await supabase
-      .from('api_endpoints')
-      .select('*')
-      .order('path');
+    try {
+      console.log('🔄 Carregando endpoints...');
+      const { data, error } = await supabase
+        .from('api_endpoints')
+        .select('*')
+        .order('path');
 
-    if (error) {
-      throw error;
+      if (error) {
+        console.error('❌ Erro ao carregar endpoints:', error);
+        throw error;
+      }
+      
+      console.log('✅ Endpoints carregados:', data?.length || 0);
+      setEndpoints(data || []);
+    } catch (error) {
+      console.error('💥 Erro na função loadEndpoints:', error);
+      setEndpoints([]);
     }
-    setEndpoints(data || []);
   };
 
   const generateToken = async () => {
