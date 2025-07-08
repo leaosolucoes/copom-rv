@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Download, MessageSquare, Calendar, Send, Volume2, VolumeX } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -65,6 +66,8 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
   const [dateFilter, setDateFilter] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [classifications, setClassifications] = useState<string[]>([]);
+  const [showRaiModal, setShowRaiModal] = useState(false);
+  const [raiData, setRaiData] = useState({ rai: '', classification: '' });
   const { toast } = useToast();
 
   // Debug info
@@ -124,6 +127,22 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
     }
   };
 
+  const fetchClassifications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'public_classifications')
+        .single();
+
+      if (error) throw error;
+      const value = data.value;
+      setClassifications(Array.isArray(value) ? value.filter(item => typeof item === 'string') as string[] : []);
+    } catch (error) {
+      console.error('Erro ao carregar classificações:', error);
+    }
+  };
+
   const playNotificationSound = () => {
     const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwMZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAOUo8j6vGUdBjOQ3fHWeCwEJ3LL7eGPOgMVaLzt5JFPEC1YrdbqsGYfBjuV4PTXfjYEH2y8796iRgEXmMn96YFMAzKQz/fGdyQCK3rM7+WQRALEgbb+zG0lBR6J3PrHeCYEFWq88+aUUwGFgLT4028nBHuu5/ueNQMTcLjp4p9UE0+Y1vL6rWclBwTBpcl+3gABSHcA');
     audio.play().catch(e => console.log('Erro ao reproduzir som:', e));
@@ -154,22 +173,6 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
         description: "Erro ao enviar denúncia para administrador",
         variant: "destructive",
       });
-    }
-  };
-
-  const fetchClassifications = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('value')
-        .eq('key', 'public_classifications')
-        .single();
-
-      if (error) throw error;
-      const value = data.value;
-      setClassifications(Array.isArray(value) ? value.filter(item => typeof item === 'string') as string[] : []);
-    } catch (error) {
-      console.error('Erro ao carregar classificações:', error);
     }
   };
 
@@ -558,83 +561,8 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                                 {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
                                   <Button 
                                     onClick={() => {
-                                      // Criar modal para RAI e Classificação
-                                      const modalDiv = document.createElement('div');
-                                      modalDiv.innerHTML = `
-                                        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-                                          <div style="background: white; padding: 30px; border-radius: 12px; min-width: 400px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-                                            <h3 style="margin-bottom: 20px; font-size: 18px; font-weight: 600; color: #1f2937;">Cadastrar Denúncia</h3>
-                                            
-                                            <div style="margin-bottom: 20px;">
-                                              <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Número RAI *</label>
-                                              <input id="raiInput" type="text" placeholder="Digite o número RAI" 
-                                                style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;" />
-                                            </div>
-                                            
-                                            <div style="margin-bottom: 25px;">
-                                              <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Classificação *</label>
-                                              <select id="classificationSelect" 
-                                                style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; background: white;">
-                                                <option value="">Selecione uma classificação...</option>
-                                                ${classifications.map(c => `<option value="${c}">${c}</option>`).join('')}
-                                              </select>
-                                            </div>
-                                            
-                                            <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                                              <button id="cancelBtn" 
-                                                style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
-                                                Cancelar
-                                              </button>
-                                              <button id="confirmBtn" 
-                                                style="padding: 10px 20px; background: #059669; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
-                                                Cadastrar
-                                              </button>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      `;
-                                      document.body.appendChild(modalDiv);
-                                      
-                                      // Focar no input RAI
-                                      setTimeout(() => {
-                                        document.getElementById('raiInput')?.focus();
-                                      }, 100);
-                                      
-                                      document.getElementById('cancelBtn')?.addEventListener('click', () => {
-                                        document.body.removeChild(modalDiv);
-                                      });
-                                      
-                                      document.getElementById('confirmBtn')?.addEventListener('click', () => {
-                                        const raiInput = document.getElementById('raiInput') as HTMLInputElement;
-                                        const classificationSelect = document.getElementById('classificationSelect') as HTMLSelectElement;
-                                        
-                                        const rai = raiInput.value.trim();
-                                        const classification = classificationSelect.value;
-                                        
-                                        if (!rai) {
-                                          alert('Por favor, digite o número RAI');
-                                          raiInput.focus();
-                                          return;
-                                        }
-                                        
-                                        if (!classification) {
-                                          alert('Por favor, selecione uma classificação');
-                                          classificationSelect.focus();
-                                          return;
-                                        }
-                                        
-                                        updateComplaintStatus(selectedComplaint.id, 'cadastrada', rai);
-                                        document.body.removeChild(modalDiv);
-                                      });
-                                      
-                                      // Fechar com ESC
-                                      const escHandler = (e: KeyboardEvent) => {
-                                        if (e.key === 'Escape' && document.body.contains(modalDiv)) {
-                                          document.body.removeChild(modalDiv);
-                                          document.removeEventListener('keydown', escHandler);
-                                        }
-                                      };
-                                      document.addEventListener('keydown', escHandler);
+                                      setRaiData({ rai: '', classification: '' });
+                                      setShowRaiModal(true);
                                     }}
                                     variant="default"
                                   >
@@ -658,10 +586,7 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                            <Button 
                              size="sm" 
                              variant="secondary"
-                             onClick={() => {
-                               console.log('🔍 Enviando para admin - ID:', complaint.id);
-                               sendToAdmin(complaint.id);
-                             }}
+                             onClick={() => sendToAdmin(complaint.id)}
                              title="Enviar para Admin"
                            >
                              <Send className="h-4 w-4 mr-1" />
@@ -681,6 +606,83 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
       {filteredComplaints.length === 0 && (
         <div className="text-center py-8 text-gray-500">
           Nenhuma denúncia encontrada com os filtros aplicados.
+        </div>
+      )}
+
+      {/* Modal RAI */}
+      {showRaiModal && selectedComplaint && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-background p-6 rounded-lg min-w-[400px] shadow-xl">
+            <h3 className="text-lg font-semibold mb-4">Cadastrar Denúncia</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="rai">Número RAI *</Label>
+                <Input
+                  id="rai"
+                  type="text"
+                  placeholder="Digite o número RAI"
+                  value={raiData.rai}
+                  onChange={(e) => setRaiData({ ...raiData, rai: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="classification">Classificação *</Label>
+                <Select 
+                  value={raiData.classification} 
+                  onValueChange={(value) => setRaiData({ ...raiData, classification: value })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Selecione uma classificação..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classifications.map((classification) => (
+                      <SelectItem key={classification} value={classification}>
+                        {classification}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 justify-end mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowRaiModal(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!raiData.rai.trim()) {
+                    toast({
+                      title: "Erro",
+                      description: "Por favor, digite o número RAI",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  
+                  if (!raiData.classification) {
+                    toast({
+                      title: "Erro", 
+                      description: "Por favor, selecione uma classificação",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  
+                  updateComplaintStatus(selectedComplaint.id, 'cadastrada', raiData.rai);
+                  setShowRaiModal(false);
+                }}
+              >
+                Cadastrar
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
