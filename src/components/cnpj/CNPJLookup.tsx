@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Search, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,6 +47,7 @@ export function CNPJLookup() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>('');
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fetchLogo = async () => {
@@ -324,9 +326,14 @@ export function CNPJLookup() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              Dados do CNPJ
-              <Button onClick={generatePDF} variant="outline" size="sm">
+            <DialogTitle className={isMobile ? "flex flex-col gap-3" : "flex items-center justify-between"}>
+              <span>Dados do CNPJ</span>
+              <Button 
+                onClick={generatePDF} 
+                variant="outline" 
+                size={isMobile ? "default" : "sm"}
+                className={isMobile ? "w-full" : ""}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Exportar PDF
               </Button>
