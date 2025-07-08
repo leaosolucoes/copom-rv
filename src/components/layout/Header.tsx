@@ -13,11 +13,17 @@ export const Header = ({ showLoginButton = true, logoUrl }: HeaderProps) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {logoUrl ? (
-              <img 
-                src={logoUrl} 
-                alt="Logo Prefeitura" 
-                className="h-12 w-auto"
-              />
+              <div className="flex items-center space-x-3">
+                <img 
+                  src={logoUrl} 
+                  alt="Logo Prefeitura" 
+                  className="h-16 w-auto"
+                />
+                <div className="text-white">
+                  <h1 className="text-xl font-bold">Posturas Rio Verde</h1>
+                  <p className="text-sm opacity-90">Sistema de Denúncias</p>
+                </div>
+              </div>
             ) : (
               <div className="flex items-center space-x-2">
                 <Building2 className="h-8 w-8 text-white" />

@@ -655,18 +655,24 @@ export const PublicComplaintForm = () => {
       <Card className="shadow-form border-l-4 border-l-primary">
         <CardHeader>
           <CardTitle className="flex items-center gap-3 text-primary">
-            {logoUrl && (
-              <div className="flex items-center gap-2">
+            {logoUrl ? (
+              <div className="flex items-center gap-3">
                 <img 
                   src={logoUrl} 
                   alt="Logo" 
-                  className="h-10 w-10 object-contain"
+                  className="h-14 w-auto object-contain"
                 />
-                <span className="text-sm font-medium">Fiscalização de Posturas</span>
+                <div>
+                  <span className="text-lg font-bold">Fiscalização de Posturas</span>
+                  <p className="text-sm font-normal opacity-90">Formulário de Denúncia</p>
+                </div>
               </div>
+            ) : (
+              <>
+                <AlertTriangle className="h-5 w-5" />
+                Formulário de Denúncia
+              </>
             )}
-            <AlertTriangle className="h-5 w-5" />
-            Formulário de Denúncia
           </CardTitle>
         </CardHeader>
         <CardContent>
