@@ -14,7 +14,9 @@ export const validateDomain = (): boolean => {
     'lovable.app',
     'lovableproject.com',
     '668e639d-dc0b-4b7a-ab49-c9f19cc751b2.lovableproject.com',
-    // Adicione seus domínios autorizados aqui
+    'conectarioverde.com.br',
+    'posturas.conectarioverde.com.br',
+    // Domínios oficiais do sistema
   ];
 
   const currentDomain = window.location.hostname;
