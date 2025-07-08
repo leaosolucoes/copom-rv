@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, AlertCircle, Download, Play } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import ReactPlayer from 'react-player';
 
 interface MediaModalProps {
   isOpen: boolean;
@@ -107,93 +108,53 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                     </div>
                   )}
                   
-                  {!videoError ? (
-                    <div className="relative">
-                      {/* Primeiro, tentar com video element normal */}
-                      <video
-                        key={`video-${currentIndex}-${media[currentIndex]}`}
-                        className="w-full h-auto max-h-[70vh] bg-black rounded"
-                        controls
-                        preload="metadata"
-                        playsInline
-                        muted
-                        onLoadStart={() => {
-                          console.log('🎬 Iniciando carregamento do vídeo:', media[currentIndex]);
-                          setIsLoading(true);
-                          setVideoError(false);
-                        }}
-                        onLoadedMetadata={() => {
-                          console.log('📊 Metadata carregada para:', media[currentIndex]);
-                          setIsLoading(false);
-                        }}
-                        onCanPlay={() => {
-                          console.log('✅ Vídeo pode ser reproduzido:', media[currentIndex]);
-                          setIsLoading(false);
-                        }}
-                        onError={(e) => {
-                          console.error('❌ Erro no vídeo HTML5:', media[currentIndex]);
-                          console.error('Tentando fallback...');
-                          // Não setar erro ainda, vamos tentar fallbacks
-                          setIsLoading(false);
-                        }}
-                        onLoadedData={() => {
-                          console.log('📁 Dados do vídeo carregados:', media[currentIndex]);
-                          setIsLoading(false);
-                        }}
-                        style={{ maxHeight: 'calc(70vh)' }}
-                      >
-                        {/* Sources específicos para QuickTime */}
-                        <source src={media[currentIndex]} type="video/quicktime" />
-                        <source src={media[currentIndex]} type="video/mp4" />
-                        <source src={media[currentIndex]} type="video/webm" />
-                        <source src={media[currentIndex]} type="video/x-msvideo" />
-                        
-                        {/* Fallback: Object element para QuickTime */}
-                        <object
-                          data={media[currentIndex]}
-                          type="video/quicktime"
-                          width="100%"
-                          height="400"
-                          style={{ background: '#000' }}
+                  {/* ReactPlayer - Player muito mais robusto */}
+                  <div className="w-full max-w-4xl mx-auto">
+                     <ReactPlayer
+                       url={media[currentIndex]}
+                       width="100%"
+                       height="70vh"
+                       controls
+                       onReady={() => {
+                         console.log('✅ ReactPlayer pronto para:', media[currentIndex]);
+                         setIsLoading(false);
+                         setVideoError(false);
+                       }}
+                       onStart={() => {
+                         console.log('▶️ Reprodução iniciada:', media[currentIndex]);
+                         setIsLoading(false);
+                       }}
+                       onError={(error) => {
+                         console.error('❌ Erro no ReactPlayer:', error);
+                         console.log('🔄 Tentando fallback HTML5...');
+                         setVideoError(true);
+                         setIsLoading(false);
+                       }}
+                     />
+                    
+                    {/* Fallback HTML5 se ReactPlayer falhar */}
+                    {videoError && (
+                      <div className="mt-4">
+                        <p className="text-white text-center mb-4">Tentando player alternativo...</p>
+                        <video
+                          key={`fallback-${currentIndex}`}
+                          className="w-full h-auto max-h-[50vh] bg-black rounded"
+                          controls
+                          preload="metadata"
+                          playsInline
+                          onError={() => {
+                            console.error('❌ Player HTML5 também falhou para:', media[currentIndex]);
+                          }}
+                          style={{ maxHeight: 'calc(50vh)' }}
                         >
-                          {/* Fallback: Embed element */}
-                          <embed
-                            src={media[currentIndex]}
-                            type="video/quicktime"
-                            width="100%"
-                            height="400"
-                          />
-                          
-                          {/* Último fallback: Link direto */}
-                          <div className="text-center text-white p-8">
-                            <p className="mb-4">Seu navegador não suporta reprodução deste vídeo.</p>
-                            <Button
-                              onClick={() => window.open(media[currentIndex], '_blank')}
-                              className="bg-blue-600 hover:bg-blue-700"
-                            >
-                              Abrir vídeo em nova aba
-                            </Button>
-                          </div>
-                        </object>
-                      </video>
-                    </div>
-                  ) : (
-                    <div className="w-full h-64 bg-gray-800 rounded flex items-center justify-center">
-                      <div className="text-center text-white p-8">
-                        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-yellow-400" />
-                        <h3 className="text-lg font-semibold mb-2">Vídeo não suportado</h3>
-                        <p className="text-sm text-gray-300 mb-4">
-                          O formato {media[currentIndex].split('.').pop()?.toUpperCase()} pode não ser compatível com este navegador.
-                        </p>
-                        <p className="text-xs text-gray-400 mb-2 break-all">
-                          {media[currentIndex]}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          Arquivo: {media[currentIndex].split('/').pop()}
-                        </p>
+                          <source src={media[currentIndex]} type="video/quicktime" />
+                          <source src={media[currentIndex]} type="video/mp4" />
+                          <source src={media[currentIndex]} type="video/webm" />
+                          Seu navegador não suporta este formato de vídeo.
+                        </video>
                       </div>
-                    </div>
-                  )}
+                    )}
+                </div>
                 </div>
 
                 {/* Botões de ação */}
