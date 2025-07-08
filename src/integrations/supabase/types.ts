@@ -63,6 +63,7 @@ export type Database = {
       }
       complaints: {
         Row: {
+          archived_by: string | null
           assigned_to: string | null
           attendant_id: string | null
           classification: string
@@ -93,6 +94,7 @@ export type Database = {
           whatsapp_sent: boolean | null
         }
         Insert: {
+          archived_by?: string | null
           assigned_to?: string | null
           attendant_id?: string | null
           classification: string
@@ -123,6 +125,7 @@ export type Database = {
           whatsapp_sent?: boolean | null
         }
         Update: {
+          archived_by?: string | null
           assigned_to?: string | null
           attendant_id?: string | null
           classification?: string
@@ -153,6 +156,13 @@ export type Database = {
           whatsapp_sent?: boolean | null
         }
         Relationships: [
+          {
+            foreignKeyName: "complaints_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "complaints_attendant_id_fkey"
             columns: ["attendant_id"]

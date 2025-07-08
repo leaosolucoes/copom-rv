@@ -121,7 +121,8 @@ export const ComplaintsList = () => {
         .from('complaints')
         .select(`
           *,
-          attendant:users!complaints_attendant_id_fkey(full_name)
+          attendant:users!complaints_attendant_id_fkey(full_name),
+          archived_by_user:users!complaints_archived_by_fkey(full_name)
         `)
         .order('created_at', { ascending: false });
 
@@ -145,7 +146,8 @@ export const ComplaintsList = () => {
         .from('complaints')
         .select(`
           *,
-          attendant:users!complaints_attendant_id_fkey(full_name)
+          attendant:users!complaints_attendant_id_fkey(full_name),
+          archived_by_user:users!complaints_archived_by_fkey(full_name)
         `)
         .order('created_at', { ascending: false });
 
@@ -334,7 +336,8 @@ export const ComplaintsList = () => {
         .from('complaints')
         .update({ 
           status: 'finalizada' as ComplaintStatus,
-          processed_at: new Date().toISOString()
+          processed_at: new Date().toISOString(),
+          archived_by: user?.id
         })
         .eq('id', complaintId);
 
@@ -895,13 +898,23 @@ export const ComplaintsList = () => {
                          <span className="text-gray-400">-</span>
                        )}
                      </TableCell>
-                      <TableCell>
-                        {(complaint as any).attendant?.full_name ? (
-                          <span className="text-sm">{(complaint as any).attendant.full_name}</span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
+                       <TableCell>
+                         {complaint.status === 'finalizada' ? (
+                           // Para denúncias finalizadas, mostrar quem arquivou
+                           (complaint as any).archived_by_user?.full_name ? (
+                             <span className="text-sm">{(complaint as any).archived_by_user.full_name}</span>
+                           ) : (
+                             <span className="text-gray-400">-</span>
+                           )
+                         ) : (
+                           // Para outras denúncias, mostrar quem cadastrou
+                           (complaint as any).attendant?.full_name ? (
+                             <span className="text-sm">{(complaint as any).attendant.full_name}</span>
+                           ) : (
+                             <span className="text-gray-400">-</span>
+                           )
+                         )}
+                       </TableCell>
                      <TableCell>
                        <Dialog>
                          <DialogTrigger asChild>
