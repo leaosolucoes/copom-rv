@@ -187,19 +187,42 @@ export function ApiManagement() {
   };
 
   const loadLogs = async () => {
-    const { data, error } = await supabase
-      .from('api_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
+    try {
+      console.log('🔄 Carregando logs da API...');
+      
+      // Primeiro verificar se o usuário pode acessar
+      const { data: authCheck, error: authError } = await supabase
+        .rpc('is_current_user_super_admin_safe');
+      
+      console.log('👑 Verificação de super admin para logs:', { result: authCheck, error: authError });
+      
+      const { data, error } = await supabase
+        .from('api_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
 
-    if (error) {
-      throw error;
+      console.log('📋 Resultado do carregamento de logs:', { data, error, count: data?.length });
+
+      if (error) {
+        console.error('❌ Erro ao carregar logs:', error);
+        throw error;
+      }
+      
+      console.log('✅ Logs carregados:', data?.length || 0);
+      setLogs((data || []).map(log => ({
+        ...log,
+        ip_address: String(log.ip_address || 'unknown')
+      })) as ApiLog[]);
+    } catch (error: any) {
+      console.error('💥 Erro na função loadLogs:', error);
+      setLogs([]);
+      toast({
+        title: "Erro",
+        description: `Erro ao carregar logs: ${error.message}`,
+        variant: "destructive",
+      });
     }
-    setLogs((data || []).map(log => ({
-      ...log,
-      ip_address: String(log.ip_address || 'unknown')
-    })) as ApiLog[]);
   };
 
   const loadEndpoints = async () => {
@@ -412,6 +435,9 @@ export function ApiManagement() {
         <div className="flex gap-2">
           <Button onClick={loadTokensDirectly} variant="outline" size="sm">
             Recarregar Tokens
+          </Button>
+          <Button onClick={loadLogs} variant="outline" size="sm">
+            Recarregar Logs
           </Button>
           <Button onClick={exportPostmanCollection} variant="outline">
             <Download className="h-4 w-4 mr-2" />
