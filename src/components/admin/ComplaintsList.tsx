@@ -641,7 +641,7 @@ export const ComplaintsList = () => {
                                    </div>
                                    
                                    {/* Formulário RAI - mostrar para atendente e denúncia nova ou verificada */}
-                                   {userRole === 'atendente' && (selectedComplaint.status === 'nova' || selectedComplaint.status === 'verificado') && (
+                                   {(userRole === 'atendente' || userRole === 'authenticated') && (selectedComplaint.status === 'nova' || selectedComplaint.status === 'verificado') && (
                                      <div className="space-y-4 border-t pt-4">
                                        <h4 className="text-md font-semibold text-primary">Cadastrar com RAI</h4>
                                        <div className="grid grid-cols-2 gap-4">
