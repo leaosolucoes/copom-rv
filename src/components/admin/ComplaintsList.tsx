@@ -1195,33 +1195,46 @@ export const ComplaintsList = () => {
                                           )}
 
                                           {/* Vídeos */}
-                                          {selectedComplaint.videos && selectedComplaint.videos.length > 0 && (
-                                            <div className="space-y-2">
-                                              <div className="flex items-center gap-2 text-sm font-medium">
-                                                <Video className="h-4 w-4" />
-                                                Vídeos ({selectedComplaint.videos.length})
-                                              </div>
-                                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                 {selectedComplaint.videos.map((video, index) => (
-                                                   <div key={index} className="relative cursor-pointer group">
-                                                     <video 
-                                                       src={video} 
-                                                       className="w-full h-32 object-cover rounded border"
-                                                       preload="metadata"
-                                                     />
-                                                     <div 
-                                                       className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded cursor-pointer"
-                                                       onClick={() => openMediaModal(selectedComplaint.videos!, index, 'video')}
-                                                     >
-                                                       <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                                                         <div className="w-0 h-0 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5"></div>
-                                                       </div>
-                                                     </div>
-                                                   </div>
-                                                 ))}
+                                           {selectedComplaint.videos && selectedComplaint.videos.length > 0 && (
+                                             <div className="space-y-2">
+                                               <div className="flex items-center gap-2 text-sm font-medium">
+                                                 <Video className="h-4 w-4" />
+                                                 Vídeos ({selectedComplaint.videos.length})
                                                </div>
-                                            </div>
-                                          )}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                  {selectedComplaint.videos.map((video, index) => {
+                                                    console.log('Renderizando vídeo:', video, 'Index:', index);
+                                                    return (
+                                                      <div key={index} className="relative cursor-pointer group border rounded overflow-hidden bg-gray-100">
+                                                        <video 
+                                                          src={video} 
+                                                          className="w-full h-32 object-cover"
+                                                          preload="metadata"
+                                                          muted
+                                                          onError={(e) => {
+                                                            console.error('Erro ao carregar vídeo preview:', video, e);
+                                                          }}
+                                                          onLoadedMetadata={() => {
+                                                            console.log('Metadata do vídeo carregada:', video);
+                                                          }}
+                                                        />
+                                                        <div 
+                                                          className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                                          onClick={() => openMediaModal(selectedComplaint.videos!, index, 'video')}
+                                                        >
+                                                          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                                                            <div className="w-0 h-0 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5"></div>
+                                                          </div>
+                                                        </div>
+                                                        <div className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1 rounded">
+                                                          Vídeo {index + 1}
+                                                        </div>
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                             </div>
+                                           )}
                                         </div>
                                       )}
                                       
