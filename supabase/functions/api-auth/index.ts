@@ -31,7 +31,19 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url)
-    const action = url.pathname.split('/').pop()
+    const path = url.pathname
+    
+    // Extrair a ação do caminho (pode ser /generate-token ou /api-auth/generate-token)
+    let action = ''
+    if (path.includes('generate-token')) {
+      action = 'generate-token'
+    } else if (path.includes('validate-token')) {
+      action = 'validate-token'
+    } else if (path.includes('refresh-token')) {
+      action = 'refresh-token'
+    }
+
+    console.log('API Auth - Ação:', action, 'Caminho:', path)
 
     switch (action) {
       case 'generate-token':
@@ -42,7 +54,7 @@ serve(async (req) => {
         return await refreshToken(req, supabase)
       default:
         return new Response(
-          JSON.stringify({ error: 'Endpoint não encontrado' }),
+          JSON.stringify({ error: 'Endpoint não encontrado', path, action }),
           { 
             status: 404, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
