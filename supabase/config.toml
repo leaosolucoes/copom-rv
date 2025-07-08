@@ -1,1 +1,4 @@
 project_id = "smytdnkylauxocqrkchn"
+
+[functions.api-complaints]
+verify_jwt = false
