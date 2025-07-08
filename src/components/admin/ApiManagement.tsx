@@ -644,9 +644,9 @@ export function ApiManagement() {
               <div className="space-y-4">
                 {tokens.map((token) => (
                   <div key={token.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="flex-1 space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
                           <h3 className="font-semibold">{token.token_name}</h3>
                           <Badge variant={token.token_type === 'production' ? 'default' : 'secondary'}>
                             {token.token_type === 'production' ? 'Produção' : 'Sandbox'}
@@ -655,40 +655,45 @@ export function ApiManagement() {
                             {token.is_active ? 'Ativo' : 'Inativo'}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Criado em: {new Date(token.created_at).toLocaleString('pt-BR')}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Último uso: {token.last_used_at ? new Date(token.last_used_at).toLocaleString('pt-BR') : 'Nunca'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Uso total: {token.usage_count} requisições
-                        </p>
-                        <div className="flex gap-1">
-                          {token.scopes.map(scope => (
-                            <Badge key={scope} variant="outline" className="text-xs">
-                              {scope}
-                            </Badge>
-                          ))}
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                          <p>Criado em: {new Date(token.created_at).toLocaleString('pt-BR')}</p>
+                          <p>Último uso: {token.last_used_at ? new Date(token.last_used_at).toLocaleString('pt-BR') : 'Nunca'}</p>
+                          <p>Uso total: {token.usage_count} requisições</p>
+                          <p>Rate limit: {token.rate_limit_per_hour}/hora</p>
+                        </div>
+                        
+                        <div>
+                          <p className="text-sm font-medium mb-2">Permissões:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {token.scopes.map(scope => (
+                              <Badge key={scope} variant="outline" className="text-xs">
+                                {scope}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                      <Button 
-                        variant={token.is_active ? "destructive" : "default"}
-                        size="sm"
-                        onClick={() => toggleTokenStatus(token.id, token.is_active)}
-                      >
-                        {token.is_active ? (
-                          <>
-                            <EyeOff className="h-4 w-4 mr-2" />
-                            Desativar
-                          </>
-                        ) : (
-                          <>
-                            <Eye className="h-4 w-4 mr-2" />
-                            Ativar
-                          </>
-                        )}
-                      </Button>
+                      
+                      <div className="flex-shrink-0">
+                        <Button 
+                          variant={token.is_active ? "destructive" : "default"}
+                          size="sm"
+                          onClick={() => toggleTokenStatus(token.id, token.is_active)}
+                        >
+                          {token.is_active ? (
+                            <>
+                              <EyeOff className="h-4 w-4 mr-2" />
+                              Desativar
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ativar
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
