@@ -14,23 +14,27 @@ interface MediaModalProps {
 export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: MediaModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [videoError, setVideoError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   console.log('MediaModal props:', { isOpen, media, initialIndex, type });
 
   // Atualizar currentIndex quando initialIndex mudar
   useEffect(() => {
     setCurrentIndex(initialIndex);
-    setVideoError(false); // Reset error state when changing videos
+    setVideoError(false);
+    setIsLoading(true);
   }, [initialIndex]);
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : media.length - 1));
     setVideoError(false);
+    setIsLoading(true);
   };
 
   const goToNext = () => {
     setCurrentIndex((prev) => (prev < media.length - 1 ? prev + 1 : 0));
     setVideoError(false);
+    setIsLoading(true);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -78,112 +82,115 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                 style={{ maxHeight: 'calc(90vh - 4rem)' }}
               />
             ) : (
-              <div className="relative w-full h-full flex flex-col items-center justify-center">
-                {!videoError ? (
-                  <>
-                    <div className="w-full flex items-center justify-center mb-4">
-                      <video
-                        key={media[currentIndex]}
-                        src={media[currentIndex]}
-                        controls
-                        preload="metadata"
-                        playsInline
-                        className="max-w-full max-h-full rounded"
-                        style={{ maxHeight: 'calc(90vh - 10rem)' }}
-                        onError={() => {
-                          console.error('Erro ao carregar vídeo:', media[currentIndex]);
-                          setVideoError(true);
-                        }}
-                        onLoadedData={() => {
-                          console.log('Vídeo carregado:', media[currentIndex]);
-                          setVideoError(false);
-                        }}
-                        onCanPlay={() => {
-                          console.log('Vídeo pode ser reproduzido:', media[currentIndex]);
-                        }}
-                      >
-                        <source src={media[currentIndex]} type="video/mp4" />
-                        <source src={media[currentIndex]} type="video/webm" />
-                        <source src={media[currentIndex]} type="video/quicktime" />
-                        <source src={media[currentIndex]} type="video/x-msvideo" />
-                        <source src={media[currentIndex]} type="video/ogg" />
-                        <source src={media[currentIndex]} />
-                        Seu navegador não suporta este formato de vídeo.
-                      </video>
+              <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                <div className="relative w-full max-w-4xl">
+                  {/* Loading indicator */}
+                  {isLoading && !videoError && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded z-10">
+                      <div className="text-white text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                        <p className="text-sm">Carregando vídeo...</p>
+                      </div>
                     </div>
-                    
-                    {/* Botões de ação sempre visíveis */}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="bg-black/50 hover:bg-black/70 text-white border-white/20"
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = media[currentIndex];
-                          link.download = media[currentIndex].split('/').pop() || 'video';
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Baixar Vídeo
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="bg-black/50 hover:bg-black/70 text-white border-white/20"
-                        onClick={() => {
-                          window.open(media[currentIndex], '_blank');
-                        }}
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        Abrir Player Externo
-                      </Button>
+                  )}
+                  
+                  {!videoError ? (
+                    <video
+                      key={`video-${currentIndex}-${media[currentIndex]}`}
+                      className="w-full h-auto max-h-[70vh] bg-black rounded"
+                      controls
+                      preload="metadata"
+                      playsInline
+                      crossOrigin="anonymous"
+                      onLoadStart={() => {
+                        console.log('Iniciando carregamento:', media[currentIndex]);
+                        setIsLoading(true);
+                        setVideoError(false);
+                      }}
+                      onLoadedMetadata={() => {
+                        console.log('Metadata carregada:', media[currentIndex]);
+                        setIsLoading(false);
+                      }}
+                      onCanPlay={() => {
+                        console.log('Vídeo pode ser reproduzido:', media[currentIndex]);
+                        setIsLoading(false);
+                      }}
+                      onError={(e) => {
+                        console.error('Erro no vídeo:', media[currentIndex], e);
+                        setVideoError(true);
+                        setIsLoading(false);
+                      }}
+                      onLoadedData={() => {
+                        console.log('Dados carregados:', media[currentIndex]);
+                        setIsLoading(false);
+                      }}
+                    >
+                      <source src={media[currentIndex]} type="video/mp4" />
+                      <source src={media[currentIndex]} type="video/webm" />
+                      <source src={media[currentIndex]} type="video/quicktime" />
+                      <source src={media[currentIndex]} type="video/x-msvideo" />
+                      <source src={media[currentIndex]} type="video/ogg" />
+                      Seu navegador não suporta este formato de vídeo.
+                    </video>
+                  ) : (
+                    <div className="w-full h-64 bg-gray-800 rounded flex items-center justify-center">
+                      <div className="text-center text-white p-8">
+                        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-yellow-400" />
+                        <h3 className="text-lg font-semibold mb-2">Erro no vídeo</h3>
+                        <p className="text-sm text-gray-300 mb-4">
+                          Não foi possível reproduzir o vídeo
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Arquivo: {media[currentIndex].split('/').pop()}
+                        </p>
+                      </div>
                     </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-8 text-white max-w-md mx-auto">
-                    <AlertCircle className="h-16 w-16 mb-4 text-yellow-400" />
-                    <h3 className="text-lg font-semibold mb-2">Formato não suportado</h3>
-                    <p className="text-sm text-gray-300 mb-4 text-center">
-                      O arquivo {media[currentIndex].split('.').pop()?.toUpperCase()} não pode ser reproduzido neste navegador.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-white border-white hover:bg-white hover:text-black"
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = media[currentIndex];
-                          link.download = media[currentIndex].split('/').pop() || 'video';
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Baixar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-white border-white hover:bg-white hover:text-black"
-                        onClick={() => {
-                          window.open(media[currentIndex], '_blank');
-                        }}
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        Player Externo
-                      </Button>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-4 text-center">
-                      Baixe o arquivo ou use um player externo para reproduzir
-                    </p>
-                  </div>
-                )}
+                  )}
+                </div>
+
+                {/* Botões de ação */}
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = media[currentIndex];
+                      link.download = media[currentIndex].split('/').pop() || 'video';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+                    onClick={() => {
+                      window.open(media[currentIndex], '_blank');
+                    }}
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Nova Aba
+                  </Button>
+                  {videoError && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+                      onClick={() => {
+                        setVideoError(false);
+                        setIsLoading(true);
+                      }}
+                    >
+                      Tentar Novamente
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </div>
