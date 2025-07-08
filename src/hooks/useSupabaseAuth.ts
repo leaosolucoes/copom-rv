@@ -7,7 +7,7 @@ interface UserProfile {
   id: string;
   email: string;
   full_name: string;
-  role: 'super_admin' | 'admin' | 'atendente';
+  role: 'super_admin' | 'admin' | 'atendente' | 'fiscal';
   is_active: boolean;
   user_roles?: Array<{
     role: string;
@@ -207,7 +207,7 @@ export const useSupabaseAuth = () => {
         id: userData.user_id,
         email: userData.email,
         full_name: userData.full_name,
-        role: userData.role as 'super_admin' | 'admin' | 'atendente',
+        role: userData.role as 'super_admin' | 'admin' | 'atendente' | 'fiscal',
         is_active: userData.is_active
       });
 
@@ -217,7 +217,7 @@ export const useSupabaseAuth = () => {
         id: userData.user_id,
         email: userData.email,
         full_name: userData.full_name,
-        role: userData.role as 'super_admin' | 'admin' | 'atendente',
+        role: userData.role as 'super_admin' | 'admin' | 'atendente' | 'fiscal',
         is_active: userData.is_active
       }));
 

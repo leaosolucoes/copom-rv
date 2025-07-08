@@ -41,6 +41,9 @@ const Login = () => {
         case 'atendente':
           navigate('/atendente', { replace: true });
           break;
+        case 'fiscal':
+          navigate('/fiscal', { replace: true });
+          break;
         default:
           navigate('/', { replace: true });
       }

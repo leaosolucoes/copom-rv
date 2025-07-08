@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import AtendenteDashboard from "./pages/AtendenteDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import FiscalDashboard from "./pages/FiscalDashboard";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 
@@ -78,6 +79,14 @@ const App = () => {
             element={
               <ProtectedRoute allowedRoles={['super_admin']}>
                 <SuperAdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/fiscal" 
+            element={
+              <ProtectedRoute allowedRoles={['fiscal', 'admin', 'super_admin']}>
+                <FiscalDashboard />
               </ProtectedRoute>
             } 
           />

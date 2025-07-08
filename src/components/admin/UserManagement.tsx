@@ -17,7 +17,7 @@ interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'super_admin' | 'admin' | 'atendente';
+  role: 'super_admin' | 'admin' | 'atendente' | 'fiscal';
   is_active: boolean;
   created_at: string;
   last_login: string | null;
@@ -36,7 +36,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
     email: '',
     full_name: '',
     password: '',
-    role: 'atendente' as 'admin' | 'atendente',
+    role: 'atendente' as 'admin' | 'atendente' | 'fiscal',
     is_active: true
   });
   const { toast } = useToast();
@@ -168,7 +168,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
       email: user.email,
       full_name: user.full_name,
       password: '',
-      role: user.role as 'admin' | 'atendente',
+      role: user.role as 'admin' | 'atendente' | 'fiscal',
       is_active: user.is_active
     });
     setDialogOpen(true);
@@ -216,13 +216,15 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
     const colors = {
       super_admin: 'bg-red-500',
       admin: 'bg-blue-500',
-      atendente: 'bg-green-500'
+      atendente: 'bg-green-500',
+      fiscal: 'bg-orange-500'
     };
     
     const labels = {
       super_admin: 'Super Admin',
       admin: 'Admin',
-      atendente: 'Atendente'
+      atendente: 'Atendente',
+      fiscal: 'Fiscal'
     };
 
     return (
@@ -301,7 +303,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                   <Label htmlFor="role">Perfil</Label>
                   <Select 
                     value={formData.role} 
-                    onValueChange={(value: 'admin' | 'atendente') => 
+                    onValueChange={(value: 'admin' | 'atendente' | 'fiscal') => 
                       setFormData(prev => ({ ...prev, role: value }))
                     }
                   >
@@ -311,6 +313,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                     <SelectContent>
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="atendente">Atendente</SelectItem>
+                      <SelectItem value="fiscal">Fiscal</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
