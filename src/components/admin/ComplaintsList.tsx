@@ -68,8 +68,8 @@ export const ComplaintsList = () => {
   const { toast } = useToast();
   const { user, profile } = useSupabaseAuth();
   
-  // Get user role from the user object
-  const userRole = user?.role || 'atendente';
+  // Get user role from the profile object
+  const userRole = profile?.role || 'atendente';
 
   useEffect(() => {
     fetchComplaints();
@@ -656,8 +656,8 @@ export const ComplaintsList = () => {
                                      </div>
                                    </div>
                                    
-                                   {/* Formulário RAI - mostrar para atendente e denúncia nova ou verificada */}
-                                   {(userRole === 'atendente' || userRole === 'authenticated') && (selectedComplaint.status === 'nova' || selectedComplaint.status === 'verificado') && (
+                                    {/* Formulário RAI - mostrar para atendente e denúncia nova ou verificada */}
+                                    {userRole === 'atendente' && (selectedComplaint.status === 'nova' || selectedComplaint.status === 'verificado') && (
                                      <div className="space-y-4 border-t pt-4">
                                        <h4 className="text-md font-semibold text-primary">Cadastrar com RAI</h4>
                                        <div className="grid grid-cols-2 gap-4">
@@ -695,7 +695,7 @@ export const ComplaintsList = () => {
 
                                      <div className="flex flex-wrap gap-2 pt-4 border-t">
                                        {/* Botões para ATENDENTE com denúncia NOVA */}
-                                       {(userRole === 'atendente' || userRole === 'authenticated') && selectedComplaint.status === 'nova' && (
+                                       {userRole === 'atendente' && selectedComplaint.status === 'nova' && (
                                         <>
                                           <Button 
                                             onClick={() => sendToAdmin(selectedComplaint.id)}
@@ -736,8 +736,8 @@ export const ComplaintsList = () => {
                                         </>
                                       )}
 
-                                      {/* Botões para ATENDENTE com denúncia VERIFICADA */}
-                                      {(userRole === 'atendente' || userRole === 'authenticated') && selectedComplaint.status === 'verificado' && (
+                                       {/* Botões para ATENDENTE com denúncia VERIFICADA */}
+                                       {userRole === 'atendente' && selectedComplaint.status === 'verificado' && (
                                         <Button 
                                           onClick={() => {
                                             if (!raiData.rai.trim()) {
