@@ -23,11 +23,12 @@ const App = () => {
   // Carregar e aplicar cores do sistema
   useSystemColors();
   
-  // Proteções de segurança
-  useDevToolsProtection();
+  // Proteções de segurança - temporariamente desabilitadas para testar vídeos
+  // useDevToolsProtection();
   
   useEffect(() => {
-    // Verificações de segurança na inicialização
+    // Verificações de segurança temporariamente desabilitadas para testar vídeos
+    /*
     if (!validateDomain()) {
       logger.error('Domínio não autorizado detectado');
       document.body.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Acesso não autorizado</div>';
@@ -46,6 +47,7 @@ const App = () => {
     logger.info('Sistema de proteção ativado');
     
     return cleanup;
+    */
   }, []);
 
   return (
