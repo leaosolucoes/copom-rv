@@ -66,6 +66,10 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const { toast } = useToast();
 
+  // Debug info
+  console.log('🔍 ComplaintsList - userRole:', userRole);
+  console.log('🔍 ComplaintsList - complaints:', complaints?.length || 0);
+
   const fetchComplaints = async () => {
     try {
       setLoading(true);
@@ -544,15 +548,21 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
                          </DialogContent>
                        </Dialog>
                        
-                       {userRole === 'atendente' && complaint.status === 'nova' && (
-                         <Button 
-                           size="sm" 
-                           variant="secondary"
-                           onClick={() => sendToAdmin(complaint.id)}
-                         >
-                           <Send className="h-4 w-4" />
-                         </Button>
-                       )}
+                         {userRole === 'atendente' && complaint.status === 'nova' && (
+                           <Button 
+                             size="sm" 
+                             variant="secondary"
+                             onClick={() => {
+                               console.log('🔍 Enviando para admin - ID:', complaint.id);
+                               sendToAdmin(complaint.id);
+                             }}
+                             title="Enviar para Admin"
+                           >
+                             <Send className="h-4 w-4 mr-1" />
+                             Enviar
+                           </Button>
+                         )}
+                         
                      </div>
                   </TableCell>
                 </TableRow>
