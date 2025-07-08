@@ -11,8 +11,9 @@ import { SystemSettings } from '@/components/admin/SystemSettings';
 import { WhatsAppConfig } from '@/components/admin/WhatsAppConfig';
 import { FormFieldsConfig } from '@/components/admin/FormFieldsConfig';
 import { LogoUpload } from '@/components/admin/LogoUpload';
+import { OccurrenceTypesConfig } from '@/components/admin/OccurrenceTypesConfig';
 import { SoundNotificationControl } from '@/components/admin/SoundNotificationControl';
-import { Users, FileText, Settings, MessageSquare, Layout, Image } from 'lucide-react';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List } from 'lucide-react';
 
 const SuperAdminDashboard = () => {
   const { profile, signOut, hasRole, isLoading } = useSupabaseAuth();
@@ -73,7 +74,7 @@ const SuperAdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="complaints" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-fit">
+          <TabsList className="grid w-full grid-cols-7 lg:w-fit">`
             <TabsTrigger value="complaints" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Denúncias</span>
@@ -93,6 +94,10 @@ const SuperAdminDashboard = () => {
             <TabsTrigger value="logo" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
               <span className="hidden sm:inline">Logo</span>
+            </TabsTrigger>
+            <TabsTrigger value="occurrence-types" className="flex items-center gap-2">
+              <List className="h-4 w-4" />
+              <span className="hidden sm:inline">Tipos</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -166,6 +171,20 @@ const SuperAdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <LogoUpload onLogoUpdate={setLogoUrl} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="occurrence-types" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tipos de Ocorrência</CardTitle>
+                <CardDescription>
+                  Configure os tipos de ocorrência disponíveis no formulário público de denúncias
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <OccurrenceTypesConfig />
               </CardContent>
             </Card>
           </TabsContent>
