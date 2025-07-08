@@ -78,15 +78,16 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                 style={{ maxHeight: 'calc(90vh - 4rem)' }}
               />
             ) : (
-              <>
+              <div className="relative w-full h-full flex flex-col items-center justify-center">
                 {!videoError ? (
-                  <div className="relative w-full h-full flex items-center justify-center">
+                  <>
                     <video
                       key={media[currentIndex]} // Force re-render when video changes
-                      className="max-w-full max-h-full"
-                      style={{ maxHeight: 'calc(90vh - 4rem)' }}
+                      className="max-w-full max-h-full mb-4"
+                      style={{ maxHeight: 'calc(90vh - 8rem)' }}
                       controls
                       preload="metadata"
+                      playsInline
                       onError={(e) => {
                         console.error('Erro ao carregar vídeo no modal:', media[currentIndex]);
                         console.error('Video error event:', e);
@@ -99,6 +100,9 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                       onCanPlay={() => {
                         console.log('Vídeo pronto para reproduzir no modal:', media[currentIndex]);
                       }}
+                      onLoadedData={() => {
+                        console.log('Dados do vídeo carregados:', media[currentIndex]);
+                      }}
                     >
                       {/* Múltiplas sources para diferentes formatos */}
                       <source src={media[currentIndex]} type="video/mp4" />
@@ -108,17 +112,48 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                       <source src={media[currentIndex]} type="video/ogg" />
                       <source src={media[currentIndex]} type="video/3gpp" />
                       <source src={media[currentIndex]} type="video/x-ms-wmv" />
-                      {/* Fallback genérico - força o navegador a tentar reproduzir */}
+                      {/* Fallback genérico */}
                       <source src={media[currentIndex]} />
                       Seu navegador não suporta o elemento de vídeo.
                     </video>
-                  </div>
+                    
+                    {/* Botão de download sempre visível para vídeos que carregam */}
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="bg-black/50 hover:bg-black/70 text-white border-white/20"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = media[currentIndex];
+                          link.download = media[currentIndex].split('/').pop() || 'video';
+                          link.target = '_blank';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Baixar Vídeo
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="bg-black/50 hover:bg-black/70 text-white border-white/20"
+                        onClick={() => {
+                          window.open(media[currentIndex], '_blank');
+                        }}
+                      >
+                        Abrir em nova aba
+                      </Button>
+                    </div>
+                  </>
                 ) : (
                   <div className="flex flex-col items-center justify-center p-8 text-white max-w-md mx-auto">
                     <AlertCircle className="h-16 w-16 mb-4 text-yellow-400" />
                     <h3 className="text-lg font-semibold mb-2">Formato não suportado</h3>
                     <p className="text-sm text-gray-300 mb-4 text-center">
-                      O formato {media[currentIndex].split('.').pop()?.toUpperCase()} pode não ser suportado pelo seu navegador.
+                      O vídeo {media[currentIndex].split('.').pop()?.toUpperCase()} não pode ser reproduzido neste navegador.
                     </p>
                     <div className="flex gap-2">
                       <Button
@@ -150,11 +185,11 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                       </Button>
                     </div>
                     <p className="text-xs text-gray-400 mt-4 text-center">
-                      Dica: Tente baixar o arquivo ou usar um player de vídeo externo
+                      Baixe o arquivo para reproduzir em um player externo
                     </p>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
 
