@@ -137,13 +137,16 @@ export const ComplaintsList = () => {
   const fetchComplaints = async () => {
     try {
       setLoading(true);
+      // Force cache refresh for new RLS policy
+      const timestamp = Date.now();
       const { data, error } = await supabase
         .from('complaints')
         .select(`
           *,
           attendant:users!complaints_attendant_id_fkey(full_name)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .gte('created_at', '1900-01-01') // Force fresh query
 
       if (error) throw error;
       
