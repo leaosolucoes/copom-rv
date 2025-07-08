@@ -98,6 +98,11 @@ export const PublicComplaintForm = () => {
     loadSystemSettings();
   }, []);
 
+  // Adicionar efeito para recarregar quando houver mudanças nos tipos
+  useEffect(() => {
+    console.log('📊 Settings atualizados:', settings);
+  }, [settings]);
+
   const loadSystemSettings = async () => {
     try {
       const { data, error } = await supabase
@@ -134,6 +139,11 @@ export const PublicComplaintForm = () => {
         } else {
           const value = typeof item.value === 'string' ? JSON.parse(item.value) : item.value;
           settingsObj[item.key as keyof SystemSettings] = value;
+          
+          // Debug: Log para verificar os tipos de ocorrência carregados
+          if (item.key === 'public_occurrence_types') {
+            console.log('🔍 Tipos de ocorrência carregados do banco:', value);
+          }
         }
       });
 
@@ -274,6 +284,9 @@ export const PublicComplaintForm = () => {
       case 'occurrence_neighborhood':
         return settings.public_neighborhoods;
       case 'occurrence_type':
+        console.log('🔍 getFieldOptions chamado para occurrence_type');
+        console.log('📊 settings.public_occurrence_types:', settings.public_occurrence_types);
+        
         // Filtrar apenas tipos visíveis
         if (Array.isArray(settings.public_occurrence_types) && settings.public_occurrence_types.length > 0) {
           try {
@@ -282,18 +295,25 @@ export const PublicComplaintForm = () => {
               item && typeof item === 'object' && 'name' in item && 'visible' in item
             );
             
+            console.log('🔄 hasNewFormat:', hasNewFormat);
+            
             if (hasNewFormat) {
               // Novo formato com objetos
-              return settings.public_occurrence_types
+              const visibleTypes = settings.public_occurrence_types
                 .filter((type: any) => type && type.visible)
                 .map((type: any) => type.name);
+              console.log('✅ Tipos visíveis (novo formato):', visibleTypes);
+              return visibleTypes;
             }
           } catch (e) {
+            console.log('❌ Erro ao processar novo formato:', e);
             // Em caso de erro, usar formato antigo
           }
           // Formato antigo com strings (compatibilidade)
+          console.log('📱 Usando formato antigo (strings):', settings.public_occurrence_types);
           return settings.public_occurrence_types as string[];
         }
+        console.log('⚠️ Nenhum tipo de ocorrência encontrado, retornando array vazio');
         return [];
       case 'classification':
         return settings.public_classifications;
