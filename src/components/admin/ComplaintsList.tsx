@@ -187,9 +187,16 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
     fetchSoundSetting();
     fetchClassifications();
     
+    console.log('🚀 Iniciando configuração do realtime...');
+    
     // Setup realtime updates para denúncias
     const complaintsChannel = supabase
-      .channel('complaints-realtime')
+      .channel('complaints-realtime-v2', {
+        config: {
+          broadcast: { self: true },
+          presence: { key: userRole }
+        }
+      })
       .on(
         'postgres_changes',
         {
@@ -198,44 +205,37 @@ export const ComplaintsList = ({ userRole }: ComplaintsListProps) => {
           table: 'complaints'
         },
         (payload) => {
-          console.log('📢 Realtime update:', payload);
+          console.log('📢 REALTIME UPDATE RECEBIDO:', payload);
+          console.log('📢 Event Type:', payload.eventType);
+          console.log('📢 Novo dados:', payload.new);
           
           // Tocar som apenas para novas denúncias
           if (payload.eventType === 'INSERT' && soundEnabled) {
+            console.log('🔊 Tocando som para nova denúncia...');
             playNotificationSound();
           }
           
           // Atualizar lista de denúncias
+          console.log('🔄 Atualizando lista de denúncias...');
           fetchComplaints();
         }
       )
       .subscribe((status) => {
         console.log('📡 Realtime status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime conectado com sucesso!');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Erro no canal realtime');
+        } else if (status === 'TIMED_OUT') {
+          console.error('⏰ Timeout no realtime');
+        }
       });
 
-    // Setup realtime updates for sound notifications (mantido para compatibilidade)
-    const soundChannel = supabase
-      .channel('complaint-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'complaints'
-        },
-        () => {
-          if (soundEnabled) {
-            playNotificationSound();
-          }
-        }
-      )
-      .subscribe();
-
     return () => {
+      console.log('🔌 Desconectando realtime...');
       supabase.removeChannel(complaintsChannel);
-      supabase.removeChannel(soundChannel);
     };
-  }, [soundEnabled]);
+  }, [soundEnabled, userRole]);
 
   const updateComplaintStatus = async (complaintId: string, newStatus: ComplaintStatus, systemIdentifier?: string) => {
     try {
