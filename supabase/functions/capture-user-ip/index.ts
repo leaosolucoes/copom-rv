@@ -62,8 +62,6 @@ Deno.serve(async (req) => {
       clientIP = realIP
     }
 
-    console.log('IP capturado:', clientIP)
-
     // Pegar dados da denúncia do body
     const complaintData: ComplaintData = await req.json()
     
@@ -73,8 +71,6 @@ Deno.serve(async (req) => {
       user_ip: clientIP
     }
 
-    console.log('Dados da denúncia com IP:', dataWithIP)
-
     // Inserir denúncia no banco
     const { data, error } = await supabase
       .from('complaints')
@@ -82,11 +78,9 @@ Deno.serve(async (req) => {
       .select()
 
     if (error) {
-      console.error('Erro ao inserir denúncia:', error)
+      console.error('Erro ao inserir denúncia')
       throw error
     }
-
-    console.log('Denúncia inserida com sucesso:', data)
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -100,9 +94,9 @@ Deno.serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('Erro na edge function:', error)
+    console.error('Erro na edge function')
     return new Response(JSON.stringify({ 
-      error: error.message 
+      error: 'Erro interno do servidor' 
     }), {
       status: 400,
       headers: { 
