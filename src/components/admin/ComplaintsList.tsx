@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video } from 'lucide-react';
+import { MediaModal } from "@/components/ui/media-modal";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -77,6 +78,17 @@ export const ComplaintsList = () => {
   const [logoUrl, setLogoUrl] = useState<string>('');
   const [cnpjSearch, setCnpjSearch] = useState<string>('');
   const [cnpjData, setCnpjData] = useState<any>(null);
+  const [mediaModal, setMediaModal] = useState<{
+    isOpen: boolean;
+    media: string[];
+    initialIndex: number;
+    type: 'photo' | 'video';
+  }>({
+    isOpen: false,
+    media: [],
+    initialIndex: 0,
+    type: 'photo'
+  });
   const [cnpjModalOpen, setCnpjModalOpen] = useState(false);
   const [cnpjLoading, setCnpjLoading] = useState(false);
   const { toast } = useToast();
@@ -645,6 +657,24 @@ export const ComplaintsList = () => {
     }
   };
 
+  const openMediaModal = (media: string[], initialIndex: number, type: 'photo' | 'video') => {
+    setMediaModal({
+      isOpen: true,
+      media,
+      initialIndex,
+      type
+    });
+  };
+
+  const closeMediaModal = () => {
+    setMediaModal({
+      isOpen: false,
+      media: [],
+      initialIndex: 0,
+      type: 'photo'
+    });
+  };
+
   const exportComplaintsPDF = async () => {
     // Verificar permissão antes de executar
     if (userRole !== 'admin' && userRole !== 'super_admin') {
@@ -1141,18 +1171,18 @@ export const ComplaintsList = () => {
                                                 <Image className="h-4 w-4" />
                                                 Fotos ({selectedComplaint.photos.length})
                                               </div>
-                                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                                                {selectedComplaint.photos.map((photo, index) => (
-                                                  <div key={index} className="relative group">
-                                                    <img 
-                                                      src={photo} 
-                                                      alt={`Foto ${index + 1}`} 
-                                                      className="w-full h-20 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-                                                      onClick={() => window.open(photo, '_blank')}
-                                                    />
-                                                  </div>
-                                                ))}
-                                              </div>
+                                               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                 {selectedComplaint.photos.map((photo, index) => (
+                                                   <div key={index} className="relative group">
+                                                     <img 
+                                                       src={photo} 
+                                                       alt={`Foto ${index + 1}`} 
+                                                       className="w-full h-20 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                                                       onClick={() => openMediaModal(selectedComplaint.photos!, index, 'photo')}
+                                                     />
+                                                   </div>
+                                                 ))}
+                                               </div>
                                             </div>
                                           )}
 
@@ -1163,18 +1193,23 @@ export const ComplaintsList = () => {
                                                 <Video className="h-4 w-4" />
                                                 Vídeos ({selectedComplaint.videos.length})
                                               </div>
-                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                {selectedComplaint.videos.map((video, index) => (
-                                                  <div key={index} className="relative">
-                                                    <video 
-                                                      src={video} 
-                                                      className="w-full h-32 object-cover rounded border"
-                                                      controls
-                                                      preload="metadata"
-                                                    />
-                                                  </div>
-                                                ))}
-                                              </div>
+                                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                 {selectedComplaint.videos.map((video, index) => (
+                                                   <div key={index} className="relative cursor-pointer group">
+                                                     <video 
+                                                       src={video} 
+                                                       className="w-full h-32 object-cover rounded border hover:opacity-80 transition-opacity"
+                                                       preload="metadata"
+                                                       onClick={() => openMediaModal(selectedComplaint.videos!, index, 'video')}
+                                                     />
+                                                     <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded">
+                                                       <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                                                         <div className="w-0 h-0 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5"></div>
+                                                       </div>
+                                                     </div>
+                                                   </div>
+                                                 ))}
+                                               </div>
                                             </div>
                                           )}
                                         </div>
@@ -1675,6 +1710,15 @@ export const ComplaintsList = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de visualização de mídia */}
+      <MediaModal
+        isOpen={mediaModal.isOpen}
+        onClose={closeMediaModal}
+        media={mediaModal.media}
+        initialIndex={mediaModal.initialIndex}
+        type={mediaModal.type}
+      />
 
     </div>
   );
