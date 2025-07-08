@@ -108,73 +108,53 @@ export const MediaModal = ({ isOpen, onClose, media, initialIndex, type }: Media
                     </div>
                   )}
                   
-                  {/* Player HTML5 robusto para arquivos .MOV */}
+                  {/* Player simples que funciona igual ao navegador */}
                   <div className="w-full max-w-4xl mx-auto">
                     <video
-                      ref={videoRef}
-                      key={`video-${currentIndex}-${media[currentIndex]}`}
+                      key={media[currentIndex]}
                       className="w-full h-auto max-h-[70vh] bg-black rounded"
                       controls
-                      preload="metadata"
-                      playsInline
-                      autoPlay={false}
-                      muted={false}
+                      preload="none"
                       onLoadStart={() => {
-                        console.log('🎬 Iniciando carregamento:', media[currentIndex]);
+                        console.log('🎬 Carregando:', media[currentIndex]);
                         setIsLoading(true);
                         setVideoError(false);
                       }}
-                      onLoadedMetadata={() => {
-                        console.log('📊 Metadata carregada:', media[currentIndex]);
-                        setIsLoading(false);
-                      }}
                       onCanPlay={() => {
-                        console.log('✅ Vídeo pronto para reprodução:', media[currentIndex]);
+                        console.log('✅ Pronto:', media[currentIndex]);
                         setIsLoading(false);
+                        setVideoError(false);
                       }}
-                      onError={(e) => {
-                        console.error('❌ Erro no vídeo HTML5:', media[currentIndex]);
-                        const error = e.currentTarget.error;
-                        if (error) {
-                          console.error('Código do erro:', error.code);
-                          console.error('Mensagem:', error.message);
-                        }
+                      onError={() => {
+                        console.error('❌ Erro:', media[currentIndex]);
                         setVideoError(true);
                         setIsLoading(false);
                       }}
-                      style={{ maxHeight: 'calc(70vh)' }}
                     >
-                      {/* Múltiplas sources para compatibilidade */}
-                      <source src={media[currentIndex]} type="video/quicktime" />
-                      <source src={media[currentIndex]} type="video/mp4" />
-                      <source src={media[currentIndex]} type="video/webm" />
-                      <source src={media[currentIndex]} type="video/ogg" />
-                      
-                      {/* Fallback para navegadores que não suportam video */}
-                      <p className="text-white text-center p-4">
-                        Seu navegador não suporta reprodução de vídeo HTML5.
-                        <br />
-                        <a 
-                          href={media[currentIndex]} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-400 underline"
-                        >
-                          Clique aqui para baixar o vídeo
-                        </a>
-                      </p>
+                      <source src={media[currentIndex]} />
+                      Seu navegador não suporta este vídeo.
                     </video>
                     
-                    {/* Informações de debug específicas para .MOV */}
-                    <div className="mt-2 text-xs text-gray-400 text-center">
-                      <p>Arquivo: {media[currentIndex].split('/').pop()}</p>
-                      <p>Formato detectado: {media[currentIndex].split('.').pop()?.toUpperCase()}</p>
-                      {videoError && (
-                        <p className="text-red-400 mt-1">
-                          ⚠️ Erro de reprodução. Tente o botão "Nova Aba" ou "Download"
-                        </p>
-                      )}
-                    </div>
+                    {isLoading && !videoError && (
+                      <div className="text-center text-white mt-2">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
+                        <p className="text-sm">Carregando...</p>
+                      </div>
+                    )}
+                    
+                    {videoError && (
+                      <div className="text-center text-white mt-4 p-4 bg-red-900/20 rounded">
+                        <AlertCircle className="h-8 w-8 mx-auto mb-2 text-red-400" />
+                        <p className="text-sm mb-2">Erro ao carregar o vídeo</p>
+                        <Button
+                          onClick={() => window.open(media[currentIndex], '_blank')}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Play className="h-4 w-4 mr-2" />
+                          Abrir em nova aba
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
