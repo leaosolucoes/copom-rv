@@ -123,12 +123,14 @@ export const useSyncQueue = () => {
     try {
       console.log(`🔄 Iniciando sincronização da denúncia ${item.id}:`, item.data);
       
-      // Filter out test data to prevent pollution of production database
+      // Filter out only specific test data patterns to prevent pollution of production database
       if (item.data.__test_data || 
-          item.data.complainant_name?.includes('TEST_SIMULATION') ||
-          item.data.complainant_name?.includes('Test User') ||
-          item.data.occurrence_type === 'TESTE_SIMULACAO') {
-        console.log(`🚫 Dados de teste detectados - removendo sem sincronizar: ${item.id}`);
+          /^TEST_SIMULATION_[0-9]+$/.test(item.data.complainant_name) ||
+          /^Test User [0-9]+$/.test(item.data.complainant_name) ||
+          item.data.complainant_name === 'João da Silva (TESTE)' ||
+          item.data.occurrence_type === 'TESTE_SIMULACAO' ||
+          item.data.occurrence_type === 'Teste de Integração WhatsApp') {
+        console.log(`🚫 Dados de teste específicos detectados - removendo sem sincronizar: ${item.id}`);
         await removeOfflineItem(item.id, 'complaint');
         return;
       }
