@@ -123,6 +123,16 @@ export const useSyncQueue = () => {
     try {
       console.log(`🔄 Iniciando sincronização da denúncia ${item.id}:`, item.data);
       
+      // Filter out test data to prevent pollution of production database
+      if (item.data.__test_data || 
+          item.data.complainant_name?.includes('TEST_SIMULATION') ||
+          item.data.complainant_name?.includes('Test User') ||
+          item.data.occurrence_type === 'TESTE_SIMULACAO') {
+        console.log(`🚫 Dados de teste detectados - removendo sem sincronizar: ${item.id}`);
+        await removeOfflineItem(item.id, 'complaint');
+        return;
+      }
+      
       const { data, error } = await supabase.functions.invoke('api-complaints', {
         body: item.data,
         headers: {
