@@ -16,7 +16,7 @@ import { SoundNotificationControl } from '@/components/admin/SoundNotificationCo
 import { ApiManagement } from '@/components/admin/ApiManagement';
 import { OfflineAnalyticsDashboard } from '@/components/ui/offline-analytics-dashboard';
 import { OfflineTestSuite } from '@/components/ui/offline-test-suite';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code } from 'lucide-react';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, BarChart3, TestTube } from 'lucide-react';
 
 const SuperAdminDashboard = () => {
   const { profile, signOut, hasRole, isLoading } = useSupabaseAuth();
@@ -77,7 +77,7 @@ const SuperAdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="complaints" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 lg:w-fit">`
+          <TabsList className="grid w-full grid-cols-10 lg:w-fit">`
             <TabsTrigger value="complaints" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Denúncias</span>
@@ -105,6 +105,14 @@ const SuperAdminDashboard = () => {
             <TabsTrigger value="api" className="flex items-center gap-2">
               <Code className="h-4 w-4" />
               <span className="hidden sm:inline">API</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="tests" className="flex items-center gap-2">
+              <TestTube className="h-4 w-4" />
+              <span className="hidden sm:inline">Testes</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -210,6 +218,34 @@ const SuperAdminDashboard = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="analytics" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Analytics do Sistema</CardTitle>
+                <CardDescription>
+                  Monitore a performance e saúde do sistema offline
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <OfflineAnalyticsDashboard />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="tests" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Testes do Sistema</CardTitle>
+                <CardDescription>
+                  Execute testes de compatibilidade e funcionalidade offline
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <OfflineTestSuite />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="settings" className="space-y-6">
             <div className="space-y-6">
               <Card>
@@ -229,10 +265,6 @@ const SuperAdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
-      
-      {/* Analytics e Testes - Exclusivos do Super Admin */}
-      <OfflineAnalyticsDashboard />
-      <OfflineTestSuite />
     </div>
   );
 };
