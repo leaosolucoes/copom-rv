@@ -14,6 +14,8 @@ import { LogoUpload } from '@/components/admin/LogoUpload';
 import { OccurrenceTypesConfig } from '@/components/admin/OccurrenceTypesConfig';
 import { SoundNotificationControl } from '@/components/admin/SoundNotificationControl';
 import { ApiManagement } from '@/components/admin/ApiManagement';
+import { OfflineAnalyticsDashboard } from '@/components/ui/offline-analytics-dashboard';
+import { OfflineTestSuite } from '@/components/ui/offline-test-suite';
 import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code } from 'lucide-react';
 
 const SuperAdminDashboard = () => {
@@ -227,6 +229,10 @@ const SuperAdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
+      
+      {/* Analytics e Testes - Exclusivos do Super Admin */}
+      <OfflineAnalyticsDashboard />
+      <OfflineTestSuite />
     </div>
   );
 };

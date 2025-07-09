@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useOfflineAnalytics } from '@/hooks/useOfflineAnalytics';
 import { useConflictResolution } from '@/hooks/useConflictResolution';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,13 +34,7 @@ export const OfflineAnalyticsDashboard = () => {
     isHealthy 
   } = useOfflineAnalytics();
   const { conflicts, hasConflicts } = useConflictResolution();
-  const { isSuperAdmin } = useSupabaseAuth();
   const [isOpen, setIsOpen] = useState(false);
-
-  // Only show for super admin
-  if (!isSuperAdmin()) {
-    return null;
-  }
 
   const healthScore = getHealthScore();
 
