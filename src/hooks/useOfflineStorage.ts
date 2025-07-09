@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-
+import { useDataCompression } from './useDataCompression';
 interface OfflineData {
   id: string;
   data: any;
   timestamp: number;
   type: 'complaint' | 'media' | 'config';
+  compressed?: boolean;
+  originalSize?: number;
 }
 
 export const useOfflineStorage = () => {
   const [pendingItems, setPendingItems] = useState<OfflineData[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const { compress, decompress, getCompressionRatio } = useDataCompression();
 
   // Initialize IndexedDB
   const initDB = async (): Promise<IDBDatabase> => {
@@ -38,17 +41,36 @@ export const useOfflineStorage = () => {
     });
   };
 
-  // Save data offline
+  // Save data offline with compression
   const saveOffline = async (type: OfflineData['type'], data: any): Promise<string> => {
     try {
       const db = await initDB();
       const id = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
+      // Compress data for complaints to save space
+      let finalData = data;
+      let compressed = false;
+      let originalSize = 0;
+      
+      if (type === 'complaint') {
+        originalSize = JSON.stringify(data).length;
+        const compressedData = compress(data);
+        const compressionRatio = getCompressionRatio(data, compressedData);
+        
+        if (compressionRatio > 10) { // Only compress if we save more than 10%
+          finalData = compressedData;
+          compressed = true;
+          console.log(`💾 Dados comprimidos: ${compressionRatio.toFixed(1)}% de economia`);
+        }
+      }
+      
       const offlineData: OfflineData = {
         id,
-        data,
+        data: finalData,
         timestamp: Date.now(),
-        type
+        type,
+        compressed,
+        originalSize
       };
 
       const storeName = type === 'complaint' ? 'pending_complaints' : 
@@ -69,7 +91,7 @@ export const useOfflineStorage = () => {
     }
   };
 
-  // Get pending items
+  // Get pending items with decompression
   const loadPendingItems = async () => {
     try {
       const db = await initDB();
@@ -78,7 +100,23 @@ export const useOfflineStorage = () => {
       const request = store.getAll();
       
       request.onsuccess = () => {
-        setPendingItems(request.result || []);
+        const items = request.result || [];
+        
+        // Decompress data if needed
+        const processedItems = items.map(item => {
+          if (item.compressed) {
+            try {
+              const decompressedData = decompress(item.data);
+              return { ...item, data: decompressedData };
+            } catch (error) {
+              console.error('Erro ao descomprimir dados:', error);
+              return item; // Return original if decompression fails
+            }
+          }
+          return item;
+        });
+        
+        setPendingItems(processedItems);
       };
     } catch (error) {
       console.error('Erro ao carregar itens pendentes:', error);

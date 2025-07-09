@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNetworkStatus } from './useNetworkStatus';
 import { useOfflineStorage } from './useOfflineStorage';
+import { useConflictResolution } from './useConflictResolution';
+import { useOfflineAnalytics } from './useOfflineAnalytics';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,6 +17,8 @@ interface SyncItem {
 export const useSyncQueue = () => {
   const { isOnline } = useNetworkStatus();
   const { pendingItems, removeOfflineItem } = useOfflineStorage();
+  const { detectConflicts, addConflict, autoResolveConflicts } = useConflictResolution();
+  const { recordSyncSuccess, recordSyncFailure } = useOfflineAnalytics();
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncQueue, setSyncQueue] = useState<SyncItem[]>([]);
@@ -49,16 +53,27 @@ export const useSyncQueue = () => {
 
     for (const item of syncQueue) {
       try {
+        // Check for conflicts before syncing
+        const conflict = await detectConflicts(item);
+        if (conflict) {
+          addConflict(conflict);
+          console.log(`⚠️ Conflito detectado para item ${item.id}`);
+          continue; // Skip this item, let user resolve conflict
+        }
+
         if (item.type === 'complaint') {
           await syncComplaint(item);
           successCount++;
+          recordSyncSuccess();
         } else if (item.type === 'media') {
           await syncMedia(item);
           successCount++;
+          recordSyncSuccess();
         }
       } catch (error) {
         console.error(`Erro ao sincronizar item ${item.id}:`, error);
         errorCount++;
+        recordSyncFailure();
         
         // Retry logic - max 3 attempts
         if (item.retryCount < 3) {
