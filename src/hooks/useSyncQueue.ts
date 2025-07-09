@@ -38,24 +38,12 @@ export const useSyncQueue = () => {
   // Auto sync when online
   useEffect(() => {
     if (isOnline && syncQueue.length > 0 && !isSyncing) {
-      console.log('🔄 Auto-sync ativado - iniciando sincronização automática');
       syncPendingItems();
     }
   }, [isOnline, syncQueue.length]);
 
   const syncPendingItems = async () => {
-    if (!isOnline) {
-      console.log('❌ Sincronização cancelada: sem conexão');
-      return;
-    }
-    if (isSyncing) {
-      console.log('⚠️ Sincronização cancelada: já em progresso');
-      return;
-    }
-    if (syncQueue.length === 0) {
-      console.log('ℹ️ Sincronização cancelada: nenhum item pendente');
-      return;
-    }
+    if (!isOnline || isSyncing || syncQueue.length === 0) return;
 
     setIsSyncing(true);
     console.log(`🔄 Iniciando sincronização de ${syncQueue.length} itens...`);
@@ -120,47 +108,16 @@ export const useSyncQueue = () => {
   };
 
   const syncComplaint = async (item: SyncItem) => {
-    try {
-      console.log(`🔄 Iniciando sincronização da denúncia ${item.id}:`, item.data);
-      
-      // Filter out only specific test data patterns to prevent pollution of production database
-      if (item.data.__test_data || 
-          /^TEST_SIMULATION_[0-9]+$/.test(item.data.complainant_name) ||
-          /^Test User [0-9]+$/.test(item.data.complainant_name) ||
-          item.data.complainant_name === 'João da Silva (TESTE)' ||
-          item.data.occurrence_type === 'TESTE_SIMULACAO' ||
-          item.data.occurrence_type === 'Teste de Integração WhatsApp') {
-        console.log(`🚫 Dados de teste específicos detectados - removendo sem sincronizar: ${item.id}`);
-        await removeOfflineItem(item.id, 'complaint');
-        return;
-      }
-      
-      const { data, error } = await supabase.functions.invoke('api-complaints', {
-        body: item.data,
-        headers: {
-          'x-api-token': 'sat_production_3ea84279b2484a138e6fba8ebec5c7e0'
-        }
-      });
+    const { data, error } = await supabase.functions.invoke('capture-user-ip', {
+      body: item.data
+    });
 
-      console.log('📡 Resposta da API:', { data, error });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
 
-      if (error) {
-        console.error(`❌ Erro na chamada da API:`, error);
-        throw error;
-      }
-      
-      if (!data?.success) {
-        console.error(`❌ API retornou erro:`, data);
-        throw new Error(data?.error || 'Erro desconhecido na sincronização');
-      }
-
-      // Remove from offline storage after successful sync
-      await removeOfflineItem(item.id, 'complaint');
-      console.log(`✅ Denúncia ${item.id} sincronizada com sucesso`);
-    } catch (error) {
-      console.error(`❌ Erro ao sincronizar denúncia ${item.id}:`, error);
-      throw error;
-    }
+    // Remove from offline storage after successful sync
+    await removeOfflineItem(item.id, 'complaint');
+    console.log(`✅ Denúncia ${item.id} sincronizada com sucesso`);
   };
 
   const syncMedia = async (item: SyncItem) => {

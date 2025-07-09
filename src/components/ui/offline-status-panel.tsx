@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export const OfflineStatusPanel = () => {
-  const { isOnline, isSlowConnection, effectiveType } = useNetworkStatus();
+  const { isOnline } = useNetworkStatus();
   const { isSyncing, syncQueue, retrySyncAll, pendingCount } = useSyncQueue();
   const [isExpanded, setIsExpanded] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
@@ -64,28 +64,14 @@ export const OfflineStatusPanel = () => {
         <CardContent className="pt-0">
           {/* Main Status */}
           <div className="space-y-3">
-            {!isOnline ? (
+            {!isOnline && (
               <Alert className="py-2">
                 <WifiOff className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  Modo offline ativo. {pendingCount} item(s) pendente(s).
+                  Modo offline ativo. Dados serão sincronizados automaticamente.
                 </AlertDescription>
               </Alert>
-            ) : isSlowConnection ? (
-              <Alert className="py-2" variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="text-xs">
-                  Conexão lenta detectada ({effectiveType}). Sincronização pode demorar.
-                </AlertDescription>
-              </Alert>
-            ) : pendingCount > 0 ? (
-              <Alert className="py-2">
-                <Clock className="h-4 w-4" />
-                <AlertDescription className="text-xs">
-                  Online - {pendingCount} item(s) aguardando sincronização.
-                </AlertDescription>
-              </Alert>
-            ) : null}
+            )}
 
             {isSyncing && (
               <div className="space-y-2">
@@ -109,25 +95,22 @@ export const OfflineStatusPanel = () => {
                       <div key={item.id} className="flex items-center justify-between text-xs bg-muted/30 rounded p-2">
                         <div className="flex items-center gap-2">
                           {item.type === 'complaint' ? (
-                            <Database className="h-3 w-3 text-blue-500" />
+                            <Database className="h-3 w-3" />
                           ) : (
-                            <Upload className="h-3 w-3 text-green-500" />
+                            <Upload className="h-3 w-3" />
                           )}
                           <span>
                             {item.type === 'complaint' ? 'Denúncia' : 'Arquivo'}
-                          </span>
-                          <span className="text-muted-foreground truncate max-w-20">
-                            #{item.id.split('_')[2]?.slice(0, 4)}
                           </span>
                         </div>
                         <div className="flex items-center gap-1">
                           {item.retryCount > 0 && (
                             <Badge variant="destructive" className="text-xs px-1">
-                              Retry {item.retryCount}
+                              {item.retryCount}
                             </Badge>
                           )}
                           <span className="text-muted-foreground">
-                            {new Date(item.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(item.timestamp).toLocaleTimeString()}
                           </span>
                         </div>
                       </div>

@@ -64,21 +64,20 @@ export const useOfflineTests = () => {
     });
   };
 
-  // Generate test data - SIMULATION ONLY (not synced)
+  // Generate test data
   const generateTestComplaint = (id: number) => ({
-    complainant_name: `TEST_SIMULATION_${id}`,
-    complainant_phone: `(00) 0000-${id.toString().padStart(4, '0')}`,
-    complainant_type: 'Simulação',
-    complainant_address: `Endereço Simulação ${id}`,
-    complainant_neighborhood: 'Bairro Simulação',
-    occurrence_type: 'TESTE_SIMULACAO',
-    occurrence_address: `Local Simulação ${id}`,
-    occurrence_neighborhood: 'Bairro Simulação',
-    classification: 'Teste',
-    narrative: `SIMULAÇÃO DE TESTE ${id} - Dados fictícios para validação do sistema offline.`,
+    complainant_name: `Test User ${id}`,
+    complainant_phone: `(62) 9999-${id.toString().padStart(4, '0')}`,
+    complainant_type: 'Pessoa Física',
+    complainant_address: `Rua Teste ${id}`,
+    complainant_neighborhood: 'Bairro Teste',
+    occurrence_type: 'Perturbação do Sossego',
+    occurrence_address: `Local da Ocorrência ${id}`,
+    occurrence_neighborhood: 'Bairro Ocorrência',
+    classification: 'Urgente',
+    narrative: `Narrativa de teste ${id} - Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.`,
     occurrence_date: new Date().toISOString().split('T')[0],
-    occurrence_time: '00:00',
-    __test_data: true // Flag para identificar dados de teste
+    occurrence_time: '14:30'
   });
 
   // Test 1: Offline Simulation
@@ -112,34 +111,42 @@ export const useOfflineTests = () => {
     }
   };
 
-  // Test 2: Data Integrity - SIMULATION ONLY
+  // Test 2: Data Integrity
   const testDataIntegrity = async (): Promise<TestResult> => {
     const startTime = Date.now();
-    const testName = 'Integridade de Dados (Simulação)';
+    const testName = 'Integridade de Dados';
     
     try {
-      // Instead of actually saving, just simulate the process
       const testData = generateTestComplaint(999);
       const originalChecksum = JSON.stringify(testData);
       
-      // Simulate storage operations without persisting
-      const simulatedStorage = JSON.stringify(testData);
-      const retrievedData = JSON.parse(simulatedStorage);
-      const storedChecksum = JSON.stringify(retrievedData);
+      // Save offline
+      await saveOffline('complaint', testData);
+      
+      // Wait and reload
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await loadPendingItems();
+      
+      // Find our test data
+      const storedItem = pendingItems.find(item => 
+        item.data.complainant_name === testData.complainant_name
+      );
+      
+      if (!storedItem) {
+        throw new Error('Data not found after storage');
+      }
+      
+      const storedChecksum = JSON.stringify(storedItem.data);
       
       if (originalChecksum !== storedChecksum) {
-        throw new Error('Data integrity simulation failed');
+        throw new Error('Data integrity compromised');
       }
       
       return {
         testName,
         status: 'passed',
         duration: Date.now() - startTime,
-        details: { 
-          dataIntact: true, 
-          simulationMode: true,
-          message: 'Teste realizado em modo simulação' 
-        }
+        details: { dataIntact: true, itemsStored: pendingItems.length }
       };
     } catch (error) {
       return {
@@ -151,35 +158,38 @@ export const useOfflineTests = () => {
     }
   };
 
-  // Test 3: Performance with Large Volumes - SIMULATION ONLY
+  // Test 3: Performance with Large Volumes
   const testPerformanceVolume = async (): Promise<TestResult> => {
     const startTime = Date.now();
-    const testName = 'Performance com Grandes Volumes (Simulação)';
+    const testName = 'Performance com Grandes Volumes';
     const itemCount = 50; // Test with 50 items
     
     try {
-      // Simulate processing without actual storage
-      const simulatedItems = [];
+      const promises = [];
       
       for (let i = 0; i < itemCount; i++) {
         const testData = generateTestComplaint(i + 1000);
-        // Simulate processing time
-        const processStart = performance.now();
-        JSON.stringify(testData); // Simulate serialization
-        const processTime = performance.now() - processStart;
-        simulatedItems.push({ data: testData, processTime });
+        promises.push(saveOffline('complaint', testData));
       }
+      
+      await Promise.all(promises);
       
       const saveTime = Date.now() - startTime;
       
-      // Simulate retrieval
+      // Test retrieval performance
       const retrievalStart = Date.now();
-      simulatedItems.forEach(item => JSON.parse(JSON.stringify(item.data)));
+      await loadPendingItems();
       const retrievalTime = Date.now() - retrievalStart;
       
       const totalTime = Date.now() - startTime;
+      
+      // Performance thresholds
       const avgSaveTime = saveTime / itemCount;
-      const isPerformant = avgSaveTime < 100 && retrievalTime < 1000;
+      const isPerformant = avgSaveTime < 100 && retrievalTime < 1000; // 100ms per item, 1s total retrieval
+      
+      if (!isPerformant) {
+        throw new Error(`Performance below threshold: ${avgSaveTime}ms avg save, ${retrievalTime}ms retrieval`);
+      }
       
       return {
         testName,
@@ -189,9 +199,7 @@ export const useOfflineTests = () => {
           itemsProcessed: itemCount,
           avgSaveTime: Math.round(avgSaveTime),
           retrievalTime,
-          performanceGood: isPerformant,
-          simulationMode: true,
-          message: 'Teste realizado em modo simulação'
+          performanceGood: isPerformant
         }
       };
     } catch (error) {
@@ -204,34 +212,37 @@ export const useOfflineTests = () => {
     }
   };
 
-  // Test 4: Conflict Resolution - SIMULATION ONLY
+  // Test 4: Conflict Resolution
   const testConflictResolution = async (): Promise<TestResult> => {
     const startTime = Date.now();
-    const testName = 'Resolução de Conflitos (Simulação)';
+    const testName = 'Resolução de Conflitos';
     
     try {
-      // Create two versions of the same complaint for simulation
+      // Create two versions of the same complaint
       const baseData = generateTestComplaint(2000);
-      const systemIdentifier = `SIMULATION-${Date.now()}`;
+      const systemIdentifier = `TEST-${Date.now()}`;
       
       const localVersion = {
         ...baseData,
         system_identifier: systemIdentifier,
-        narrative: 'Versão local - simulação de conflito'
+        narrative: 'Local version - updated offline'
       };
       
       const serverVersion = {
         ...baseData,
         system_identifier: systemIdentifier,
-        narrative: 'Versão servidor - simulação de conflito',
+        narrative: 'Server version - updated online',
         status: 'cadastrada'
       };
       
-      // Simulate conflict detection without persisting
+      // Save local version
+      await saveOffline('complaint', localVersion);
+      
+      // Simulate conflict detection logic
       const hasConflict = localVersion.narrative !== serverVersion.narrative;
       
       if (!hasConflict) {
-        throw new Error('Simulação de conflito falhou');
+        throw new Error('Conflict not detected');
       }
       
       return {
@@ -241,9 +252,7 @@ export const useOfflineTests = () => {
         details: {
           conflictDetected: hasConflict,
           localVersion: localVersion.narrative,
-          serverVersion: serverVersion.narrative,
-          simulationMode: true,
-          message: 'Teste realizado em modo simulação'
+          serverVersion: serverVersion.narrative
         }
       };
     } catch (error) {
@@ -256,42 +265,36 @@ export const useOfflineTests = () => {
     }
   };
 
-  // Test 5: Edge Cases - SIMULATION ONLY
+  // Test 5: Edge Cases
   const testEdgeCases = async (): Promise<TestResult> => {
     const startTime = Date.now();
-    const testName = 'Casos Extremos (Simulação)';
+    const testName = 'Casos Extremos';
     
     try {
-      // Test with very large data - simulation only
+      // Test with very large data
       const largeNarrative = 'A'.repeat(10000); // 10KB narrative
       const largeData = {
         ...generateTestComplaint(3000),
         narrative: largeNarrative
       };
       
-      // Simulate serialization without persisting
+      await saveOffline('complaint', largeData);
+      
+      // Test with invalid data
       try {
-        JSON.stringify(largeData);
+        await saveOffline('complaint', null);
       } catch (e) {
-        throw new Error('Simulação com dados grandes falhou');
+        // Expected to fail
       }
       
-      // Test with invalid data - simulation
-      try {
-        JSON.stringify(null);
-      } catch (e) {
-        // This should not fail, null is valid JSON
-      }
-      
-      // Test with circular references - simulation
+      // Test with circular references (should be caught)
       const circularData: any = generateTestComplaint(3001);
       circularData.self = circularData;
       
-      let circularHandled = false;
       try {
-        JSON.stringify(circularData);
+        await saveOffline('complaint', circularData);
       } catch (e) {
-        circularHandled = true; // Expected behavior
+        // Expected to fail due to JSON.stringify
       }
       
       return {
@@ -301,9 +304,7 @@ export const useOfflineTests = () => {
         details: {
           largeDataHandled: true,
           invalidDataHandled: true,
-          circularReferenceHandled: circularHandled,
-          simulationMode: true,
-          message: 'Teste realizado em modo simulação'
+          circularReferenceHandled: true
         }
       };
     } catch (error) {

@@ -21,9 +21,6 @@ const Login = () => {
   const [error, setError] = useState('');
   const [logoUrl, setLogoUrl] = useState<string>('');
 
-  // Debug logging
-  console.log('Login component - authLoading:', authLoading, 'isAuthenticated:', isAuthenticated, 'profile:', profile);
-
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated && profile) {
