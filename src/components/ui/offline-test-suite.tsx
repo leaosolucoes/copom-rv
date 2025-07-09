@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useOfflineTests } from '@/hooks/useOfflineTests';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { SystemCompatibilityValidator } from '@/components/ui/system-compatibility-validator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -74,9 +75,15 @@ export const OfflineTestSuite = () => {
     currentTest,
     runAllTests
   } = useOfflineTests();
+  const { isSuperAdmin } = useSupabaseAuth();
   
   const [isOpen, setIsOpen] = useState(false);
   const [expandedTests, setExpandedTests] = useState<string[]>([]);
+
+  // Only show for super admin
+  if (!isSuperAdmin()) {
+    return null;
+  }
 
   const toggleTestExpansion = (testName: string) => {
     setExpandedTests(prev =>
