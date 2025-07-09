@@ -37,7 +37,6 @@ const App = () => {
   return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <NetworkStatus />
       <Toaster />
       <Sonner />
       <BrowserRouter>
