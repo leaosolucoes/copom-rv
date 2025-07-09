@@ -1,14 +1,15 @@
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { useOfflineStorage } from "@/hooks/useOfflineStorage";
+import { useSyncQueue } from "@/hooks/useSyncQueue";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Wifi, WifiOff, Clock, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Wifi, WifiOff, Clock, CheckCircle, RefreshCw } from "lucide-react";
 
 export const NetworkStatus = () => {
   const { isOnline, isSlowConnection } = useNetworkStatus();
-  const { pendingItems } = useOfflineStorage();
+  const { isSyncing, pendingCount, retrySyncAll } = useSyncQueue();
 
-  if (isOnline && pendingItems.length === 0) {
+  if (isOnline && pendingCount === 0) {
     return null; // Don't show anything when online and no pending items
   }
 
@@ -33,18 +34,39 @@ export const NetworkStatus = () => {
       </Badge>
 
       {/* Pending Items Alert */}
-      {pendingItems.length > 0 && (
+      {pendingCount > 0 && (
         <Alert className="w-80">
           <Clock className="h-4 w-4" />
           <AlertDescription>
             {isOnline ? (
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Sincronizando {pendingItems.length} item(s)...</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {isSyncing ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />
+                      <span>Sincronizando {pendingCount} item(s)...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span>{pendingCount} item(s) na fila</span>
+                    </>
+                  )}
+                </div>
+                {!isSyncing && (
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={retrySyncAll}
+                    className="ml-2"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
             ) : (
               <span>
-                {pendingItems.length} denúncia(s) aguardando sincronização.
+                {pendingCount} denúncia(s) aguardando sincronização.
                 Serão enviadas quando a conexão for restabelecida.
               </span>
             )}

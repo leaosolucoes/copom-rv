@@ -7,7 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Send, AlertTriangle, Upload, X, Image, Video } from "lucide-react";
+import { Send, AlertTriangle, Upload, X, Image, Video, WifiOff, Clock } from "lucide-react";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { useOfflineStorage } from "@/hooks/useOfflineStorage";
+import { useOfflineConfig } from "@/hooks/useOfflineConfig";
+import { useOfflineMedia } from "@/hooks/useOfflineMedia";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface FormData {
   // Dados do reclamante
@@ -58,15 +63,13 @@ interface SystemSettings {
 
 export const PublicComplaintForm = () => {
   const { toast } = useToast();
+  const { isOnline } = useNetworkStatus();
+  const { saveOffline } = useOfflineStorage();
+  const { config, isLoading: configLoading } = useOfflineConfig();
+  const { addMediaFile, removeMediaFile, clearPendingUploads, pendingUploads } = useOfflineMedia();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>('');
-  const [settings, setSettings] = useState<SystemSettings>({
-    public_neighborhoods: [],
-    public_complaint_types: [],
-    public_occurrence_types: [],
-    public_classifications: []
-  });
-  const [fieldConfig, setFieldConfig] = useState<FormField[]>([]);
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
   const [uploadedVideos, setUploadedVideos] = useState<string[]>([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
@@ -76,6 +79,8 @@ export const PublicComplaintForm = () => {
     browser: string;
     userAgent: string;
   } | null>(null);
+
+  const [fieldConfig, setFieldConfig] = useState<FormField[]>([]);
 
   const [formData, setFormData] = useState<FormData>({
     complainant_name: "",
@@ -101,14 +106,16 @@ export const PublicComplaintForm = () => {
   });
 
   useEffect(() => {
-    loadSystemSettings();
+    loadLogoAndFieldConfig();
     collectUserInfo();
   }, []);
 
-  // Adicionar efeito para recarregar quando houver mudanças nos tipos
+  // Update field config when offline config loads
   useEffect(() => {
-    console.log('📊 Settings atualizados:', settings);
-  }, [settings]);
+    if (config.form_fields_config) {
+      setFieldConfig(config.form_fields_config);
+    }
+  }, [config]);
 
   const collectUserInfo = async () => {
     try {
@@ -170,54 +177,26 @@ export const PublicComplaintForm = () => {
     }
   };
 
-  const loadSystemSettings = async () => {
+  const loadLogoAndFieldConfig = async () => {
     try {
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('key, value')
-        .in('key', [
-          'public_neighborhoods',
-          'public_complaint_types',
-          'public_occurrence_types',
-          'public_classifications',
-          'form_fields_config',
-          'public_logo_url'
-        ]);
+      if (isOnline) {
+        const { data, error } = await supabase
+          .from('system_settings')
+          .select('key, value')
+          .in('key', ['form_fields_config', 'public_logo_url']);
 
-      if (error) {
-        console.error('Erro ao carregar configurações:', error);
-        return;
-      }
-
-      const settingsObj: SystemSettings = {
-        public_neighborhoods: [],
-        public_complaint_types: [],
-        public_occurrence_types: [],
-        public_classifications: []
-      };
-
-      let fieldsConfig: FormField[] = [];
-
-      data.forEach(item => {
-        if (item.key === 'form_fields_config') {
-          fieldsConfig = (item.value as unknown as FormField[]) || [];
-        } else if (item.key === 'public_logo_url') {
-          setLogoUrl(item.value as string);
-        } else {
-          const value = typeof item.value === 'string' ? JSON.parse(item.value) : item.value;
-          settingsObj[item.key as keyof SystemSettings] = value;
-          
-          // Debug: Log para verificar os tipos de ocorrência carregados
-          if (item.key === 'public_occurrence_types') {
-            console.log('🔍 Tipos de ocorrência carregados do banco:', value);
-          }
+        if (!error && data) {
+          data.forEach(item => {
+            if (item.key === 'form_fields_config') {
+              setFieldConfig((item.value as unknown as FormField[]) || []);
+            } else if (item.key === 'public_logo_url') {
+              setLogoUrl(item.value as string);
+            }
+          });
         }
-      });
-
-      setSettings(settingsObj);
-      setFieldConfig(fieldsConfig);
+      }
     } catch (error) {
-      console.error('Erro ao processar configurações:', error);
+      console.error('Erro ao carregar configurações:', error);
     }
   };
 
@@ -227,61 +206,73 @@ export const PublicComplaintForm = () => {
     setUploadingMedia(true);
     
     try {
-      const uploadPromises = Array.from(files).map(async (file) => {
-        // Validar tipo de arquivo
-        const isPhoto = file.type.startsWith('image/');
-        const isVideo = file.type.startsWith('video/');
+      if (isOnline) {
+        // Online upload logic (existing)
+        const uploadPromises = Array.from(files).map(async (file) => {
+          // Validar tipo de arquivo
+          const isPhoto = file.type.startsWith('image/');
+          const isVideo = file.type.startsWith('video/');
+          
+          if (type === 'photo' && !isPhoto) {
+            throw new Error('Por favor, selecione apenas arquivos de imagem');
+          }
+          
+          if (type === 'video' && !isVideo) {
+            throw new Error('Por favor, selecione apenas arquivos de vídeo');
+          }
+
+          // Validar tamanho do arquivo
+          const maxSize = type === 'photo' ? 5 * 1024 * 1024 : 50 * 1024 * 1024;
+          if (file.size > maxSize) {
+            throw new Error(`Arquivo muito grande. Tamanho máximo: ${type === 'photo' ? '5MB' : '50MB'}`);
+          }
+
+          // Gerar nome único para o arquivo
+          const timestamp = Date.now();
+          const randomStr = Math.random().toString(36).substring(2, 15);
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${type}-${timestamp}-${randomStr}.${fileExt}`;
+
+          // Upload para o Supabase Storage
+          const { data, error } = await supabase.storage
+            .from('complaint-media')
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (error) throw error;
+
+          // Obter URL pública
+          const { data: { publicUrl } } = supabase.storage
+            .from('complaint-media')
+            .getPublicUrl(data.path);
+
+          return publicUrl;
+        });
+
+        const urls = await Promise.all(uploadPromises);
         
-        if (type === 'photo' && !isPhoto) {
-          throw new Error('Por favor, selecione apenas arquivos de imagem');
-        }
-        
-        if (type === 'video' && !isVideo) {
-          throw new Error('Por favor, selecione apenas arquivos de vídeo');
+        if (type === 'photo') {
+          setUploadedPhotos(prev => [...prev, ...urls]);
+        } else {
+          setUploadedVideos(prev => [...prev, ...urls]);
         }
 
-        // Validar tamanho do arquivo
-        const maxSize = type === 'photo' ? 5 * 1024 * 1024 : 50 * 1024 * 1024; // 5MB para fotos, 50MB para vídeos
-        if (file.size > maxSize) {
-          throw new Error(`Arquivo muito grande. Tamanho máximo: ${type === 'photo' ? '5MB' : '50MB'}`);
-        }
-
-        // Gerar nome único para o arquivo
-        const timestamp = Date.now();
-        const randomStr = Math.random().toString(36).substring(2, 15);
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${type}-${timestamp}-${randomStr}.${fileExt}`;
-
-        // Upload para o Supabase Storage
-        const { data, error } = await supabase.storage
-          .from('complaint-media')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (error) throw error;
-
-        // Obter URL pública
-        const { data: { publicUrl } } = supabase.storage
-          .from('complaint-media')
-          .getPublicUrl(data.path);
-
-        return publicUrl;
-      });
-
-      const urls = await Promise.all(uploadPromises);
-      
-      if (type === 'photo') {
-        setUploadedPhotos(prev => [...prev, ...urls]);
+        toast({
+          title: "Upload realizado com sucesso!",
+          description: `${urls.length} arquivo(s) ${type === 'photo' ? 'de imagem' : 'de vídeo'} enviado(s).`,
+        });
       } else {
-        setUploadedVideos(prev => [...prev, ...urls]);
+        // Offline storage
+        const urls = await addMediaFile(files, type);
+        
+        if (type === 'photo') {
+          setUploadedPhotos(prev => [...prev, ...urls]);
+        } else {
+          setUploadedVideos(prev => [...prev, ...urls]);
+        }
       }
-
-      toast({
-        title: "Upload realizado com sucesso!",
-        description: `${urls.length} arquivo(s) ${type === 'photo' ? 'de imagem' : 'de vídeo'} enviado(s).`,
-      });
 
     } catch (error: any) {
       console.error('Erro no upload:', error);
@@ -341,13 +332,13 @@ export const PublicComplaintForm = () => {
     // Para tipos de ocorrência, sempre usar configuração dinâmica do Super Admin
     if (field.name === 'occurrence_type') {
       console.log('🔍 getFieldOptions chamado para occurrence_type');
-      console.log('📊 settings.public_occurrence_types:', settings.public_occurrence_types);
+      console.log('📊 config.public_occurrence_types:', config.public_occurrence_types);
       
       // Filtrar apenas tipos visíveis
-      if (Array.isArray(settings.public_occurrence_types) && settings.public_occurrence_types.length > 0) {
+      if (Array.isArray(config.public_occurrence_types) && config.public_occurrence_types.length > 0) {
         try {
           // Verificar se está no novo formato (objetos com name e visible)
-          const hasNewFormat = settings.public_occurrence_types.some((item: any) => 
+          const hasNewFormat = config.public_occurrence_types.some((item: any) => 
             item && typeof item === 'object' && 'name' in item && 'visible' in item
           );
           
@@ -355,7 +346,7 @@ export const PublicComplaintForm = () => {
           
           if (hasNewFormat) {
             // Novo formato com objetos
-            const visibleTypes = settings.public_occurrence_types
+            const visibleTypes = config.public_occurrence_types
               .filter((type: any) => type && type.visible)
               .map((type: any) => type.name);
             console.log('✅ Tipos visíveis (novo formato):', visibleTypes);
@@ -366,8 +357,8 @@ export const PublicComplaintForm = () => {
           // Em caso de erro, usar formato antigo
         }
         // Formato antigo com strings (compatibilidade)
-        console.log('📱 Usando formato antigo (strings):', settings.public_occurrence_types);
-        return settings.public_occurrence_types as string[];
+        console.log('📱 Usando formato antigo (strings):', config.public_occurrence_types);
+        return config.public_occurrence_types as string[];
       }
       console.log('⚠️ Nenhum tipo de ocorrência encontrado, retornando array vazio');
       return [];
@@ -381,12 +372,12 @@ export const PublicComplaintForm = () => {
     // Para campos que dependem das configurações do sistema
     switch (field.name) {
       case 'complainant_type':
-        return settings.public_complaint_types;
+        return config.public_complaint_types;
       case 'complainant_neighborhood':
       case 'occurrence_neighborhood':
-        return settings.public_neighborhoods;
+        return config.public_neighborhoods;
       case 'classification':
-        return settings.public_classifications;
+        return config.public_classifications;
       default:
         return [];
     }
@@ -662,26 +653,35 @@ export const PublicComplaintForm = () => {
       };
       
       console.log('🔄 Dados que serão enviados:', dataToInsert);
-      console.log('📡 Fazendo requisição para edge function...');
       
-      // Usar edge function para capturar IP e inserir denúncia
-      const { data, error } = await supabase.functions.invoke('capture-user-ip', {
-        body: dataToInsert
-      });
+      if (isOnline) {
+        console.log('📡 Fazendo requisição para edge function...');
+        
+        // Usar edge function para capturar IP e inserir denúncia
+        const { data, error } = await supabase.functions.invoke('capture-user-ip', {
+          body: dataToInsert
+        });
 
-      if (error) {
-        console.error('Erro da edge function:', error);
-        throw error;
+        if (error) {
+          console.error('Erro da edge function:', error);
+          throw error;
+        }
+
+        if (!data.success) {
+          throw new Error(data.error || 'Erro desconhecido');
+        }
+
+        console.log('Denúncia enviada com sucesso!');
+      } else {
+        // Save offline
+        await saveOffline('complaint', dataToInsert);
+        console.log('💾 Denúncia salva offline para sincronização posterior');
       }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Erro desconhecido');
-      }
-
-      console.log('Denúncia enviada com sucesso!');
       toast({
-        title: "Denúncia enviada com sucesso!",
-        description: "Sua denúncia foi registrada e será analisada pela equipe responsável.",
+        title: isOnline ? "Denúncia enviada com sucesso!" : "Denúncia salva offline!",
+        description: isOnline 
+          ? "Sua denúncia foi registrada e será analisada pela equipe responsável."
+          : "Sua denúncia foi salva e será enviada quando a conexão for restabelecida.",
         variant: "default"
       });
 
@@ -712,6 +712,7 @@ export const PublicComplaintForm = () => {
       // Limpar uploads
       setUploadedPhotos([]);
       setUploadedVideos([]);
+      clearPendingUploads();
 
     } catch (error) {
       console.error('Erro ao enviar denúncia:', error);
@@ -727,6 +728,19 @@ export const PublicComplaintForm = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
+      {/* Status offline */}
+      {!isOnline && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <WifiOff className="h-4 w-4" />
+          <AlertDescription className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            <span>
+              Você está offline. Suas denúncias serão salvas e enviadas automaticamente quando a conexão for restabelecida.
+            </span>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Cabeçalho informativo */}
       <Card className="shadow-form border-l-4 border-l-primary">
         <CardHeader>
