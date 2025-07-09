@@ -121,15 +121,26 @@ export const useSyncQueue = () => {
 
   const syncComplaint = async (item: SyncItem) => {
     try {
+      console.log(`🔄 Iniciando sincronização da denúncia ${item.id}:`, item.data);
+      
       const { data, error } = await supabase.functions.invoke('api-complaints', {
-        body: {
-          method: 'POST',
-          data: item.data
+        body: item.data,
+        headers: {
+          'x-api-token': 'sat_production_3ea84279b2484a138e6fba8ebec5c7e0'
         }
       });
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Erro na sincronização');
+      console.log('📡 Resposta da API:', { data, error });
+
+      if (error) {
+        console.error(`❌ Erro na chamada da API:`, error);
+        throw error;
+      }
+      
+      if (!data?.success) {
+        console.error(`❌ API retornou erro:`, data);
+        throw new Error(data?.error || 'Erro desconhecido na sincronização');
+      }
 
       // Remove from offline storage after successful sync
       await removeOfflineItem(item.id, 'complaint');

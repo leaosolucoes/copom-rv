@@ -66,6 +66,64 @@ serve(async (req) => {
     const body = await req.json()
     console.log('Body recebido:', JSON.stringify(body, null, 2))
 
+    // Criar cliente Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Se o body contém dados de denúncia, criar a denúncia
+    if (body.complainant_name && body.narrative) {
+      console.log('Criando denúncia a partir de dados sincronizados...')
+      
+      // Gerar identificador único se não existir
+      if (!body.system_identifier) {
+        body.system_identifier = `DEN-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+      }
+
+      const complaintData = {
+        ...body,
+        status: body.status || 'nova',
+        user_ip: req.headers.get('x-forwarded-for') || 'offline-sync',
+        user_agent: req.headers.get('user-agent') || 'OfflineSync',
+        user_device_type: 'Offline'
+      }
+
+      const { data: complaint, error: insertError } = await supabase
+        .from('complaints')
+        .insert(complaintData)
+        .select()
+        .single()
+
+      if (insertError) {
+        console.error('Erro ao inserir denúncia:', insertError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Erro ao criar denúncia',
+            details: insertError.message 
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      console.log('Denúncia criada com sucesso:', complaint.id)
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Denúncia sincronizada com sucesso!',
+          complaint: complaint
+        }),
+        { 
+          status: 201, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Resposta padrão para outras requisições
     return new Response(
       JSON.stringify({ 
         success: true, 
