@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useSystemColors } from "@/hooks/useSystemColors";
 import { useDevToolsProtection } from "@/hooks/useDevToolsProtection";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { NetworkStatus } from "@/components/ui/network-status";
 import { validateDomain, checkIntegrity, initAntiTamper } from "@/utils/codeProtection";
 import { logger } from "@/lib/secureLogger";
 import Index from "./pages/Index";
@@ -53,7 +52,6 @@ const App = () => {
   return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <NetworkStatus />
       <Toaster />
       <Sonner />
       <BrowserRouter>
