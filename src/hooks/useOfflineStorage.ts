@@ -79,9 +79,14 @@ export const useOfflineStorage = () => {
       const tx = db.transaction([storeName], 'readwrite');
       const store = tx.objectStore(storeName);
       
-      await store.add(offlineData);
+      await new Promise<void>((resolve, reject) => {
+        const request = store.add(offlineData);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
       
-      console.log(`💾 Dados salvos offline: ${type}`, id);
+      console.log(`💾 Dados salvos offline: ${type} (ID: ${id})`);
+      console.log(`📊 Dados salvos:`, { type, compressed, originalSize, finalSize: JSON.stringify(finalData).length });
       await loadPendingItems();
       
       return id;
@@ -107,15 +112,17 @@ export const useOfflineStorage = () => {
           if (item.compressed) {
             try {
               const decompressedData = decompress(item.data);
+              console.log(`🔓 Dados descomprimidos para item ${item.id}`);
               return { ...item, data: decompressedData };
             } catch (error) {
-              console.error('Erro ao descomprimir dados:', error);
+              console.error('❌ Erro ao descomprimir dados:', item.id, error);
               return item; // Return original if decompression fails
             }
           }
           return item;
         });
         
+        console.log(`📦 ${processedItems.length} itens carregados do armazenamento offline`);
         setPendingItems(processedItems);
       };
     } catch (error) {
@@ -133,7 +140,11 @@ export const useOfflineStorage = () => {
       const tx = db.transaction([storeName], 'readwrite');
       const store = tx.objectStore(storeName);
       
-      await store.delete(id);
+      await new Promise<void>((resolve, reject) => {
+        const request = store.delete(id);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
       
       console.log(`🗑️ Item removido do cache offline: ${id}`);
       await loadPendingItems();
@@ -149,7 +160,11 @@ export const useOfflineStorage = () => {
       const tx = db.transaction(['system_config'], 'readwrite');
       const store = tx.objectStore('system_config');
       
-      await store.put({ key, value, timestamp: Date.now() });
+      await new Promise<void>((resolve, reject) => {
+        const request = store.put({ key, value, timestamp: Date.now() });
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
       console.log(`⚙️ Configuração cacheada: ${key}`);
     } catch (error) {
       console.error('Erro ao cachear configuração:', error);

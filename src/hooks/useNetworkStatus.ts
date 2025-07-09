@@ -27,14 +27,19 @@ export const useNetworkStatus = (): NetworkStatus => {
     const handleOnline = () => {
       updateNetworkStatus();
       console.log('🟢 Conectado à internet');
+      console.log('🔄 Tentando registrar background sync...');
       
       // Trigger background sync when back online
       if ('serviceWorker' in navigator && 'sync' in (window as any).ServiceWorkerRegistration.prototype) {
         navigator.serviceWorker.ready.then((registration: any) => {
           return registration.sync.register('background-sync-complaints');
+        }).then(() => {
+          console.log('✅ Background sync registrado com sucesso');
         }).catch((error) => {
-          console.error('Background sync registration failed:', error);
+          console.error('❌ Falha ao registrar background sync:', error);
         });
+      } else {
+        console.log('⚠️ Background sync não suportado neste navegador');
       }
     };
 

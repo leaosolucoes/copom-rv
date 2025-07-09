@@ -38,12 +38,24 @@ export const useSyncQueue = () => {
   // Auto sync when online
   useEffect(() => {
     if (isOnline && syncQueue.length > 0 && !isSyncing) {
+      console.log('🔄 Auto-sync ativado - iniciando sincronização automática');
       syncPendingItems();
     }
   }, [isOnline, syncQueue.length]);
 
   const syncPendingItems = async () => {
-    if (!isOnline || isSyncing || syncQueue.length === 0) return;
+    if (!isOnline) {
+      console.log('❌ Sincronização cancelada: sem conexão');
+      return;
+    }
+    if (isSyncing) {
+      console.log('⚠️ Sincronização cancelada: já em progresso');
+      return;
+    }
+    if (syncQueue.length === 0) {
+      console.log('ℹ️ Sincronização cancelada: nenhum item pendente');
+      return;
+    }
 
     setIsSyncing(true);
     console.log(`🔄 Iniciando sincronização de ${syncQueue.length} itens...`);
@@ -108,16 +120,24 @@ export const useSyncQueue = () => {
   };
 
   const syncComplaint = async (item: SyncItem) => {
-    const { data, error } = await supabase.functions.invoke('capture-user-ip', {
-      body: item.data
-    });
+    try {
+      const { data, error } = await supabase.functions.invoke('api-complaints', {
+        body: {
+          method: 'POST',
+          data: item.data
+        }
+      });
 
-    if (error) throw error;
-    if (!data.success) throw new Error(data.error);
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Erro na sincronização');
 
-    // Remove from offline storage after successful sync
-    await removeOfflineItem(item.id, 'complaint');
-    console.log(`✅ Denúncia ${item.id} sincronizada com sucesso`);
+      // Remove from offline storage after successful sync
+      await removeOfflineItem(item.id, 'complaint');
+      console.log(`✅ Denúncia ${item.id} sincronizada com sucesso`);
+    } catch (error) {
+      console.error(`❌ Erro ao sincronizar denúncia ${item.id}:`, error);
+      throw error;
+    }
   };
 
   const syncMedia = async (item: SyncItem) => {
