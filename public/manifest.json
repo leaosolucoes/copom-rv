@@ -1,0 +1,43 @@
+{
+  "name": "Rio Verde - Sossego & Denúncias",
+  "short_name": "RV Denúncias",
+  "description": "Sistema de denúncias e posturas de Rio Verde",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e40af",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["government", "productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Nova Denúncia",
+      "short_name": "Denunciar",
+      "description": "Fazer uma nova denúncia",
+      "url": "/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Acesso Sistema",
+      "short_name": "Login",
+      "description": "Acessar sistema administrativo",
+      "url": "/acesso",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

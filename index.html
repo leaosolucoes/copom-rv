@@ -7,6 +7,21 @@
     <meta name="description" content="Sistema Municipal de Denúncias de Perturbação do Sossego - Rio Verde/GO" />
     <meta name="author" content="Prefeitura Municipal de Rio Verde" />
     
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1e40af" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="RV Denúncias" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- App Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    
     <!-- Cabeçalhos de segurança -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co; media-src 'self' https://*.supabase.co data: blob:; connect-src 'self' https://*.supabase.co; font-src 'self'; frame-src 'self' https://*.supabase.co; object-src 'none'; child-src 'self';">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
@@ -30,5 +45,19 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('ServiceWorker registration successful');
+            }, function(err) {
+              console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+      }
+    </script>
   </body>
 </html>
