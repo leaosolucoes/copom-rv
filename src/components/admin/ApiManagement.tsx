@@ -416,7 +416,7 @@ export function ApiManagement() {
       variable: [
         {
           key: "baseUrl",
-          value: "https://posturas.conectarioverde.com.br/functions/v1",
+          value: "https://smytdnkylauxocqrkchn.supabase.co/functions/v1",
           type: "string"
         },
         {
@@ -854,11 +854,11 @@ export function ApiManagement() {
                   <h3 className="text-lg font-semibold mb-3">🔑 Autenticação</h3>
                   <div className="bg-muted p-4 rounded-lg">
                     <p className="mb-2 font-medium">Use o header <code className="bg-background px-2 py-1 rounded">x-api-token</code> em todas as requisições:</p>
-                    <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
+                     <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
 {`curl -H "x-api-token: seu_token_aqui" \\
      -H "Content-Type: application/json" \\
-     https://posturas.conectarioverde.com.br/functions/v1/api-users`}
-                    </pre>
+     https://smytdnkylauxocqrkchn.supabase.co/functions/v1/api-users`}
+                     </pre>
                   </div>
                 </div>
 
@@ -1063,9 +1063,9 @@ X-RateLimit-Reset: 1640995200`}
                 <div>
                   <h4 className="text-md font-semibold mb-3">Criar uma denúncia</h4>
                   <div className="bg-muted p-4 rounded-lg">
-                    <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
+                     <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
 {`curl -X POST \\
-  https://posturas.conectarioverde.com.br/functions/v1/api-complaints \\
+  https://smytdnkylauxocqrkchn.supabase.co/functions/v1/api-complaints \\
   -H "Content-Type: application/json" \\
   -H "x-api-token: seu_token_aqui" \\
   -d '{
@@ -1087,9 +1087,9 @@ X-RateLimit-Reset: 1640995200`}
                 <div>
                   <h4 className="text-md font-semibold mb-3">Listar denúncias</h4>
                   <div className="bg-muted p-4 rounded-lg">
-                    <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
+                     <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
 {`curl -X GET \\
-  "https://posturas.conectarioverde.com.br/functions/v1/api-complaints?page=1&limit=10&status=nova" \\
+  "https://smytdnkylauxocqrkchn.supabase.co/functions/v1/api-complaints?page=1&limit=10&status=nova" \\
   -H "x-api-token: seu_token_aqui"`}
                     </pre>
                   </div>
@@ -1098,9 +1098,9 @@ X-RateLimit-Reset: 1640995200`}
                 <div>
                   <h4 className="text-md font-semibold mb-3">Consultar CNPJ</h4>
                   <div className="bg-muted p-4 rounded-lg">
-                    <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
+                     <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
 {`curl -X GET \\
-  https://posturas.conectarioverde.com.br/functions/v1/api-cnpj/11222333000181 \\
+  https://smytdnkylauxocqrkchn.supabase.co/functions/v1/api-cnpj/11222333000181 \\
   -H "x-api-token: seu_token_aqui"`}
                     </pre>
                   </div>
@@ -1122,9 +1122,9 @@ X-RateLimit-Reset: 1640995200`}
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="min-w-20 font-medium text-sm">URL:</div>
-                      <div className="text-sm font-mono bg-background px-2 py-1 rounded">
-                        https://posturas.conectarioverde.com.br/functions/v1/api-[endpoint]
-                      </div>
+                       <div className="text-sm font-mono bg-background px-2 py-1 rounded">
+                         https://smytdnkylauxocqrkchn.supabase.co/functions/v1/api-[endpoint]
+                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="min-w-20 font-medium text-sm">Headers:</div>
