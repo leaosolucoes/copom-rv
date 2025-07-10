@@ -12,20 +12,19 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  const startTime = Date.now()
+  const url = new URL(req.url)
+  const path = url.pathname
+
   console.log('=== INÍCIO DA REQUISIÇÃO ===')
   console.log('Method:', req.method)
   console.log('URL:', req.url)
-  
-  // Log de todos os headers
-  console.log('=== HEADERS RECEBIDOS ===')
-  for (const [key, value] of req.headers.entries()) {
-    console.log(`${key}: ${value}`)
-  }
+  console.log('Path:', path)
   
   // Verificar se é uma requisição válida
-  if (req.method !== 'POST') {
+  if (!['GET', 'POST', 'PUT', 'DELETE'].includes(req.method)) {
     return new Response(
-      JSON.stringify({ error: 'Método não permitido. Use POST.' }),
+      JSON.stringify({ error: 'Método não permitido' }),
       { 
         status: 405, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -33,52 +32,128 @@ serve(async (req) => {
     )
   }
 
-  // Verificar token simples
-  const apiToken = req.headers.get('x-api-token')
-  console.log('Token encontrado:', apiToken)
-  
-  if (!apiToken) {
-    console.log('ERRO: Token não encontrado!')
-    return new Response(
-      JSON.stringify({ error: 'Token da API necessário no header x-api-token' }),
-      { 
-        status: 401, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
-  }
+  // Criar cliente Supabase
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  )
 
-  // Verificar se é o token correto
-  if (apiToken !== 'sat_production_3ea84279b2484a138e6fba8ebec5c7e0') {
-    console.log('ERRO: Token inválido!')
-    return new Response(
-      JSON.stringify({ error: 'Token da API inválido' }),
-      { 
-        status: 401, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+  // Validar token de API
+  const tokenValidation = await validateApiToken(req, supabase)
+  if (!tokenValidation.valid) {
+    return tokenValidation.response
   }
 
   console.log('Token válido! Processando requisição...')
 
+  let result
+  let statusCode = 200
+
   try {
-    const body = await req.json()
-    console.log('Body recebido:', JSON.stringify(body, null, 2))
+    // Verificar escopo de permissão
+    const tokenData = tokenValidation.tokenData
+    const requiredScope = req.method === 'GET' ? 'complaints:read' : 'complaints:write'
+    
+    if (!tokenData.scopes.includes(requiredScope) && !tokenData.scopes.includes('*')) {
+      return new Response(
+        JSON.stringify({ error: `Permissão insuficiente. Escopo necessário: ${requiredScope}` }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Roteamento baseado no método e path
+    if (req.method === 'GET') {
+      const searchParams = url.searchParams
+      const pathParts = path.split('/').filter(p => p)
+      
+      if (pathParts.length === 1) {
+        // GET /api-complaints - Listar denúncias
+        result = await listComplaints(searchParams, supabase)
+      } else if (pathParts.length === 2) {
+        const complaintId = pathParts[1]
+        if (pathParts[1] === 'media') {
+          return new Response(
+            JSON.stringify({ error: 'ID da denúncia é obrigatório para buscar mídia' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        // GET /api-complaints/{id} - Buscar denúncia específica
+        result = await getComplaint(complaintId, supabase)
+      } else if (pathParts.length === 3 && pathParts[2] === 'media') {
+        // GET /api-complaints/{id}/media - Buscar mídia da denúncia
+        const complaintId = pathParts[1]
+        result = await getComplaintMedia(complaintId, supabase)
+      } else {
+        return new Response(
+          JSON.stringify({ error: 'Endpoint não encontrado' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    } else if (req.method === 'POST') {
+      // POST /api-complaints - Criar nova denúncia
+      result = await createComplaint(req, supabase)
+    } else if (req.method === 'PUT') {
+      const pathParts = path.split('/').filter(p => p)
+      if (pathParts.length === 2) {
+        // PUT /api-complaints/{id} - Atualizar denúncia
+        const complaintId = pathParts[1]
+        result = await updateComplaint(complaintId, req, supabase)
+      } else if (pathParts.length === 3 && pathParts[2] === 'status') {
+        // PUT /api-complaints/{id}/status - Atualizar status da denúncia
+        const complaintId = pathParts[1]
+        result = await updateComplaintStatus(complaintId, req, supabase)
+      } else {
+        return new Response(
+          JSON.stringify({ error: 'Endpoint não encontrado' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    } else if (req.method === 'DELETE') {
+      const pathParts = path.split('/').filter(p => p)
+      if (pathParts.length === 2) {
+        // DELETE /api-complaints/{id} - Deletar denúncia
+        const complaintId = pathParts[1]
+        
+        // Verificar se tem permissão de delete
+        if (!tokenData.scopes.includes('complaints:delete') && !tokenData.scopes.includes('*')) {
+          return new Response(
+            JSON.stringify({ error: 'Permissão insuficiente. Escopo necessário: complaints:delete' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        
+        result = await deleteComplaint(complaintId, supabase)
+      } else {
+        return new Response(
+          JSON.stringify({ error: 'Endpoint não encontrado' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
+    statusCode = result.status
+    const executionTime = Date.now() - startTime
+
+    // Log da requisição
+    await logApiRequest(req, tokenData.token_id, statusCode, executionTime, result.data, supabase)
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'API funcionando!', 
-        data: body 
-      }),
+      JSON.stringify(result.data),
       { 
-        status: 200, 
+        status: statusCode, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     )
+
   } catch (error) {
     console.error('Erro ao processar requisição:', error)
+    const executionTime = Date.now() - startTime
+
+    // Log do erro
+    if (tokenValidation.tokenData) {
+      await logApiRequest(req, tokenValidation.tokenData.token_id, 500, executionTime, { error: error.message }, supabase)
+    }
+
     return new Response(
       JSON.stringify({ error: 'Erro interno do servidor', details: error.message }),
       { 
