@@ -392,11 +392,15 @@ async function createComplaint(req: Request, supabase: any) {
   // Gerar identificador único do sistema
   const systemIdentifier = `DEN-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
 
+  // Extract first IP from x-forwarded-for header (can contain multiple IPs)
+  const forwardedFor = req.headers.get('x-forwarded-for')
+  const clientIP = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown'
+
   const complaintData = {
     ...body,
     system_identifier: systemIdentifier,
     status: 'nova',
-    user_ip: req.headers.get('x-forwarded-for') || 'unknown',
+    user_ip: clientIP,
     user_agent: req.headers.get('user-agent') || 'API',
     user_device_type: 'API'
   }
