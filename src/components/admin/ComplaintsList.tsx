@@ -219,35 +219,73 @@ export const ComplaintsList = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [userRole]);
+  }, [userRole, soundEnabled]);
 
   const setupRealtimeUpdates = () => {
     console.log(`🔗 Configurando realtime para: ${userRole}`);
     
     const channel = supabase
-      .channel(`complaints-changes-${userRole}-${Math.random()}`)
+      .channel(`complaints-realtime-${userRole}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'complaints'
         },
         (payload) => {
-          console.log(`📢 REALTIME UPDATE RECEBIDO (${userRole}):`, payload);
-          console.log(`📢 Event Type (${userRole}):`, payload.eventType);
-          console.log(`📢 Novos dados (${userRole}):`, payload.new);
+          console.log(`📢 NOVA DENÚNCIA RECEBIDA (${userRole}):`, payload);
           
-          if (payload.eventType === 'INSERT' && payload.new && payload.new.status === 'nova') {
-            console.log(`🔊 Nova denúncia detectada para ${userRole}, tocando som...`);
-            playNotificationSound();
+          const newComplaint = payload.new as Complaint;
+          
+          // Verificar se a denúncia deve ser exibida para este usuário
+          const shouldShow = userRole === 'super_admin' || userRole === 'admin' || 
+                           (userRole === 'atendente' && newComplaint.status !== 'a_verificar' && newComplaint.status !== 'finalizada');
+          
+          if (shouldShow) {
+            // Adicionar a nova denúncia no topo da lista
+            setComplaints(prevComplaints => [newComplaint, ...prevComplaints]);
+            
+            // Tocar som se for uma denúncia nova
+            if (newComplaint.status === 'nova' && soundEnabled) {
+              console.log(`🔊 Tocando som para nova denúncia...`);
+              playNotificationSound();
+            }
+            
+            // Mostrar toast de notificação
+            toast({
+              title: "Nova Denúncia",
+              description: `Denúncia de ${newComplaint.complainant_name} recebida`,
+              duration: 5000,
+            });
           }
-          
-          console.log(`🔄 Atualizando lista de denúncias (${userRole})...`);
-          refetch();
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'complaints'
+        },
+        (payload) => {
+          console.log(`📢 DENÚNCIA ATUALIZADA (${userRole}):`, payload);
+          
+          const updatedComplaint = payload.new as Complaint;
+          
+          // Atualizar a denúncia na lista
+          setComplaints(prevComplaints => 
+            prevComplaints.map(complaint => 
+              complaint.id === updatedComplaint.id ? updatedComplaint : complaint
+            )
+          );
+        }
+      )
+      .subscribe(
+        (status) => {
+          console.log(`📡 Status da conexão realtime: ${status}`);
+        }
+      );
 
     return channel;
   };
