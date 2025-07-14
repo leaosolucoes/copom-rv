@@ -191,6 +191,26 @@ const Login = () => {
                   </>
                 )}
               </Button>
+              
+              {/* Debug button for mobile testing */}
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  const debugInfo = {
+                    isAuthenticated,
+                    profileRole: profile?.role,
+                    authLoading,
+                    userAgent: navigator.userAgent,
+                    localStorageSession: !!localStorage.getItem('custom_session'),
+                    localStorageProfile: !!localStorage.getItem('custom_profile')
+                  };
+                  alert('Debug Info: ' + JSON.stringify(debugInfo, null, 2));
+                }}
+              >
+                Debug Info
+              </Button>
             </form>
           </CardContent>
         </Card>

@@ -15,13 +15,37 @@ export const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { isAuthenticated, hasRole, isLoading, profile } = useSupabaseAuth();
 
+  // Debug logs for mobile
+  useEffect(() => {
+    console.log('🛡️ ProtectedRoute state:', {
+      isLoading,
+      isAuthenticated,
+      profile: profile?.role,
+      allowedRoles
+    });
+  }, [isLoading, isAuthenticated, profile, allowedRoles]);
+
+  // Safety timeout to prevent infinite loading
+  useEffect(() => {
+    if (isLoading) {
+      const timeout = setTimeout(() => {
+        console.warn('⚠️ ProtectedRoute loading timeout reached - forcing refresh');
+        window.location.reload();
+      }, 8000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [isLoading]);
+
   // Show loading while checking authentication
   if (isLoading) {
+    console.log('🔄 ProtectedRoute showing loading screen...');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Verificando acesso...</p>
+          <p className="text-xs text-muted-foreground mt-2">Mobile: {navigator.userAgent.includes('Mobile') ? 'Sim' : 'Não'}</p>
         </div>
       </div>
     );
@@ -29,11 +53,13 @@ export const ProtectedRoute = ({
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
+    console.log('❌ User not authenticated, redirecting to login');
     return <Navigate to={redirectTo} replace />;
   }
 
   // Check if user has required role
   if (!hasRole(allowedRoles)) {
+    console.log('🚫 User does not have required role:', { userRole: profile?.role, requiredRoles: allowedRoles });
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
@@ -55,6 +81,7 @@ export const ProtectedRoute = ({
     );
   }
 
+  console.log('✅ ProtectedRoute allowing access');
   return <>{children}</>;
 };
 

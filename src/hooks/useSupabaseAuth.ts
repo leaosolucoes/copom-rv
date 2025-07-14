@@ -222,25 +222,23 @@ export const useSupabaseAuth = () => {
       } as any;
 
       // Set user and profile data
+      console.log('📱 Setting user data for mobile:', userData.full_name);
       setUser(mockUser);
       setSession(mockSession);
-      setProfile({
+      
+      const profileData = {
         id: userData.user_id,
         email: userData.email,
         full_name: userData.full_name,
         role: userData.role as 'super_admin' | 'admin' | 'atendente' | 'fiscal',
         is_active: userData.is_active
-      });
+      };
+      
+      setProfile(profileData);
 
       // Store in localStorage for persistence
       localStorage.setItem('custom_session', JSON.stringify(mockSession));
-      localStorage.setItem('custom_profile', JSON.stringify({
-        id: userData.user_id,
-        email: userData.email,
-        full_name: userData.full_name,
-        role: userData.role as 'super_admin' | 'admin' | 'atendente' | 'fiscal',
-        is_active: userData.is_active
-      }));
+      localStorage.setItem('custom_profile', JSON.stringify(profileData));
 
       // Update last login
       await supabase
