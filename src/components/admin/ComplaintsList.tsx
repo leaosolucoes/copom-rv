@@ -225,7 +225,7 @@ export const ComplaintsList = () => {
     console.log(`🔗 Configurando realtime para: ${userRole}`);
     
     const channel = supabase
-      .channel(`complaints-realtime-${userRole}`)
+      .channel(`complaints-realtime-${Math.random()}`)
       .on(
         'postgres_changes',
         {
@@ -236,15 +236,19 @@ export const ComplaintsList = () => {
         (payload) => {
           console.log(`📢 NOVA DENÚNCIA RECEBIDA (${userRole}):`, payload);
           
-          const newComplaint = payload.new as Complaint;
+          const newComplaint = payload.new as any;
           
           // Verificar se a denúncia deve ser exibida para este usuário
           const shouldShow = userRole === 'super_admin' || userRole === 'admin' || 
                            (userRole === 'atendente' && newComplaint.status !== 'a_verificar' && newComplaint.status !== 'finalizada');
           
+          console.log(`🔍 Should show for ${userRole}:`, shouldShow, 'Status:', newComplaint.status);
+          
           if (shouldShow) {
-            // Adicionar a nova denúncia no topo da lista
-            setComplaints(prevComplaints => [newComplaint, ...prevComplaints]);
+            console.log(`✅ Adicionando nova denúncia à lista...`);
+            
+            // Primeiro recarregar os dados para garantir consistência
+            refetch();
             
             // Tocar som se for uma denúncia nova
             if (newComplaint.status === 'nova' && soundEnabled) {
