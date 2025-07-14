@@ -25,6 +25,7 @@ const Login = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated && profile) {
+      console.log('🔄 Redirecting user with role:', profile.role);
       const userRole = profile.role;
       const activeUserRole = profile.user_roles?.find(
         role => role.is_active && (!role.expires_at || new Date(role.expires_at) > new Date())
@@ -50,6 +51,19 @@ const Login = () => {
       }
     }
   }, [isAuthenticated, profile, navigate, authLoading]);
+
+  // Safety timeout to prevent infinite loading on mobile
+  useEffect(() => {
+    const safetyTimeout = setTimeout(() => {
+      if (authLoading) {
+        console.log('⚠️ Safety timeout reached, stopping loading state');
+        // Force re-check authentication state
+        window.location.reload();
+      }
+    }, 10000); // 10 seconds timeout
+
+    return () => clearTimeout(safetyTimeout);
+  }, [authLoading]);
 
   useEffect(() => {
     const fetchLogo = async () => {

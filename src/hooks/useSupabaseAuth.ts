@@ -68,6 +68,7 @@ export const useSupabaseAuth = () => {
           const session = JSON.parse(storedSession);
           const profile = JSON.parse(storedProfile);
           
+          console.log('📱 Loading stored session for mobile...');
           setSession(session);
           setUser(session.user);
           setProfile(profile);
@@ -85,17 +86,23 @@ export const useSupabaseAuth = () => {
     // Set up auth state listener for Supabase Auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Auth state changed:', event, !!session);
+        
         // Only handle if we don't have a custom session
         if (!checkExistingSession()) {
           setSession(session);
           setUser(session?.user ?? null);
           
           if (session?.user) {
-            setTimeout(async () => {
+            console.log('👤 Loading user profile...');
+            try {
               const userProfile = await fetchUserProfile(session.user.id);
               setProfile(userProfile);
+            } catch (error) {
+              console.error('Error fetching user profile:', error);
+            } finally {
               setIsLoading(false);
-            }, 0);
+            }
           } else {
             setProfile(null);
             setIsLoading(false);
@@ -105,22 +112,36 @@ export const useSupabaseAuth = () => {
     );
 
     // Initial check - first custom session, then Supabase session
-    if (!checkExistingSession()) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          setTimeout(async () => {
-            const userProfile = await fetchUserProfile(session.user.id);
-            setProfile(userProfile);
-            setIsLoading(false);
-          }, 0);
-        } else {
+    const initializeAuth = async () => {
+      console.log('🚀 Initializing auth...');
+      
+      if (!checkExistingSession()) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          console.log('📋 Got session:', !!session);
+          
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            console.log('👤 Loading user profile on init...');
+            try {
+              const userProfile = await fetchUserProfile(session.user.id);
+              setProfile(userProfile);
+            } catch (error) {
+              console.error('Error fetching user profile on init:', error);
+            }
+          }
+        } catch (error) {
+          console.error('Error getting session:', error);
+        } finally {
+          console.log('✅ Auth initialization complete');
           setIsLoading(false);
         }
-      });
-    }
+      }
+    };
+
+    initializeAuth();
 
     return () => subscription.unsubscribe();
   }, []);
