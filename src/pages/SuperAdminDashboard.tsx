@@ -51,14 +51,14 @@ const SuperAdminDashboard = () => {
       />
       
       {/* User Info Bar */}
-      <div className="bg-white border-b shadow-sm">
+      <div className="bg-card border-b shadow-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-xl font-semibold text-card-foreground">
                 Super Administrador
               </h1>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Bem-vindo, {profile.full_name}
               </p>
             </div>
