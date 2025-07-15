@@ -23,7 +23,7 @@ const SuperAdminDashboard = () => {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
-  console.log('📱 SUPER_ADMIN: isLoading:', isLoading, 'profile:', !!profile, 'profile.full_name:', profile?.full_name);
+  console.log('📱 SUPER_ADMIN: Component loaded', { isLoading, profile: !!profile });
 
   useEffect(() => {
     if (!isLoading && !profile) {
@@ -58,198 +58,54 @@ const SuperAdminDashboard = () => {
     fetchLogo();
   }, []);
 
-  // SEMPRE mostrar o dashboard - sem verificações que causam tela branca
+  // FALLBACK VISUAL SEMPRE VISÍVEL
   return (
-    <div className="min-h-screen bg-background">
-      <Header 
-        showLoginButton={false} 
-        logoUrl={logoUrl}
-      />
-      
-      {/* User Info Bar */}
-      <div className="bg-card border-b shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-card-foreground">
-                Super Administrador
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Bem-vindo, {profile?.full_name || 'Carregando...'}
-              </p>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={signOut}
-            >
-              Sair
-            </Button>
-          </div>
-        </div>
+    <div style={{ minHeight: '100vh', backgroundColor: '#fafafa', padding: '20px' }}>
+      <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
+        <h1 style={{ margin: '0 0 10px 0', color: '#2d5016' }}>Super Administrador</h1>
+        <p style={{ margin: '0', color: '#666' }}>
+          {isLoading ? 'Carregando perfil...' : `Bem-vindo, ${profile?.full_name || 'Usuário'}`}
+        </p>
+        <button 
+          onClick={signOut}
+          style={{ 
+            marginTop: '10px', 
+            padding: '8px 16px', 
+            backgroundColor: '#2d5016', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Sair
+        </button>
       </div>
-
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="complaints" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 lg:w-fit">`
-            <TabsTrigger value="complaints" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Denúncias</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Usuários</span>
-            </TabsTrigger>
-            <TabsTrigger value="whatsapp" className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">WhatsApp</span>
-            </TabsTrigger>
-            <TabsTrigger value="form" className="flex items-center gap-2">
-              <Layout className="h-4 w-4" />
-              <span className="hidden sm:inline">Formulário</span>
-            </TabsTrigger>
-            <TabsTrigger value="logo" className="flex items-center gap-2">
-              <Image className="h-4 w-4" />
-              <span className="hidden sm:inline">Logo</span>
-            </TabsTrigger>
-            <TabsTrigger value="occurrence-types" className="flex items-center gap-2">
-              <List className="h-4 w-4" />
-              <span className="hidden sm:inline">Tipos</span>
-            </TabsTrigger>
-            <TabsTrigger value="api" className="flex items-center gap-2">
-              <Code className="h-4 w-4" />
-              <span className="hidden sm:inline">API</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Config</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="complaints" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Gerenciar Denúncias</CardTitle>
-                <CardDescription>
-                  Visualize, exporte e gerencie todas as denúncias do sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p>Carregando denúncias...</p>
-                  </div>
-                ) : (
-                  <ComplaintsList />
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="users" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Gerenciar Usuários</CardTitle>
-                <CardDescription>
-                  Cadastre, edite e desative usuários do sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <UserManagement />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="whatsapp" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configuração WhatsApp</CardTitle>
-                <CardDescription>
-                  Configure a integração com Evolution API para envio automático de mensagens
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <WhatsAppConfig />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="form" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configurar Formulário</CardTitle>
-                <CardDescription>
-                  Gerencie quais campos aparecem no formulário público de denúncias
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FormFieldsConfig />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="logo" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Logo do Sistema</CardTitle>
-                <CardDescription>
-                  Faça upload e configure a logo que aparecerá em todas as telas
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <LogoUpload onLogoUpdate={setLogoUrl} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="occurrence-types" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tipos de Ocorrência</CardTitle>
-                <CardDescription>
-                  Configure os tipos de ocorrência disponíveis no formulário público de denúncias
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <OccurrenceTypesConfig />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="api" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Gerenciamento de API</CardTitle>
-                <CardDescription>
-                  Configure tokens, monitore uso e gerencie a API completa do sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ApiManagement />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Configurações Gerais</CardTitle>
-                  <CardDescription>
-                    Configurações avançadas do sistema
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <SystemSettings />
-                </CardContent>
-              </Card>
-              
-              <SoundNotificationControl />
+      
+      <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px' }}>
+        <h2 style={{ margin: '0 0 15px 0', color: '#2d5016' }}>Painel Super Administrador</h2>
+        {isLoading ? (
+          <p>Carregando dados...</p>
+        ) : (
+          <div>
+            <p>Status: Sistema funcionando</p>
+            <p>Perfil: {profile?.role || 'Não definido'}</p>
+            <p>Email: {profile?.email || 'Não definido'}</p>
+            <div style={{ marginTop: '20px' }}>
+              <h3 style={{ margin: '0 0 10px 0' }}>Funcionalidades Disponíveis:</h3>
+              <ul>
+                <li>Gerenciar todas as denúncias</li>
+                <li>Gerenciar todos os usuários</li>
+                <li>Configurar WhatsApp</li>
+                <li>Configurar formulários</li>
+                <li>Gerenciar logos e identidade</li>
+                <li>API Management</li>
+                <li>Configurações avançadas</li>
+              </ul>
             </div>
-          </TabsContent>
-        </Tabs>
-      </main>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

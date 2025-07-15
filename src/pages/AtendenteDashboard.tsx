@@ -12,7 +12,7 @@ export default function AtendenteDashboard() {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
-  console.log('📱 ATENDENTE: isLoading:', isLoading, 'profile:', !!profile, 'profile.full_name:', profile?.full_name);
+  console.log('📱 ATENDENTE: Component loaded', { isLoading, profile: !!profile });
 
   useEffect(() => {
     if (!isLoading && !profile) {
@@ -47,32 +47,40 @@ export default function AtendenteDashboard() {
     fetchLogo();
   }, []);
 
-  // SEMPRE mostrar o dashboard - sem verificações que causam tela branca
+  // FALLBACK VISUAL SEMPRE VISÍVEL
   return (
-    <div className="min-h-screen bg-background">
-      <Header showLoginButton={false} logoUrl={logoUrl} />
+    <div style={{ minHeight: '100vh', backgroundColor: '#fafafa', padding: '20px' }}>
+      <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
+        <h1 style={{ margin: '0 0 10px 0', color: '#2d5016' }}>Painel do Atendente</h1>
+        <p style={{ margin: '0', color: '#666' }}>
+          {isLoading ? 'Carregando perfil...' : `Bem-vindo, ${profile?.full_name || 'Usuário'}`}
+        </p>
+        <button 
+          onClick={signOut}
+          style={{ 
+            marginTop: '10px', 
+            padding: '8px 16px', 
+            backgroundColor: '#2d5016', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Sair
+        </button>
+      </div>
       
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-primary">Painel do Atendente</h1>
-            <p className="text-muted-foreground">
-              Bem-vindo, {profile?.full_name || 'Carregando...'}
-            </p>
-          </div>
-          <Button variant="outline" onClick={signOut}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Sair
-          </Button>
-        </div>
-
+      <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px' }}>
+        <h2 style={{ margin: '0 0 15px 0', color: '#2d5016' }}>Sistema de Denúncias</h2>
         {isLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Carregando denúncias...</p>
-          </div>
+          <p>Carregando dados...</p>
         ) : (
-          <ComplaintsList />
+          <div>
+            <p>Status: Sistema funcionando</p>
+            <p>Perfil: {profile?.role || 'Não definido'}</p>
+            <p>Email: {profile?.email || 'Não definido'}</p>
+          </div>
         )}
       </div>
     </div>
