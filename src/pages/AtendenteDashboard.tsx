@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
@@ -8,16 +7,15 @@ import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AtendenteDashboard() {
-  const { profile, signOut, isLoading } = useSupabaseAuth();
-  const navigate = useNavigate();
+  const { profile, signOut, isLoading, hasRole } = useSupabaseAuth();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
   useEffect(() => {
-    if (!isLoading && !profile) {
-      navigate('/acesso');
+    if (!isLoading && (!profile || !hasRole(['atendente', 'admin', 'super_admin']))) {
+      window.location.href = '/acesso';
       return;
     }
-  }, [profile, navigate, isLoading]);
+  }, [profile, hasRole, isLoading]);
 
   useEffect(() => {
     const fetchLogo = async () => {
@@ -45,10 +43,15 @@ export default function AtendenteDashboard() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p>Carregando...</p>
         </div>
       </div>
     );
+  }
+
+  if (!profile || !hasRole(['atendente', 'admin', 'super_admin'])) {
+    return null;
   }
 
   return (
