@@ -22,7 +22,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [logoUrl, setLogoUrl] = useState<string>('');
 
-  // Redirect if already authenticated
+  // Enhanced redirect logic for mobile
   useEffect(() => {
     if (!authLoading && isAuthenticated && profile) {
       console.log('🔄 Redirecting user with role:', profile.role);
@@ -33,22 +33,32 @@ const Login = () => {
       
       const currentRole = activeUserRole?.role || userRole;
       
-      switch (currentRole) {
-        case 'super_admin':
-          navigate('/super-admin', { replace: true });
-          break;
-        case 'admin':
-          navigate('/admin', { replace: true });
-          break;
-        case 'atendente':
-          navigate('/atendente', { replace: true });
-          break;
-        case 'fiscal':
-          navigate('/fiscal', { replace: true });
-          break;
-        default:
-          navigate('/', { replace: true });
-      }
+      // Add small delay for mobile to ensure state is fully set
+      const redirectTimeout = setTimeout(() => {
+        switch (currentRole) {
+          case 'super_admin':
+            console.log('📱 Navigating to super-admin dashboard');
+            navigate('/super-admin', { replace: true });
+            break;
+          case 'admin':
+            console.log('📱 Navigating to admin dashboard');
+            navigate('/admin', { replace: true });
+            break;
+          case 'atendente':
+            console.log('📱 Navigating to atendente dashboard');
+            navigate('/atendente', { replace: true });
+            break;
+          case 'fiscal':
+            console.log('📱 Navigating to fiscal dashboard');
+            navigate('/fiscal', { replace: true });
+            break;
+          default:
+            console.log('📱 Navigating to home page');
+            navigate('/', { replace: true });
+        }
+      }, 100); // Small delay for mobile
+      
+      return () => clearTimeout(redirectTimeout);
     }
   }, [isAuthenticated, profile, navigate, authLoading]);
 
