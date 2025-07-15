@@ -10,46 +10,9 @@ export default function AtendenteDashboard() {
   const { profile, signOut, isLoading, hasRole } = useSupabaseAuth();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
-  // MOBILE FORCE CHECK - Verificação imediata
-  useEffect(() => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    console.log('📱 ATENDENTE MOBILE CHECK:', { isMobile, isLoading, profile: !!profile });
-
-    // Se é mobile e não está carregando, força verificação
-    if (isMobile && !isLoading) {
-      // Verifica localStorage primeiro para mobile
-      const storedSession = localStorage.getItem('custom_session');
-      const storedProfile = localStorage.getItem('custom_profile');
-      
-      if (!storedSession || !storedProfile) {
-        console.log('📱 ATENDENTE: No stored session, redirecting...');
-        window.location.replace('/acesso');
-        return;
-      }
-
-      try {
-        const profileData = JSON.parse(storedProfile);
-        const allowedRoles = ['atendente', 'admin', 'super_admin'];
-        
-        if (!allowedRoles.includes(profileData.role)) {
-          console.log('📱 ATENDENTE: Role not allowed:', profileData.role);
-          window.location.replace('/acesso');
-          return;
-        }
-        
-        console.log('📱 ATENDENTE: Mobile access granted for:', profileData.role);
-      } catch (error) {
-        console.error('📱 ATENDENTE: Error parsing stored data:', error);
-        window.location.replace('/acesso');
-        return;
-      }
-    }
-  }, [isLoading]);
-
-  // Fallback check para desktop/outros casos
   useEffect(() => {
     if (!isLoading && (!profile || !hasRole(['atendente', 'admin', 'super_admin']))) {
-      window.location.replace('/acesso');
+      window.location.href = '/acesso';
       return;
     }
   }, [profile, hasRole, isLoading]);
