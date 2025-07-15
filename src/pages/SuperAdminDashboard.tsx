@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
@@ -17,14 +18,15 @@ import { ApiManagement } from '@/components/admin/ApiManagement';
 import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code } from 'lucide-react';
 
 const SuperAdminDashboard = () => {
+  const navigate = useNavigate();
   const { profile, signOut, hasRole, isLoading } = useSupabaseAuth();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
   useEffect(() => {
     if (!isLoading && (!profile || !hasRole(['super_admin']))) {
-      window.location.href = '/acesso';
+      navigate('/acesso');
     }
-  }, [profile, hasRole, isLoading]);
+  }, [profile, hasRole, navigate, isLoading]);
 
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {

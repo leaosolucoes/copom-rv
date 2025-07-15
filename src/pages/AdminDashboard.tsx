@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
@@ -11,14 +12,15 @@ import { Users, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const { profile, signOut, hasRole, isLoading } = useSupabaseAuth();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
   useEffect(() => {
     if (!isLoading && (!profile || !hasRole(['admin', 'super_admin']))) {
-      window.location.href = '/acesso';
+      navigate('/acesso');
     }
-  }, [profile, hasRole, isLoading]);
+  }, [profile, hasRole, navigate, isLoading]);
 
   useEffect(() => {
     const fetchLogo = async () => {
