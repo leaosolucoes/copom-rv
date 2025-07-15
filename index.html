@@ -40,6 +40,33 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <style>
+      /* Inline CSS para prevenir flash de cores */
+      :root {
+        --background: 0 0% 98%;
+        --foreground: 212 15% 25%;
+        --card: 0 0% 100%;
+        --card-foreground: 212 15% 25%;
+        --primary: 142 76% 28%;
+        --primary-foreground: 0 0% 98%;
+        --border: 214 15% 88%;
+        --input: 214 15% 88%;
+        --ring: 142 76% 28%;
+      }
+      
+      body {
+        background-color: hsl(0 0% 98%);
+        color: hsl(212 15% 25%);
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      
+      #root {
+        min-height: 100vh;
+        background-color: hsl(0 0% 98%);
+      }
+    </style>
   </head>
 
   <body>
