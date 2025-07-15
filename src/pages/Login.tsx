@@ -62,18 +62,62 @@ const Login = () => {
     }
   }, [isAuthenticated, profile, navigate, authLoading]);
 
-  // Safety timeout to prevent infinite loading on mobile
+  // Enhanced mobile redirect with forced navigation
   useEffect(() => {
-    const safetyTimeout = setTimeout(() => {
-      if (authLoading) {
-        console.log('⚠️ Safety timeout reached, stopping loading state');
-        // Force re-check authentication state
-        window.location.reload();
-      }
-    }, 10000); // 10 seconds timeout
-
-    return () => clearTimeout(safetyTimeout);
-  }, [authLoading]);
+    if (!authLoading && isAuthenticated && profile) {
+      console.log('🔄 Mobile redirect triggered for:', profile.role);
+      
+      // Force immediate redirect for mobile
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const redirectDelay = isMobile ? 500 : 100; // Longer delay for mobile
+      
+      const redirectTimeout = setTimeout(() => {
+        const currentRole = profile.role;
+        
+        console.log('📱 Forcing navigation for mobile user:', currentRole);
+        
+        // Force page change with location.href for stubborn mobile browsers
+        if (isMobile) {
+          switch (currentRole) {
+            case 'super_admin':
+              window.location.href = '/super-admin';
+              break;
+            case 'admin':
+              window.location.href = '/admin';
+              break;
+            case 'atendente':
+              window.location.href = '/atendente';
+              break;
+            case 'fiscal':
+              window.location.href = '/fiscal';
+              break;
+            default:
+              window.location.href = '/';
+          }
+        } else {
+          // Use React Router for desktop
+          switch (currentRole) {
+            case 'super_admin':
+              navigate('/super-admin', { replace: true });
+              break;
+            case 'admin':
+              navigate('/admin', { replace: true });
+              break;
+            case 'atendente':
+              navigate('/atendente', { replace: true });
+              break;
+            case 'fiscal':
+              navigate('/fiscal', { replace: true });
+              break;
+            default:
+              navigate('/', { replace: true });
+          }
+        }
+      }, redirectDelay);
+      
+      return () => clearTimeout(redirectTimeout);
+    }
+  }, [isAuthenticated, profile, navigate, authLoading]);
 
   useEffect(() => {
     const fetchLogo = async () => {
@@ -105,14 +149,23 @@ const Login = () => {
     setError('');
 
     try {
+      console.log('📱 Starting mobile login process...');
       const { error } = await signIn(email.toLowerCase().trim(), password);
       
       if (error) {
         setError('Email ou senha incorretos');
+      } else {
+        // For mobile, add extra delay to ensure auth state is set
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          console.log('📱 Mobile login successful, waiting for state...');
+          setTimeout(() => {
+            console.log('📱 Mobile state ready, redirect should happen...');
+          }, 200);
+        }
       }
-      // Navigation will be handled by useEffect above
     } catch (error: any) {
-      console.error('Erro no login:', error);
+      console.error('❌ Login error:', error);
       setError('Erro ao fazer login');
     } finally {
       setLoading(false);

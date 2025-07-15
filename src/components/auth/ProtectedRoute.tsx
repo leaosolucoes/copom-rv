@@ -25,13 +25,20 @@ export const ProtectedRoute = ({
     });
   }, [isLoading, isAuthenticated, profile, allowedRoles]);
 
-  // Safety timeout to prevent infinite loading
+  // Enhanced mobile timeout with forced redirect
   useEffect(() => {
     if (isLoading) {
       const timeout = setTimeout(() => {
-        console.warn('⚠️ ProtectedRoute loading timeout reached - forcing refresh');
-        window.location.reload();
-      }, 8000);
+        console.warn('⚠️ ProtectedRoute loading timeout reached');
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+          console.warn('📱 Mobile timeout detected - forcing redirect to login');
+          window.location.href = '/acesso';
+        } else {
+          window.location.reload();
+        }
+      }, 6000); // Shorter timeout for mobile
 
       return () => clearTimeout(timeout);
     }
