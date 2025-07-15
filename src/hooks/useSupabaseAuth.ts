@@ -261,12 +261,46 @@ export const useSupabaseAuth = () => {
       localStorage.setItem('custom_session', JSON.stringify(mockSession));
       localStorage.setItem('custom_profile', JSON.stringify(profileData));
       
-      // Then set state
-      setUser(mockUser);
-      setSession(mockSession);
-      setProfile(profileData);
-      
-      console.log('📱 MOBILE: Auth state set successfully - ready for redirect');
+      // MOBILE: Force immediate redirect after successful auth
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        console.log('📱 MOBILE: Immediate redirect after login for role:', userData.role);
+        
+        // Set state quickly
+        setUser(mockUser);
+        setSession(mockSession);
+        setProfile(profileData);
+        
+        // Force redirect without any React Router
+        setTimeout(() => {
+          switch (userData.role) {
+            case 'super_admin':
+              window.location.href = '/super-admin';
+              break;
+            case 'admin':
+              window.location.href = '/admin';
+              break;
+            case 'atendente':
+              window.location.href = '/atendente';
+              break;
+            case 'fiscal':
+              window.location.href = '/fiscal';
+              break;
+            default:
+              window.location.href = '/';
+          }
+        }, 200);
+        
+        console.log('📱 MOBILE: Redirect initiated');
+        return { error: null };
+      } else {
+        // Desktop normal flow
+        setUser(mockUser);
+        setSession(mockSession);
+        setProfile(profileData);
+        
+        console.log('📱 DESKTOP: Auth state set successfully - ready for redirect');
+      }
 
       // Update last login
       await supabase
