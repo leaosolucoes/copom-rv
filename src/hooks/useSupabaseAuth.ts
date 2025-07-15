@@ -63,7 +63,7 @@ export const useSupabaseAuth = () => {
 
     console.log('🔄 Starting mobile auth initialization...');
 
-    // Immediate check for stored session (mobile optimization)
+    // CRITICAL: Check for stored session FIRST (mobile optimization)
     const storedSession = localStorage.getItem('custom_session');
     const storedProfile = localStorage.getItem('custom_profile');
     
@@ -74,15 +74,25 @@ export const useSupabaseAuth = () => {
         
         console.log('📱 MOBILE: Restored session for', profile.full_name, 'role:', profile.role);
         
-        setSession(session);
-        setUser(session.user);
-        setProfile(profile);
-        setIsLoading(false);
-        
-        // For mobile, immediately stop loading and trust the stored session
-        return () => {
-          isMounted = false;
-        };
+        // Validate session is not expired (basic check)
+        const now = Math.floor(Date.now() / 1000);
+        if (session.expires_at && session.expires_at > now) {
+          setSession(session);
+          setUser(session.user);
+          setProfile(profile);
+          setIsLoading(false);
+          
+          console.log('📱 MOBILE: Session valid, auth complete');
+          
+          // For mobile with valid session, skip Supabase check entirely
+          return () => {
+            isMounted = false;
+          };
+        } else {
+          console.log('📱 MOBILE: Session expired, clearing storage');
+          localStorage.removeItem('custom_session');
+          localStorage.removeItem('custom_profile');
+        }
       } catch (error) {
         console.error('❌ Error parsing stored session:', error);
         localStorage.removeItem('custom_session');
@@ -231,8 +241,8 @@ export const useSupabaseAuth = () => {
         user: mockUser,
         access_token: 'custom_token_' + userData.user_id,
         refresh_token: 'custom_refresh_' + userData.user_id,
-        expires_in: 3600,
-        expires_at: Math.floor(Date.now() / 1000) + 3600,
+        expires_in: 86400, // 24 hours in seconds
+        expires_at: Math.floor(Date.now() / 1000) + 86400, // 24 hours from now
         token_type: 'bearer'
       } as any;
 
