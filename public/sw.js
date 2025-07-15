@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rio-verde-denuncias-v1';
+const CACHE_NAME = 'rio-verde-denuncias-v2-' + Date.now();
 const urlsToCache = [
   '/',
   '/manifest.json',
