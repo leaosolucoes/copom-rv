@@ -12,15 +12,16 @@ import { Users, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
+  const { profile, signOut, isLoading } = useSupabaseAuth();
   const navigate = useNavigate();
-  const { profile, signOut, hasRole, isLoading } = useSupabaseAuth();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
   useEffect(() => {
-    if (!isLoading && (!profile || !hasRole(['admin', 'super_admin']))) {
+    if (!isLoading && !profile) {
       navigate('/acesso');
+      return;
     }
-  }, [profile, hasRole, navigate, isLoading]);
+  }, [profile, navigate, isLoading]);
 
   useEffect(() => {
     const fetchLogo = async () => {
@@ -44,20 +45,14 @@ const AdminDashboard = () => {
     fetchLogo();
   }, []);
 
-  // Mostrar loading enquanto verifica autenticação
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p>Carregando...</p>
         </div>
       </div>
     );
-  }
-
-  if (!profile || !hasRole(['admin', 'super_admin'])) {
-    return null;
   }
 
   return (

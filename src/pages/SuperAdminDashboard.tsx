@@ -16,32 +16,50 @@ import { OccurrenceTypesConfig } from '@/components/admin/OccurrenceTypesConfig'
 import { SoundNotificationControl } from '@/components/admin/SoundNotificationControl';
 import { ApiManagement } from '@/components/admin/ApiManagement';
 import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
+  const { profile, signOut, isLoading } = useSupabaseAuth();
   const navigate = useNavigate();
-  const { profile, signOut, hasRole, isLoading } = useSupabaseAuth();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
   useEffect(() => {
-    if (!isLoading && (!profile || !hasRole(['super_admin']))) {
+    if (!isLoading && !profile) {
       navigate('/acesso');
+      return;
     }
-  }, [profile, hasRole, navigate, isLoading]);
+  }, [profile, navigate, isLoading]);
 
-  // Mostrar loading enquanto verifica autenticação
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'public_logo_url')
+          .maybeSingle();
+
+        if (error) throw error;
+        
+        if (data?.value) {
+          setLogoUrl(data.value as string);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar logo:', error);
+      }
+    };
+
+    fetchLogo();
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p>Carregando...</p>
         </div>
       </div>
     );
-  }
-
-  if (!profile || !hasRole(['super_admin'])) {
-    return null;
   }
 
   return (
