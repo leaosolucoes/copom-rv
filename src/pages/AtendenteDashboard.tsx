@@ -11,9 +11,37 @@ export default function AtendenteDashboard() {
   const [logoUrl, setLogoUrl] = useState<string>('');
 
   useEffect(() => {
-    if (!isLoading && (!profile || !hasRole(['atendente', 'admin', 'super_admin']))) {
-      window.location.href = '/acesso';
-      return;
+    console.log('📱 ATENDENTE DASHBOARD: isLoading:', isLoading, 'profile:', !!profile, 'hasRole:', hasRole(['atendente', 'admin', 'super_admin']));
+    
+    if (profile) {
+      console.log('📱 ATENDENTE: Profile data:', { 
+        full_name: profile.full_name, 
+        role: profile.role,
+        is_active: profile.is_active 
+      });
+    }
+    
+    // Mobile immediate redirect if not authorized
+    if (!isLoading) {
+      if (!profile) {
+        console.log('📱 ATENDENTE: No profile, redirecting to /acesso');
+        window.location.href = '/acesso';
+        return;
+      }
+      
+      // Check role specifically
+      const allowedRoles = ['atendente', 'admin', 'super_admin'];
+      const roleCheck = hasRole(allowedRoles);
+      
+      console.log('📱 ATENDENTE: Role check result:', roleCheck, 'for roles:', allowedRoles);
+      
+      if (!roleCheck) {
+        console.log('📱 ATENDENTE: Role not allowed, redirecting to /acesso');
+        window.location.href = '/acesso';
+        return;
+      }
+      
+      console.log('📱 ATENDENTE: All checks passed, showing dashboard');
     }
   }, [profile, hasRole, isLoading]);
 
