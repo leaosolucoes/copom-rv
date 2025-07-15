@@ -16,7 +16,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
-  console.log('📱 ADMIN: Component loaded', { isLoading, profile: !!profile });
+  console.log('📱 ADMIN: isLoading:', isLoading, 'profile:', !!profile, 'profile.full_name:', profile?.full_name);
 
   useEffect(() => {
     if (!isLoading && !profile) {
@@ -51,79 +51,90 @@ const AdminDashboard = () => {
     fetchLogo();
   }, []);
 
-  // HYBRID: CSS inline + React components para garantir funcionamento
+  // SEMPRE mostrar o dashboard - sem verificações que causam tela branca
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#fafafa' }}>
-      {/* CSS inline garante que sempre aparece */}
-      <div style={{ backgroundColor: 'white', padding: '20px', borderBottom: '1px solid #ddd' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1 style={{ margin: '0 0 5px 0', color: '#2d5016', fontSize: '24px' }}>
-              Administrador
-            </h1>
-            <p style={{ margin: '0', color: '#666' }}>
-              {isLoading ? 'Carregando perfil...' : `Bem-vindo, ${profile?.full_name || 'Usuário'}`}
-            </p>
+    <div className="min-h-screen bg-background">
+      <Header showLoginButton={false} logoUrl={logoUrl} />
+      
+      {/* User Info Bar */}
+      <div className="bg-card border-b shadow-sm">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-card-foreground">
+                Administrador
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Bem-vindo, {profile?.full_name || 'Carregando...'}
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={signOut}
+            >
+              Sair
+            </Button>
           </div>
-          <button 
-            onClick={signOut}
-            style={{ 
-              padding: '8px 16px', 
-              backgroundColor: '#2d5016', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Sair
-          </button>
         </div>
       </div>
-      
-      {/* Navegação por abas */}
-      <div style={{ backgroundColor: 'white', padding: '10px 20px', borderBottom: '1px solid #ddd' }}>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button 
-            style={{ 
-              padding: '8px 16px', 
-              backgroundColor: '#2d5016', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Denúncias
-          </button>
-          <button 
-            style={{ 
-              padding: '8px 16px', 
-              backgroundColor: '#f5f5f5', 
-              color: '#666', 
-              border: '1px solid #ddd', 
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Usuários
-          </button>
-        </div>
-      </div>
-      
-      {/* Área principal com componentes React */}
-      <div style={{ padding: '20px' }}>
-        {isLoading ? (
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
-            <p>Carregando sistema administrativo...</p>
-          </div>
-        ) : (
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px' }}>
-            <h2 style={{ margin: '0 0 20px 0', color: '#2d5016' }}>Gerenciar Denúncias</h2>
-            <ComplaintsList />
-          </div>
-        )}
-      </div>
+
+      <main className="container mx-auto px-4 py-8">
+        <Tabs defaultValue="complaints" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 lg:w-fit">
+            <TabsTrigger value="complaints" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Denúncias
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Atendentes
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="complaints" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Acompanhar Denúncias</CardTitle>
+                <CardDescription>
+                  Visualize todas as denúncias e o fluxo de atendimento
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p>Carregando denúncias...</p>
+                  </div>
+                ) : (
+                  <ComplaintsList />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gerenciar Atendentes</CardTitle>
+                <CardDescription>
+                  Cadastre e desative usuários atendentes
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p>Carregando usuários...</p>
+                  </div>
+                ) : (
+                  <UserManagement userRole="admin" />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
     </div>
   );
 };

@@ -12,7 +12,7 @@ export default function AtendenteDashboard() {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
-  console.log('📱 ATENDENTE: Component loaded', { isLoading, profile: !!profile });
+  console.log('📱 ATENDENTE: isLoading:', isLoading, 'profile:', !!profile, 'profile.full_name:', profile?.full_name);
 
   useEffect(() => {
     if (!isLoading && !profile) {
@@ -47,47 +47,32 @@ export default function AtendenteDashboard() {
     fetchLogo();
   }, []);
 
-  // HYBRID: CSS inline + React components para garantir funcionamento
+  // SEMPRE mostrar o dashboard - sem verificações que causam tela branca
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#fafafa' }}>
-      {/* CSS inline garante que sempre aparece */}
-      <div style={{ backgroundColor: 'white', padding: '20px', borderBottom: '1px solid #ddd' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="min-h-screen bg-background">
+      <Header showLoginButton={false} logoUrl={logoUrl} />
+      
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 style={{ margin: '0 0 5px 0', color: '#2d5016', fontSize: '24px' }}>
-              Painel do Atendente
-            </h1>
-            <p style={{ margin: '0', color: '#666' }}>
-              {isLoading ? 'Carregando perfil...' : `Bem-vindo, ${profile?.full_name || 'Usuário'}`}
+            <h1 className="text-2xl font-bold text-primary">Painel do Atendente</h1>
+            <p className="text-muted-foreground">
+              Bem-vindo, {profile?.full_name || 'Carregando...'}
             </p>
           </div>
-          <button 
-            onClick={signOut}
-            style={{ 
-              padding: '8px 16px', 
-              backgroundColor: '#2d5016', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
+          <Button variant="outline" onClick={signOut}>
+            <LogOut className="h-4 w-4 mr-2" />
             Sair
-          </button>
+          </Button>
         </div>
-      </div>
-      
-      {/* Área principal com componentes React */}
-      <div style={{ padding: '20px' }}>
+
         {isLoading ? (
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
-            <p>Carregando sistema de denúncias...</p>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Carregando denúncias...</p>
           </div>
         ) : (
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px' }}>
-            <h2 style={{ margin: '0 0 20px 0', color: '#2d5016' }}>Sistema de Denúncias</h2>
-            <ComplaintsList />
-          </div>
+          <ComplaintsList />
         )}
       </div>
     </div>
