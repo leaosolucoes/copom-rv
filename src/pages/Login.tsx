@@ -35,16 +35,16 @@ const Login = () => {
         
         switch (profile.role) {
           case 'super_admin':
-            window.location.href = '/super-admin';
+            window.location.href = '/super-admin-dashboard';
             break;
           case 'admin':
-            window.location.href = '/admin';
+            window.location.href = '/admin-dashboard';
             break;
           case 'atendente':
-            window.location.href = '/atendente';
+            window.location.href = '/atendente-dashboard';
             break;
           case 'fiscal':
-            window.location.href = '/fiscal';
+            window.location.href = '/fiscal-dashboard';
             break;
           default:
             window.location.href = '/';
