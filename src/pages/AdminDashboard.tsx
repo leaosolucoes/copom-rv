@@ -14,9 +14,46 @@ const AdminDashboard = () => {
   const { profile, signOut, hasRole, isLoading } = useSupabaseAuth();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
+  // MOBILE FORCE CHECK - Verificação imediata
+  useEffect(() => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    console.log('📱 ADMIN MOBILE CHECK:', { isMobile, isLoading, profile: !!profile });
+
+    // Se é mobile e não está carregando, força verificação
+    if (isMobile && !isLoading) {
+      // Verifica localStorage primeiro para mobile
+      const storedSession = localStorage.getItem('custom_session');
+      const storedProfile = localStorage.getItem('custom_profile');
+      
+      if (!storedSession || !storedProfile) {
+        console.log('📱 ADMIN: No stored session, redirecting...');
+        window.location.replace('/acesso');
+        return;
+      }
+
+      try {
+        const profileData = JSON.parse(storedProfile);
+        const allowedRoles = ['admin', 'super_admin'];
+        
+        if (!allowedRoles.includes(profileData.role)) {
+          console.log('📱 ADMIN: Role not allowed:', profileData.role);
+          window.location.replace('/acesso');
+          return;
+        }
+        
+        console.log('📱 ADMIN: Mobile access granted for:', profileData.role);
+      } catch (error) {
+        console.error('📱 ADMIN: Error parsing stored data:', error);
+        window.location.replace('/acesso');
+        return;
+      }
+    }
+  }, [isLoading]);
+
+  // Fallback check para desktop/outros casos
   useEffect(() => {
     if (!isLoading && (!profile || !hasRole(['admin', 'super_admin']))) {
-      window.location.href = '/acesso';
+      window.location.replace('/acesso');
     }
   }, [profile, hasRole, isLoading]);
 
