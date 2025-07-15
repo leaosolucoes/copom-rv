@@ -23,10 +23,16 @@ const SuperAdminDashboard = () => {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
+  console.log('📱 SUPER_ADMIN: isLoading:', isLoading, 'profile:', !!profile, 'profile.full_name:', profile?.full_name);
+
   useEffect(() => {
     if (!isLoading && !profile) {
+      console.log('📱 SUPER_ADMIN: No profile, redirecting to /acesso');
       navigate('/acesso');
       return;
+    }
+    if (profile) {
+      console.log('📱 SUPER_ADMIN: Profile loaded:', profile.full_name, 'role:', profile.role);
     }
   }, [profile, navigate, isLoading]);
 
@@ -53,6 +59,7 @@ const SuperAdminDashboard = () => {
   }, []);
 
   if (isLoading) {
+    console.log('📱 SUPER_ADMIN: Showing loading screen');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -61,6 +68,13 @@ const SuperAdminDashboard = () => {
       </div>
     );
   }
+
+  if (!profile) {
+    console.log('📱 SUPER_ADMIN: No profile, showing null');
+    return null;
+  }
+
+  console.log('📱 SUPER_ADMIN: Rendering dashboard for:', profile.full_name);
 
   return (
     <div className="min-h-screen bg-background">

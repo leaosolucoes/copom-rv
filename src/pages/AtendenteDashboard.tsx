@@ -12,10 +12,16 @@ export default function AtendenteDashboard() {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
+  console.log('📱 ATENDENTE: isLoading:', isLoading, 'profile:', !!profile, 'profile.full_name:', profile?.full_name);
+
   useEffect(() => {
     if (!isLoading && !profile) {
+      console.log('📱 ATENDENTE: No profile, redirecting to /acesso');
       navigate('/acesso');
       return;
+    }
+    if (profile) {
+      console.log('📱 ATENDENTE: Profile loaded:', profile.full_name, 'role:', profile.role);
     }
   }, [profile, navigate, isLoading]);
 
@@ -42,6 +48,7 @@ export default function AtendenteDashboard() {
   }, []);
 
   if (isLoading) {
+    console.log('📱 ATENDENTE: Showing loading screen');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -50,6 +57,13 @@ export default function AtendenteDashboard() {
       </div>
     );
   }
+
+  if (!profile) {
+    console.log('📱 ATENDENTE: No profile, showing null');
+    return null;
+  }
+
+  console.log('📱 ATENDENTE: Rendering dashboard for:', profile.full_name);
 
   return (
     <div className="min-h-screen bg-background">

@@ -16,10 +16,16 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
 
+  console.log('📱 ADMIN: isLoading:', isLoading, 'profile:', !!profile, 'profile.full_name:', profile?.full_name);
+
   useEffect(() => {
     if (!isLoading && !profile) {
+      console.log('📱 ADMIN: No profile, redirecting to /acesso');
       navigate('/acesso');
       return;
+    }
+    if (profile) {
+      console.log('📱 ADMIN: Profile loaded:', profile.full_name, 'role:', profile.role);
     }
   }, [profile, navigate, isLoading]);
 
@@ -46,6 +52,7 @@ const AdminDashboard = () => {
   }, []);
 
   if (isLoading) {
+    console.log('📱 ADMIN: Showing loading screen');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -54,6 +61,13 @@ const AdminDashboard = () => {
       </div>
     );
   }
+
+  if (!profile) {
+    console.log('📱 ADMIN: No profile, showing null');
+    return null;
+  }
+
+  console.log('📱 ADMIN: Rendering dashboard for:', profile.full_name);
 
   return (
     <div className="min-h-screen bg-background">
