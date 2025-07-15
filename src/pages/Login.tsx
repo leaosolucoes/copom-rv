@@ -22,102 +22,55 @@ const Login = () => {
   const [error, setError] = useState('');
   const [logoUrl, setLogoUrl] = useState<string>('');
 
-  // Enhanced redirect logic for mobile
+  // Mobile-first redirect logic
   useEffect(() => {
     if (!authLoading && isAuthenticated && profile) {
-      console.log('🔄 Redirecting user with role:', profile.role);
-      const userRole = profile.role;
-      const activeUserRole = profile.user_roles?.find(
-        role => role.is_active && (!role.expires_at || new Date(role.expires_at) > new Date())
-      );
+      console.log('📱 MOBILE: Starting redirect for', profile.full_name, 'with role:', profile.role);
       
-      const currentRole = activeUserRole?.role || userRole;
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
-      // Add small delay for mobile to ensure state is fully set
-      const redirectTimeout = setTimeout(() => {
-        switch (currentRole) {
+      // Immediate redirect for mobile - no delays
+      if (isMobile) {
+        console.log('📱 MOBILE: Force redirecting with window.location');
+        
+        switch (profile.role) {
           case 'super_admin':
-            console.log('📱 Navigating to super-admin dashboard');
+            window.location.href = '/super-admin';
+            break;
+          case 'admin':
+            window.location.href = '/admin';
+            break;
+          case 'atendente':
+            window.location.href = '/atendente';
+            break;
+          case 'fiscal':
+            window.location.href = '/fiscal';
+            break;
+          default:
+            window.location.href = '/';
+        }
+      } else {
+        // Desktop can use React Router
+        switch (profile.role) {
+          case 'super_admin':
             navigate('/super-admin', { replace: true });
             break;
           case 'admin':
-            console.log('📱 Navigating to admin dashboard');
             navigate('/admin', { replace: true });
             break;
           case 'atendente':
-            console.log('📱 Navigating to atendente dashboard');
             navigate('/atendente', { replace: true });
             break;
           case 'fiscal':
-            console.log('📱 Navigating to fiscal dashboard');
             navigate('/fiscal', { replace: true });
             break;
           default:
-            console.log('📱 Navigating to home page');
             navigate('/', { replace: true });
         }
-      }, 100); // Small delay for mobile
-      
-      return () => clearTimeout(redirectTimeout);
+      }
     }
   }, [isAuthenticated, profile, navigate, authLoading]);
 
-  // Enhanced mobile redirect with forced navigation
-  useEffect(() => {
-    if (!authLoading && isAuthenticated && profile) {
-      console.log('🔄 Mobile redirect triggered for:', profile.role);
-      
-      // Force immediate redirect for mobile
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const redirectDelay = isMobile ? 500 : 100; // Longer delay for mobile
-      
-      const redirectTimeout = setTimeout(() => {
-        const currentRole = profile.role;
-        
-        console.log('📱 Forcing navigation for mobile user:', currentRole);
-        
-        // Force page change with location.href for stubborn mobile browsers
-        if (isMobile) {
-          switch (currentRole) {
-            case 'super_admin':
-              window.location.href = '/super-admin';
-              break;
-            case 'admin':
-              window.location.href = '/admin';
-              break;
-            case 'atendente':
-              window.location.href = '/atendente';
-              break;
-            case 'fiscal':
-              window.location.href = '/fiscal';
-              break;
-            default:
-              window.location.href = '/';
-          }
-        } else {
-          // Use React Router for desktop
-          switch (currentRole) {
-            case 'super_admin':
-              navigate('/super-admin', { replace: true });
-              break;
-            case 'admin':
-              navigate('/admin', { replace: true });
-              break;
-            case 'atendente':
-              navigate('/atendente', { replace: true });
-              break;
-            case 'fiscal':
-              navigate('/fiscal', { replace: true });
-              break;
-            default:
-              navigate('/', { replace: true });
-          }
-        }
-      }, redirectDelay);
-      
-      return () => clearTimeout(redirectTimeout);
-    }
-  }, [isAuthenticated, profile, navigate, authLoading]);
 
   useEffect(() => {
     const fetchLogo = async () => {
@@ -149,20 +102,13 @@ const Login = () => {
     setError('');
 
     try {
-      console.log('📱 Starting mobile login process...');
+      console.log('📱 MOBILE: Starting login process...');
       const { error } = await signIn(email.toLowerCase().trim(), password);
       
       if (error) {
         setError('Email ou senha incorretos');
       } else {
-        // For mobile, add extra delay to ensure auth state is set
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        if (isMobile) {
-          console.log('📱 Mobile login successful, waiting for state...');
-          setTimeout(() => {
-            console.log('📱 Mobile state ready, redirect should happen...');
-          }, 200);
-        }
+        console.log('📱 MOBILE: Login successful, redirect handled by useEffect');
       }
     } catch (error: any) {
       console.error('❌ Login error:', error);

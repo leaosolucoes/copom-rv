@@ -61,67 +61,62 @@ export const useSupabaseAuth = () => {
     let isMounted = true;
     let loadingTimeout: NodeJS.Timeout;
 
-    // Mobile-optimized session check
-    const checkExistingSession = () => {
+    console.log('🔄 Starting mobile auth initialization...');
+
+    // Immediate check for stored session (mobile optimization)
+    const storedSession = localStorage.getItem('custom_session');
+    const storedProfile = localStorage.getItem('custom_profile');
+    
+    if (storedSession && storedProfile) {
       try {
-        const storedSession = localStorage.getItem('custom_session');
-        const storedProfile = localStorage.getItem('custom_profile');
+        const session = JSON.parse(storedSession);
+        const profile = JSON.parse(storedProfile);
         
-        if (storedSession && storedProfile) {
-          const session = JSON.parse(storedSession);
-          const profile = JSON.parse(storedProfile);
-          
-          console.log('📱 Restoring mobile session for:', profile.full_name);
-          
-          if (isMounted) {
-            setSession(session);
-            setUser(session.user);
-            setProfile(profile);
-            setIsLoading(false);
-          }
-          return true;
-        }
+        console.log('📱 MOBILE: Restored session for', profile.full_name, 'role:', profile.role);
+        
+        setSession(session);
+        setUser(session.user);
+        setProfile(profile);
+        setIsLoading(false);
+        
+        // For mobile, immediately stop loading and trust the stored session
+        return () => {
+          isMounted = false;
+        };
       } catch (error) {
-        console.error('❌ Error loading stored session:', error);
+        console.error('❌ Error parsing stored session:', error);
         localStorage.removeItem('custom_session');
         localStorage.removeItem('custom_profile');
       }
-      return false;
-    };
+    }
 
-    // Safety timeout for mobile devices
+    // Mobile safety timeout - much shorter
     loadingTimeout = setTimeout(() => {
-      if (isMounted && isLoading) {
-        console.warn('⚠️ Mobile auth timeout - forcing initialization complete');
+      console.warn('⚠️ MOBILE: Auth timeout reached, forcing complete');
+      if (isMounted) {
         setIsLoading(false);
       }
-    }, 8000);
+    }, 3000); // Reduced to 3 seconds for mobile
 
-    // Set up auth state listener
+    // Simplified auth state listener for mobile
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔄 Auth state changed:', event, !!session);
+        console.log('🔄 MOBILE: Auth state change -', event, !!session);
         
         if (!isMounted) return;
-        
-        // Skip if we already have a custom session
-        if (localStorage.getItem('custom_session')) {
-          console.log('📱 Custom session exists, skipping Supabase auth handler');
-          return;
-        }
         
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          console.log('👤 Loading user profile...');
           try {
             const userProfile = await fetchUserProfile(session.user.id);
-            if (isMounted) {
+            if (isMounted && userProfile) {
               setProfile(userProfile);
+              console.log('📱 MOBILE: Profile loaded for', userProfile.full_name);
             }
           } catch (error) {
-            console.error('Error fetching user profile:', error);
+            console.error('Error fetching profile:', error);
           }
         } else {
           setProfile(null);
@@ -133,48 +128,31 @@ export const useSupabaseAuth = () => {
       }
     );
 
-    // Initialize auth - prioritize stored session for mobile
-    const initializeAuth = async () => {
-      console.log('🚀 Initializing auth for mobile...');
-      
-      // First check for stored session (fastest for mobile)
-      if (checkExistingSession()) {
-        console.log('✅ Mobile session restored from storage');
-        return;
-      }
-      
-      // Then check Supabase session
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('📋 Supabase session check:', !!session);
+    // Quick session check for mobile
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (isMounted && session) {
+        console.log('📱 MOBILE: Found Supabase session');
+        setSession(session);
+        setUser(session.user);
         
-        if (isMounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          if (session?.user) {
-            console.log('👤 Loading user profile on init...');
-            try {
-              const userProfile = await fetchUserProfile(session.user.id);
-              if (isMounted) {
-                setProfile(userProfile);
-              }
-            } catch (error) {
-              console.error('Error fetching user profile on init:', error);
+        if (session.user) {
+          fetchUserProfile(session.user.id).then(profile => {
+            if (isMounted && profile) {
+              setProfile(profile);
+              console.log('📱 MOBILE: Initial profile set for', profile.full_name);
             }
-          }
+            if (isMounted) setIsLoading(false);
+          });
+        } else {
+          if (isMounted) setIsLoading(false);
         }
-      } catch (error) {
-        console.error('Error getting session:', error);
-      } finally {
-        if (isMounted) {
-          console.log('✅ Auth initialization complete');
-          setIsLoading(false);
-        }
+      } else {
+        if (isMounted) setIsLoading(false);
       }
-    };
-
-    initializeAuth();
+    }).catch(error => {
+      console.error('Error getting session:', error);
+      if (isMounted) setIsLoading(false);
+    });
 
     return () => {
       isMounted = false;
@@ -258,10 +236,8 @@ export const useSupabaseAuth = () => {
         token_type: 'bearer'
       } as any;
 
-      // Set user and profile data
-      console.log('📱 Setting user data for mobile:', userData.full_name);
-      setUser(mockUser);
-      setSession(mockSession);
+      // Set user and profile data immediately for mobile
+      console.log('📱 MOBILE: Setting immediate auth data for', userData.full_name, 'role:', userData.role);
       
       const profileData = {
         id: userData.user_id,
@@ -271,11 +247,16 @@ export const useSupabaseAuth = () => {
         is_active: userData.is_active
       };
       
-      setProfile(profileData);
-
-      // Store in localStorage for persistence
+      // Store FIRST for mobile reliability
       localStorage.setItem('custom_session', JSON.stringify(mockSession));
       localStorage.setItem('custom_profile', JSON.stringify(profileData));
+      
+      // Then set state
+      setUser(mockUser);
+      setSession(mockSession);
+      setProfile(profileData);
+      
+      console.log('📱 MOBILE: Auth state set successfully - ready for redirect');
 
       // Update last login
       await supabase
