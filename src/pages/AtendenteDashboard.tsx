@@ -47,24 +47,7 @@ export default function AtendenteDashboard() {
     fetchLogo();
   }, []);
 
-  if (isLoading) {
-    console.log('📱 ATENDENTE: Showing loading screen');
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p>Carregando...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile) {
-    console.log('📱 ATENDENTE: No profile, showing null');
-    return null;
-  }
-
-  console.log('📱 ATENDENTE: Rendering dashboard for:', profile.full_name);
-
+  // SEMPRE mostrar o dashboard - sem verificações que causam tela branca
   return (
     <div className="min-h-screen bg-background">
       <Header showLoginButton={false} logoUrl={logoUrl} />
@@ -73,7 +56,9 @@ export default function AtendenteDashboard() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-primary">Painel do Atendente</h1>
-            <p className="text-muted-foreground">Bem-vindo, {profile?.full_name}</p>
+            <p className="text-muted-foreground">
+              Bem-vindo, {profile?.full_name || 'Carregando...'}
+            </p>
           </div>
           <Button variant="outline" onClick={signOut}>
             <LogOut className="h-4 w-4 mr-2" />
@@ -81,7 +66,14 @@ export default function AtendenteDashboard() {
           </Button>
         </div>
 
-        <ComplaintsList />
+        {isLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Carregando denúncias...</p>
+          </div>
+        ) : (
+          <ComplaintsList />
+        )}
       </div>
     </div>
   );

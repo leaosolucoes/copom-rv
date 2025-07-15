@@ -58,24 +58,7 @@ const SuperAdminDashboard = () => {
     fetchLogo();
   }, []);
 
-  if (isLoading) {
-    console.log('📱 SUPER_ADMIN: Showing loading screen');
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p>Carregando...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile) {
-    console.log('📱 SUPER_ADMIN: No profile, showing null');
-    return null;
-  }
-
-  console.log('📱 SUPER_ADMIN: Rendering dashboard for:', profile.full_name);
-
+  // SEMPRE mostrar o dashboard - sem verificações que causam tela branca
   return (
     <div className="min-h-screen bg-background">
       <Header 
@@ -92,7 +75,7 @@ const SuperAdminDashboard = () => {
                 Super Administrador
               </h1>
               <p className="text-sm text-muted-foreground">
-                Bem-vindo, {profile.full_name}
+                Bem-vindo, {profile?.full_name || 'Carregando...'}
               </p>
             </div>
             <Button 
@@ -152,7 +135,14 @@ const SuperAdminDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ComplaintsList />
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p>Carregando denúncias...</p>
+                  </div>
+                ) : (
+                  <ComplaintsList />
+                )}
               </CardContent>
             </Card>
           </TabsContent>
