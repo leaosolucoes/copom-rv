@@ -47,90 +47,101 @@ export default function AtendenteDashboard() {
     fetchLogo();
   }, []);
 
-  // SEMPRE mostrar o dashboard - sem verificações que causam tela branca
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  
-  return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#ffffff',
-      display: 'block',
-      visibility: 'visible'
-    }}>
-      {/* Header simplificado para mobile */}
-      <div style={{
-        backgroundColor: '#f8f9fa',
-        padding: '16px',
-        borderBottom: '1px solid #e9ecef',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#333', margin: '0' }}>
-            Painel do Atendente
-          </h1>
-          <p style={{ fontSize: '14px', color: '#666', margin: '4px 0 0 0' }}>
-            Bem-vindo, {profile?.full_name || 'Carregando...'}
-          </p>
-        </div>
-        <Button variant="outline" onClick={signOut} style={{ fontSize: '14px' }}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Sair
-        </Button>
-      </div>
 
-      {/* Conteúdo principal */}
-      <div style={{ padding: '16px' }}>
-        {isLoading ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '32px 0',
-            backgroundColor: '#fff'
-          }}>
+  if (isMobile) {
+    // Versão mobile otimizada
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#ffffff',
+        display: 'block',
+        visibility: 'visible'
+      }}>
+        {/* Header simplificado para mobile */}
+        <div style={{
+          backgroundColor: '#f8f9fa',
+          padding: '16px',
+          borderBottom: '1px solid #e9ecef',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#333', margin: '0' }}>
+              Painel do Atendente
+            </h1>
+            <p style={{ fontSize: '14px', color: '#666', margin: '4px 0 0 0' }}>
+              Bem-vindo, {profile?.full_name || 'Carregando...'}
+            </p>
+          </div>
+          <Button variant="outline" onClick={signOut} style={{ fontSize: '14px' }}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair
+          </Button>
+        </div>
+
+        {/* Lista de denúncias funcionais */}
+        <div style={{ padding: '16px' }}>
+          {isLoading ? (
             <div style={{
-              width: '32px',
-              height: '32px',
-              border: '3px solid #f3f3f3',
-              borderTop: '3px solid #007bff',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 16px'
-            }}></div>
-            <p style={{ color: '#666', fontSize: '14px' }}>Carregando denúncias...</p>
-            <style>{`
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            `}</style>
+              textAlign: 'center',
+              padding: '32px 0',
+              backgroundColor: '#fff'
+            }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                border: '3px solid #f3f3f3',
+                borderTop: '3px solid #007bff',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto 16px'
+              }}></div>
+              <p style={{ color: '#666', fontSize: '14px' }}>Carregando denúncias...</p>
+              <style>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
+            </div>
+          ) : (
+            <div style={{ backgroundColor: '#fff' }}>
+              <ComplaintsList />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Versão desktop normal
+  return (
+    <div className="min-h-screen bg-background">
+      <Header showLoginButton={false} logoUrl={logoUrl} />
+      
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-primary">Painel do Atendente</h1>
+            <p className="text-muted-foreground">
+              Bem-vindo, {profile?.full_name || 'Carregando...'}
+            </p>
+          </div>
+          <Button variant="outline" onClick={signOut}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Carregando denúncias...</p>
           </div>
         ) : (
-          <div style={{
-            backgroundColor: '#fff',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            padding: '16px'
-          }}>
-            <h2 style={{ fontSize: '18px', marginBottom: '16px', color: '#333' }}>
-              Lista de Denúncias
-            </h2>
-            <p style={{ color: '#666', fontSize: '14px' }}>
-              Sistema carregado com sucesso. As denúncias aparecerão aqui.
-            </p>
-            {isMobile && (
-              <div style={{
-                marginTop: '16px',
-                padding: '12px',
-                backgroundColor: '#e7f3ff',
-                borderRadius: '6px',
-                fontSize: '12px',
-                color: '#0066cc'
-              }}>
-                📱 Versão móvel carregada
-              </div>
-            )}
-          </div>
+          <ComplaintsList />
         )}
       </div>
     </div>
