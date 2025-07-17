@@ -24,29 +24,12 @@ const App = () => {
   // Carregar e aplicar cores do sistema
   useSystemColors();
   
-  // Proteções de segurança reativadas
-  useDevToolsProtection();
+  // Proteções desativadas temporariamente para debugging
+  // useDevToolsProtection();
   
   useEffect(() => {
-    // Verificações de segurança ativas
-    if (!validateDomain()) {
-      logger.error('Domínio não autorizado detectado');
-      document.body.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Acesso não autorizado</div>';
-      return;
-    }
-    
-    if (!checkIntegrity()) {
-      logger.error('Violação de integridade detectada');
-      window.location.reload();
-      return;
-    }
-    
-    // Inicializar proteções anti-tamper
-    const cleanup = initAntiTamper();
-    
-    logger.info('Sistema de proteção ativado');
-    
-    return cleanup;
+    console.log('Sistema iniciado com proteções desativadas');
+    logger.info('Sistema iniciado');
   }, []);
 
   return (
