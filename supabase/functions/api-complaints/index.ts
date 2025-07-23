@@ -391,17 +391,18 @@ async function createComplaint(req: Request, supabase: any) {
   // Processar user_location se vier como string
   if (normalizedBody.user_location && typeof normalizedBody.user_location === 'string') {
     try {
-      // Se vier como duas linhas separadas (latitude\nlongitude)
+      // Se vier como três linhas separadas (latitude\nlongitude\naccuracy)
       const lines = normalizedBody.user_location.trim().split('\n')
-      if (lines.length === 2) {
+      if (lines.length >= 2) {
         const latitude = parseFloat(lines[0])
         const longitude = parseFloat(lines[1])
+        const accuracy = lines.length >= 3 ? parseFloat(lines[2]) : null
         
         if (!isNaN(latitude) && !isNaN(longitude)) {
           normalizedBody.user_location = {
             latitude: latitude,
             longitude: longitude,
-            accuracy: null
+            accuracy: !isNaN(accuracy) ? accuracy : null
           }
           console.log('user_location convertido:', normalizedBody.user_location)
         }
