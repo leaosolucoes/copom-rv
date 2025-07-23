@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, MapPin } from 'lucide-react';
 import { MediaModal } from "@/components/ui/media-modal";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -21,6 +21,7 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
+import { LocationInfo } from '@/components/LocationInfo';
 
 type ComplaintStatus = 'nova' | 'cadastrada' | 'finalizada' | 'a_verificar' | 'verificado';
 
@@ -1430,26 +1431,53 @@ export const ComplaintsList = () => {
                                                      }
                                                    }
 
-                                                   if (latitude && longitude) {
-                                                     return (
-                                                       <>
-                                                         <div>Latitude: {latitude}</div>
-                                                         <div>Longitude: {longitude}</div>
-                                                         {accuracy && (
-                                                           <div>Precisão: {Math.round(accuracy)}m</div>
-                                                         )}
-                                                         <div className="mt-2">
-                                                           <a 
-                                                             href={`https://www.google.com/maps?q=${latitude},${longitude}`}
-                                                             target="_blank"
-                                                             rel="noopener noreferrer"
-                                                             className="text-blue-600 hover:text-blue-800 underline"
-                                                           >
-                                                             Ver no Google Maps
-                                                           </a>
-                                                         </div>
-                                                       </>
-                                                     );
+                                                    if (latitude && longitude) {
+                                                      }, [latitude, longitude]);
+
+                                                      return (
+                                                        <>
+                                                          <div className="space-y-2">
+                                                            <div><strong>Coordenadas:</strong></div>
+                                                            <div className="ml-4">
+                                                              <div>Latitude: {latitude}</div>
+                                                              <div>Longitude: {longitude}</div>
+                                                              {accuracy && (
+                                                                <div>Precisão: {Math.round(accuracy)}m</div>
+                                                              )}
+                                                            </div>
+                                                            
+                                                            <div className="mt-3">
+                                                              <div className="flex items-center gap-2 mb-2">
+                                                                <MapPin className="h-4 w-4 text-blue-600" />
+                                                                <strong>Localização Aproximada:</strong>
+                                                              </div>
+                                                              <div className="ml-6 text-sm bg-blue-50 p-2 rounded border-l-4 border-blue-400">
+                                                                {loadingAddress ? (
+                                                                  <div className="flex items-center gap-2">
+                                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                                    <span>Buscando endereço...</span>
+                                                                  </div>
+                                                                ) : (
+                                                                  <span>{locationAddress || 'Endereço não disponível'}</span>
+                                                                )}
+                                                              </div>
+                                                            </div>
+                                                          </div>
+                                                          
+                                                          <div className="mt-3 pt-3 border-t">
+                                                            <a 
+                                                              href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                                                              target="_blank"
+                                                              rel="noopener noreferrer"
+                                                              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 underline"
+                                                            >
+                                                              <MapPin className="h-4 w-4" />
+                                                              Ver no Google Maps
+                                                            </a>
+                                                          </div>
+                                                        </>
+                                                      );
+                                                    }
                                                    } else {
                                                      return (
                                                        <div className="text-gray-500">
