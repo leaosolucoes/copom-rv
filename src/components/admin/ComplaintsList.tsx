@@ -1407,88 +1407,14 @@ export const ComplaintsList = () => {
                                               <strong>Endereço IP:</strong> {selectedComplaint.user_ip}
                                             </div>
                                           )}
-                                           {selectedComplaint.user_location && (
-                                             <div className="md:col-span-2">
-                                               <strong>Localização:</strong>
-                                               <div className="mt-1 text-sm bg-gray-50 p-2 rounded">
-                                                 {(() => {
-                                                   let latitude: number | null = null;
-                                                   let longitude: number | null = null;
-                                                   let accuracy: number | null = null;
-
-                                                   // Se é um objeto estruturado
-                                                   if (typeof selectedComplaint.user_location === 'object' && selectedComplaint.user_location.latitude) {
-                                                     latitude = selectedComplaint.user_location.latitude;
-                                                     longitude = selectedComplaint.user_location.longitude;
-                                                     accuracy = selectedComplaint.user_location.accuracy;
-                                                   }
-                                                   // Se é uma string, tentar processar
-                                                   else if (typeof selectedComplaint.user_location === 'string') {
-                                                     const lines = selectedComplaint.user_location.trim().split('\n');
-                                                     if (lines.length === 2) {
-                                                       latitude = parseFloat(lines[0]);
-                                                       longitude = parseFloat(lines[1]);
-                                                     }
-                                                   }
-
-                                                    if (latitude && longitude) {
-                                                      }, [latitude, longitude]);
-
-                                                      return (
-                                                        <>
-                                                          <div className="space-y-2">
-                                                            <div><strong>Coordenadas:</strong></div>
-                                                            <div className="ml-4">
-                                                              <div>Latitude: {latitude}</div>
-                                                              <div>Longitude: {longitude}</div>
-                                                              {accuracy && (
-                                                                <div>Precisão: {Math.round(accuracy)}m</div>
-                                                              )}
-                                                            </div>
-                                                            
-                                                            <div className="mt-3">
-                                                              <div className="flex items-center gap-2 mb-2">
-                                                                <MapPin className="h-4 w-4 text-blue-600" />
-                                                                <strong>Localização Aproximada:</strong>
-                                                              </div>
-                                                              <div className="ml-6 text-sm bg-blue-50 p-2 rounded border-l-4 border-blue-400">
-                                                                {loadingAddress ? (
-                                                                  <div className="flex items-center gap-2">
-                                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                                                    <span>Buscando endereço...</span>
-                                                                  </div>
-                                                                ) : (
-                                                                  <span>{locationAddress || 'Endereço não disponível'}</span>
-                                                                )}
-                                                              </div>
-                                                            </div>
-                                                          </div>
-                                                          
-                                                          <div className="mt-3 pt-3 border-t">
-                                                            <a 
-                                                              href={`https://www.google.com/maps?q=${latitude},${longitude}`}
-                                                              target="_blank"
-                                                              rel="noopener noreferrer"
-                                                              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 underline"
-                                                            >
-                                                              <MapPin className="h-4 w-4" />
-                                                              Ver no Google Maps
-                                                            </a>
-                                                          </div>
-                                                        </>
-                                                      );
-                                                    }
-                                                   } else {
-                                                     return (
-                                                       <div className="text-gray-500">
-                                                         Dados de localização inválidos: {JSON.stringify(selectedComplaint.user_location)}
-                                                       </div>
-                                                     );
-                                                   }
-                                                 })()}
-                                               </div>
-                                             </div>
-                                           )}
+                                            {selectedComplaint.user_location && (
+                                              <div className="md:col-span-2">
+                                                <strong>Localização:</strong>
+                                                <div className="mt-1">
+                                                  <LocationInfo userLocation={selectedComplaint.user_location} />
+                                                </div>
+                                              </div>
+                                            )}
                                           {selectedComplaint.user_agent && (
                                             <div className="md:col-span-2">
                                               <strong>User Agent:</strong>
