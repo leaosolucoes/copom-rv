@@ -69,12 +69,12 @@ const SuperAdminDashboard = () => {
       {/* User Info Bar */}
       <div className="bg-card border-b shadow-sm">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h1 className="text-xl font-semibold text-card-foreground">
+              <h1 className="text-lg md:text-xl font-semibold text-card-foreground">
                 Super Administrador
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs md:text-sm text-muted-foreground">
                 Bem-vindo, {profile?.full_name || 'Carregando...'}
               </p>
             </div>
@@ -82,6 +82,7 @@ const SuperAdminDashboard = () => {
               variant="outline" 
               size="sm"
               onClick={signOut}
+              className="w-full sm:w-auto"
             >
               Sair
             </Button>
@@ -89,42 +90,52 @@ const SuperAdminDashboard = () => {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="complaints" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 lg:w-fit">`
-            <TabsTrigger value="complaints" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Denúncias</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Usuários</span>
-            </TabsTrigger>
-            <TabsTrigger value="whatsapp" className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">WhatsApp</span>
-            </TabsTrigger>
-            <TabsTrigger value="form" className="flex items-center gap-2">
-              <Layout className="h-4 w-4" />
-              <span className="hidden sm:inline">Formulário</span>
-            </TabsTrigger>
-            <TabsTrigger value="logo" className="flex items-center gap-2">
-              <Image className="h-4 w-4" />
-              <span className="hidden sm:inline">Logo</span>
-            </TabsTrigger>
-            <TabsTrigger value="occurrence-types" className="flex items-center gap-2">
-              <List className="h-4 w-4" />
-              <span className="hidden sm:inline">Tipos</span>
-            </TabsTrigger>
-            <TabsTrigger value="api" className="flex items-center gap-2">
-              <Code className="h-4 w-4" />
-              <span className="hidden sm:inline">API</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Config</span>
-            </TabsTrigger>
-          </TabsList>
+      <main className="container mx-auto px-4 py-4 md:py-8">
+        <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
+          <div className="overflow-x-auto">
+            <TabsList className="flex w-max md:grid md:grid-cols-8 md:w-fit gap-1">
+              <TabsTrigger value="complaints" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <FileText className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Denúncias</span>
+                <span className="sm:hidden">Lista</span>
+              </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Users className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Usuários</span>
+                <span className="sm:hidden">Users</span>
+              </TabsTrigger>
+              <TabsTrigger value="whatsapp" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <MessageSquare className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">WhatsApp</span>
+                <span className="sm:hidden">Zap</span>
+              </TabsTrigger>
+              <TabsTrigger value="form" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Layout className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Formulário</span>
+                <span className="sm:hidden">Form</span>
+              </TabsTrigger>
+              <TabsTrigger value="logo" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Image className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Logo</span>
+                <span className="sm:hidden">Logo</span>
+              </TabsTrigger>
+              <TabsTrigger value="occurrence-types" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <List className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Tipos</span>
+                <span className="sm:hidden">Tipos</span>
+              </TabsTrigger>
+              <TabsTrigger value="api" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Code className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">API</span>
+                <span className="sm:hidden">API</span>
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Settings className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Config</span>
+                <span className="sm:hidden">Config</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="complaints" className="space-y-6">
             <Card>

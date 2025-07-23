@@ -22,108 +22,27 @@ const Login = () => {
   const [error, setError] = useState('');
   const [logoUrl, setLogoUrl] = useState<string>('');
 
-  // MOBILE IMMEDIATE CHECK - PREVENT WHITE SCREEN
-  useEffect(() => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-      console.log('📱 MOBILE: Checking stored auth immediately...');
-      
-      const storedSession = localStorage.getItem('custom_session');
-      const storedProfile = localStorage.getItem('custom_profile');
-      
-      if (storedSession && storedProfile) {
-        try {
-          const session = JSON.parse(storedSession);
-          const profile = JSON.parse(storedProfile);
-          
-          const now = Math.floor(Date.now() / 1000);
-          if (session.expires_at > now) {
-            console.log('📱 MOBILE: Valid session found, redirecting NOW');
-            
-            // Hide the page content immediately to prevent flash
-            document.body.style.display = 'none';
-            
-            // Force redirect without any delay
-            switch (profile.role) {
-              case 'super_admin':
-                window.location.href = '/super-admin';
-                return;
-              case 'admin':
-                window.location.href = '/admin';
-                return;
-              case 'atendente':
-                window.location.href = '/atendente';
-                return;
-              case 'fiscal':
-                window.location.href = '/fiscal';
-                return;
-            }
-          } else {
-            console.log('📱 MOBILE: Session expired, clearing');
-            localStorage.removeItem('custom_session');
-            localStorage.removeItem('custom_profile');
-          }
-        } catch (error) {
-          console.error('📱 MOBILE: Error checking stored session:', error);
-          localStorage.removeItem('custom_session');
-          localStorage.removeItem('custom_profile');
-        }
-      }
-      
-      // Show content if we get here (no valid session)
-      document.body.style.display = '';
-    }
-  }, []);
-
-  // Hook de autenticação - MOBILE PRIORITY
+  // Hook de autenticação simplificado
   useEffect(() => {
     if (!authLoading && isAuthenticated && profile) {
-      console.log('📱 AUTH: Authenticated user confirmed:', profile.full_name, 'role:', profile.role);
+      console.log('🔐 AUTH: Authenticated user confirmed:', profile.full_name, 'role:', profile.role);
       
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      
-      if (isMobile) {
-        console.log('📱 MOBILE: Hiding page and redirecting immediately');
-        
-        // Hide page content to prevent white screen
-        document.body.style.display = 'none';
-        
-        // Force redirect immediately
-        switch (profile.role) {
-          case 'super_admin':
-            window.location.href = '/super-admin';
-            break;
-          case 'admin':
-            window.location.href = '/admin';
-            break;
-          case 'atendente':
-            window.location.href = '/atendente';
-            break;
-          case 'fiscal':
-            window.location.href = '/fiscal';
-            break;
-          default:
-            window.location.href = '/';
-        }
-      } else {
-        // Desktop usa React Router normalmente
-        switch (profile.role) {
-          case 'super_admin':
-            navigate('/super-admin', { replace: true });
-            break;
-          case 'admin':
-            navigate('/admin', { replace: true });
-            break;
-          case 'atendente':
-            navigate('/atendente', { replace: true });
-            break;
-          case 'fiscal':
-            navigate('/fiscal', { replace: true });
-            break;
-          default:
-            navigate('/', { replace: true });
-        }
+      // Usar React Router para redirecionamento consistente
+      switch (profile.role) {
+        case 'super_admin':
+          navigate('/super-admin', { replace: true });
+          break;
+        case 'admin':
+          navigate('/admin', { replace: true });
+          break;
+        case 'atendente':
+          navigate('/atendente', { replace: true });
+          break;
+        case 'fiscal':
+          navigate('/fiscal', { replace: true });
+          break;
+        default:
+          navigate('/', { replace: true });
       }
     }
   }, [isAuthenticated, profile, navigate, authLoading]);
@@ -159,13 +78,13 @@ const Login = () => {
     setError('');
 
     try {
-      console.log('📱 MOBILE: Starting login process...');
+      console.log('🔐 Starting login process...');
       const { error } = await signIn(email.toLowerCase().trim(), password);
       
       if (error) {
         setError('Email ou senha incorretos');
       } else {
-        console.log('📱 MOBILE: Login successful, redirect handled by useEffect');
+        console.log('✅ Login successful, redirect handled by useEffect');
       }
     } catch (error: any) {
       console.error('❌ Login error:', error);
@@ -268,9 +187,7 @@ const Login = () => {
                     isAuthenticated,
                     profileRole: profile?.role,
                     authLoading,
-                    userAgent: navigator.userAgent,
-                    localStorageSession: !!localStorage.getItem('custom_session'),
-                    localStorageProfile: !!localStorage.getItem('custom_profile')
+                    userAgent: navigator.userAgent
                   };
                   alert('Debug Info: ' + JSON.stringify(debugInfo, null, 2));
                 }}

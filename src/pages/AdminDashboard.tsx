@@ -59,12 +59,12 @@ const AdminDashboard = () => {
       {/* User Info Bar */}
       <div className="bg-card border-b shadow-sm">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h1 className="text-xl font-semibold text-card-foreground">
+              <h1 className="text-lg md:text-xl font-semibold text-card-foreground">
                 Administrador
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs md:text-sm text-muted-foreground">
                 Bem-vindo, {profile?.full_name || 'Carregando...'}
               </p>
             </div>
@@ -72,6 +72,7 @@ const AdminDashboard = () => {
               variant="outline" 
               size="sm"
               onClick={signOut}
+              className="w-full sm:w-auto"
             >
               Sair
             </Button>
@@ -79,16 +80,18 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="complaints" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:w-fit">
-            <TabsTrigger value="complaints" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Denúncias
+      <main className="container mx-auto px-4 py-4 md:py-8">
+        <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
+          <TabsList className="grid w-full grid-cols-2 md:w-fit">
+            <TabsTrigger value="complaints" className="flex items-center gap-2 text-xs md:text-sm">
+              <FileText className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Denúncias</span>
+              <span className="sm:hidden">Lista</span>
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Atendentes
+            <TabsTrigger value="users" className="flex items-center gap-2 text-xs md:text-sm">
+              <Users className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Atendentes</span>
+              <span className="sm:hidden">Users</span>
             </TabsTrigger>
           </TabsList>
 
