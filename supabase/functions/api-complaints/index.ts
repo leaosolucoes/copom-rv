@@ -254,6 +254,11 @@ async function listComplaints(searchParams: URLSearchParams, supabase: any) {
       narrative,
       photos,
       videos,
+      user_location,
+      user_device_type,
+      user_browser,
+      user_ip,
+      user_agent,
       created_at,
       updated_at,
       processed_at
