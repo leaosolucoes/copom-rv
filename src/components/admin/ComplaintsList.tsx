@@ -1406,28 +1406,61 @@ export const ComplaintsList = () => {
                                               <strong>Endereço IP:</strong> {selectedComplaint.user_ip}
                                             </div>
                                           )}
-                                          {selectedComplaint.user_location && (
-                                            <div className="md:col-span-2">
-                                              <strong>Localização:</strong>
-                                              <div className="mt-1 text-sm bg-gray-50 p-2 rounded">
-                                                <div>Latitude: {selectedComplaint.user_location.latitude}</div>
-                                                <div>Longitude: {selectedComplaint.user_location.longitude}</div>
-                                                {selectedComplaint.user_location.accuracy && (
-                                                  <div>Precisão: {Math.round(selectedComplaint.user_location.accuracy)}m</div>
-                                                )}
-                                                <div className="mt-2">
-                                                  <a 
-                                                    href={`https://www.google.com/maps?q=${selectedComplaint.user_location.latitude},${selectedComplaint.user_location.longitude}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 hover:text-blue-800 underline"
-                                                  >
-                                                    Ver no Google Maps
-                                                  </a>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          )}
+                                           {selectedComplaint.user_location && (
+                                             <div className="md:col-span-2">
+                                               <strong>Localização:</strong>
+                                               <div className="mt-1 text-sm bg-gray-50 p-2 rounded">
+                                                 {(() => {
+                                                   let latitude: number | null = null;
+                                                   let longitude: number | null = null;
+                                                   let accuracy: number | null = null;
+
+                                                   // Se é um objeto estruturado
+                                                   if (typeof selectedComplaint.user_location === 'object' && selectedComplaint.user_location.latitude) {
+                                                     latitude = selectedComplaint.user_location.latitude;
+                                                     longitude = selectedComplaint.user_location.longitude;
+                                                     accuracy = selectedComplaint.user_location.accuracy;
+                                                   }
+                                                   // Se é uma string, tentar processar
+                                                   else if (typeof selectedComplaint.user_location === 'string') {
+                                                     const lines = selectedComplaint.user_location.trim().split('\n');
+                                                     if (lines.length === 2) {
+                                                       latitude = parseFloat(lines[0]);
+                                                       longitude = parseFloat(lines[1]);
+                                                     }
+                                                   }
+
+                                                   if (latitude && longitude) {
+                                                     return (
+                                                       <>
+                                                         <div>Latitude: {latitude}</div>
+                                                         <div>Longitude: {longitude}</div>
+                                                         {accuracy && (
+                                                           <div>Precisão: {Math.round(accuracy)}m</div>
+                                                         )}
+                                                         <div className="mt-2">
+                                                           <a 
+                                                             href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                                                             target="_blank"
+                                                             rel="noopener noreferrer"
+                                                             className="text-blue-600 hover:text-blue-800 underline"
+                                                           >
+                                                             Ver no Google Maps
+                                                           </a>
+                                                         </div>
+                                                       </>
+                                                     );
+                                                   } else {
+                                                     return (
+                                                       <div className="text-gray-500">
+                                                         Dados de localização inválidos: {JSON.stringify(selectedComplaint.user_location)}
+                                                       </div>
+                                                     );
+                                                   }
+                                                 })()}
+                                               </div>
+                                             </div>
+                                           )}
                                           {selectedComplaint.user_agent && (
                                             <div className="md:col-span-2">
                                               <strong>User Agent:</strong>

@@ -388,6 +388,34 @@ async function createComplaint(req: Request, supabase: any) {
   console.log('Body original:', body)
   console.log('Body normalizado:', normalizedBody)
   
+  // Processar user_location se vier como string
+  if (normalizedBody.user_location && typeof normalizedBody.user_location === 'string') {
+    try {
+      // Se vier como duas linhas separadas (latitude\nlongitude)
+      const lines = normalizedBody.user_location.trim().split('\n')
+      if (lines.length === 2) {
+        const latitude = parseFloat(lines[0])
+        const longitude = parseFloat(lines[1])
+        
+        if (!isNaN(latitude) && !isNaN(longitude)) {
+          normalizedBody.user_location = {
+            latitude: latitude,
+            longitude: longitude,
+            accuracy: null
+          }
+          console.log('user_location convertido:', normalizedBody.user_location)
+        }
+      }
+      // Se vier como JSON string, tentar fazer parse
+      else if (normalizedBody.user_location.startsWith('{')) {
+        normalizedBody.user_location = JSON.parse(normalizedBody.user_location)
+      }
+    } catch (error) {
+      console.error('Erro ao processar user_location:', error)
+      // Manter valor original se não conseguir processar
+    }
+  }
+  
   const requiredFields = [
     'complainant_name', 'complainant_phone', 'complainant_type',
     'complainant_address', 'complainant_neighborhood',
