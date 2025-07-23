@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, MapPin } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle } from 'lucide-react';
 import { MediaModal } from "@/components/ui/media-modal";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -21,7 +21,6 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
-import { LocationInfo } from '@/components/LocationInfo';
 
 type ComplaintStatus = 'nova' | 'cadastrada' | 'finalizada' | 'a_verificar' | 'verificado';
 
@@ -1407,14 +1406,61 @@ export const ComplaintsList = () => {
                                               <strong>Endereço IP:</strong> {selectedComplaint.user_ip}
                                             </div>
                                           )}
-                                            {selectedComplaint.user_location && (
-                                              <div className="md:col-span-2">
-                                                <strong>Localização:</strong>
-                                                <div className="mt-1">
-                                                  <LocationInfo userLocation={selectedComplaint.user_location} />
-                                                </div>
-                                              </div>
-                                            )}
+                                           {selectedComplaint.user_location && (
+                                             <div className="md:col-span-2">
+                                               <strong>Localização:</strong>
+                                               <div className="mt-1 text-sm bg-gray-50 p-2 rounded">
+                                                 {(() => {
+                                                   let latitude: number | null = null;
+                                                   let longitude: number | null = null;
+                                                   let accuracy: number | null = null;
+
+                                                   // Se é um objeto estruturado
+                                                   if (typeof selectedComplaint.user_location === 'object' && selectedComplaint.user_location.latitude) {
+                                                     latitude = selectedComplaint.user_location.latitude;
+                                                     longitude = selectedComplaint.user_location.longitude;
+                                                     accuracy = selectedComplaint.user_location.accuracy;
+                                                   }
+                                                   // Se é uma string, tentar processar
+                                                   else if (typeof selectedComplaint.user_location === 'string') {
+                                                     const lines = selectedComplaint.user_location.trim().split('\n');
+                                                     if (lines.length === 2) {
+                                                       latitude = parseFloat(lines[0]);
+                                                       longitude = parseFloat(lines[1]);
+                                                     }
+                                                   }
+
+                                                   if (latitude && longitude) {
+                                                     return (
+                                                       <>
+                                                         <div>Latitude: {latitude}</div>
+                                                         <div>Longitude: {longitude}</div>
+                                                         {accuracy && (
+                                                           <div>Precisão: {Math.round(accuracy)}m</div>
+                                                         )}
+                                                         <div className="mt-2">
+                                                           <a 
+                                                             href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                                                             target="_blank"
+                                                             rel="noopener noreferrer"
+                                                             className="text-blue-600 hover:text-blue-800 underline"
+                                                           >
+                                                             Ver no Google Maps
+                                                           </a>
+                                                         </div>
+                                                       </>
+                                                     );
+                                                   } else {
+                                                     return (
+                                                       <div className="text-gray-500">
+                                                         Dados de localização inválidos: {JSON.stringify(selectedComplaint.user_location)}
+                                                       </div>
+                                                     );
+                                                   }
+                                                 })()}
+                                               </div>
+                                             </div>
+                                           )}
                                           {selectedComplaint.user_agent && (
                                             <div className="md:col-span-2">
                                               <strong>User Agent:</strong>
