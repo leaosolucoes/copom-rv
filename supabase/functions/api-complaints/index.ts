@@ -378,6 +378,16 @@ async function getComplaintMedia(complaintId: string, supabase: any) {
 async function createComplaint(req: Request, supabase: any) {
   const body = await req.json()
   
+  // Converter nomes de campos com hífen para underscore
+  const normalizedBody: any = {}
+  for (const [key, value] of Object.entries(body)) {
+    const normalizedKey = key.replace(/-/g, '_')
+    normalizedBody[normalizedKey] = value
+  }
+  
+  console.log('Body original:', body)
+  console.log('Body normalizado:', normalizedBody)
+  
   const requiredFields = [
     'complainant_name', 'complainant_phone', 'complainant_type',
     'complainant_address', 'complainant_neighborhood',
@@ -386,7 +396,7 @@ async function createComplaint(req: Request, supabase: any) {
   ]
 
   for (const field of requiredFields) {
-    if (!body[field]) {
+    if (!normalizedBody[field]) {
       return {
         status: 400,
         data: { error: `Campo obrigatório: ${field}` }
@@ -402,12 +412,12 @@ async function createComplaint(req: Request, supabase: any) {
   const clientIP = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown'
 
   const complaintData = {
-    ...body,
+    ...normalizedBody,
     system_identifier: systemIdentifier,
     status: 'nova',
     user_ip: clientIP,
     user_agent: req.headers.get('user-agent') || 'API',
-    user_device_type: 'API'
+    user_device_type: normalizedBody.user_device_type || 'API'
   }
 
   const { data, error } = await supabase
