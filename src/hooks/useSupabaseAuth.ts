@@ -61,7 +61,7 @@ export const useSupabaseAuth = () => {
     let isMounted = true;
     let loadingTimeout: NodeJS.Timeout;
 
-    console.log('🔄 Starting mobile auth initialization...');
+    console.log('🔄 Starting custom auth initialization...');
 
     // Set loading timeout
     loadingTimeout = setTimeout(() => {
@@ -69,101 +69,42 @@ export const useSupabaseAuth = () => {
       if (isMounted) {
         setIsLoading(false);
       }
-    }, 5000);
+    }, 3000);
 
-    // Mobile-optimized auth state listener 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('🔄 MOBILE: Auth state change -', event, !!session);
+    // Check for existing custom session
+    try {
+      const customSession = localStorage.getItem('custom_session');
+      const customProfile = localStorage.getItem('custom_profile');
+      
+      if (customSession && customProfile) {
+        const session = JSON.parse(customSession);
+        const profile = JSON.parse(customProfile);
         
-        if (!isMounted) return;
+        console.log('📱 MOBILE: Found custom session for', profile.full_name);
         
-        // Immediate state updates for mobile
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Defer profile fetching to avoid blocking main thread
-          setTimeout(() => {
-            if (isMounted) {
-              fetchUserProfile(session.user.id).then(userProfile => {
-                if (isMounted && userProfile) {
-                  setProfile(userProfile);
-                  console.log('📱 MOBILE: Profile loaded for', userProfile.full_name);
-                  setIsLoading(false);
-                }
-              }).catch(error => {
-                console.error('Error fetching profile:', error);
-                if (isMounted) setIsLoading(false);
-              });
-            }
-          }, 0);
-        } else {
-          setProfile(null);
-          if (isMounted) setIsLoading(false);
-        }
-      }
-    );
-
-    // Quick session check for mobile
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (isMounted && session) {
-        console.log('📱 MOBILE: Found Supabase session');
         setSession(session);
         setUser(session.user);
+        setProfile(profile);
         
-        if (session.user) {
-          fetchUserProfile(session.user.id).then(profile => {
-            if (isMounted && profile) {
-              setProfile(profile);
-              console.log('📱 MOBILE: Initial profile set for', profile.full_name);
-            }
-            if (isMounted) setIsLoading(false);
-          });
-        } else {
-          if (isMounted) setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       } else {
+        console.log('📱 MOBILE: No custom session found');
         if (isMounted) setIsLoading(false);
       }
-    }).catch(error => {
-      console.error('Error getting session:', error);
+    } catch (error) {
+      console.error('Error loading custom session:', error);
       if (isMounted) setIsLoading(false);
-    });
+    }
 
     return () => {
       isMounted = false;
       if (loadingTimeout) clearTimeout(loadingTimeout);
-      subscription.unsubscribe();
     };
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      // SISTEMA HÍBRIDO: Primeiro tenta Supabase Auth, depois fallback para sistema customizado
-      
-      // Tentativa 1: Supabase Auth
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.toLowerCase().trim(),
-        password: password
-      });
-
-      if (data.user && !error) {
-        // Sucesso com Supabase Auth
-        await supabase
-          .from('users')
-          .update({ last_login: new Date().toISOString() })
-          .eq('id', data.user.id);
-
-        toast({
-          title: "Login realizado",
-          description: "Bem-vindo ao sistema!",
-        });
-        return { error: null };
-      }
-
-      // Tentativa 2: Sistema customizado como fallback
-      console.log('Supabase Auth failed, trying custom auth...');
+      console.log('🔑 Authenticating with custom system...');
       
       const { data: customData, error: customError } = await supabase
         .rpc('authenticate_user', {
