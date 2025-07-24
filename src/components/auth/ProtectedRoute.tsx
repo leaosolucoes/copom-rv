@@ -60,7 +60,11 @@ export const ProtectedRoute = ({
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    console.log('❌ User not authenticated, redirecting to login');
+    console.log('❌ MOBILE: User not authenticated, redirecting to login', {
+      hasUser: !!profile,
+      hasSession: !!window.localStorage.getItem('custom_session'),
+      userAgent: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
+    });
     return <Navigate to={redirectTo} replace />;
   }
 

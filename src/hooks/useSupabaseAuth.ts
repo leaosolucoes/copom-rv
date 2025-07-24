@@ -71,6 +71,31 @@ export const useSupabaseAuth = () => {
       }
     }, 5000);
 
+    // Check for stored custom session FIRST (for hybrid auth)
+    const storedSession = localStorage.getItem('custom_session');
+    const storedProfile = localStorage.getItem('custom_profile');
+    
+    if (storedSession && storedProfile) {
+      try {
+        const customSession = JSON.parse(storedSession);
+        const customProfile = JSON.parse(storedProfile);
+        
+        console.log('🔄 MOBILE: Found stored custom session for', customProfile.full_name);
+        
+        setSession(customSession);
+        setUser(customSession.user);
+        setProfile(customProfile);
+        setIsLoading(false);
+        
+        // Clear timeout since we found stored data
+        if (loadingTimeout) clearTimeout(loadingTimeout);
+      } catch (error) {
+        console.error('Error parsing stored session:', error);
+        localStorage.removeItem('custom_session');
+        localStorage.removeItem('custom_profile');
+      }
+    }
+
     // Mobile-optimized auth state listener 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -78,58 +103,65 @@ export const useSupabaseAuth = () => {
         
         if (!isMounted) return;
         
-        // Immediate state updates for mobile
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Defer profile fetching to avoid blocking main thread
-          setTimeout(() => {
-            if (isMounted) {
-              fetchUserProfile(session.user.id).then(userProfile => {
-                if (isMounted && userProfile) {
-                  setProfile(userProfile);
-                  console.log('📱 MOBILE: Profile loaded for', userProfile.full_name);
-                  setIsLoading(false);
-                }
-              }).catch(error => {
-                console.error('Error fetching profile:', error);
-                if (isMounted) setIsLoading(false);
-              });
-            }
-          }, 0);
+        // Only process Supabase auth if no custom session exists
+        if (!localStorage.getItem('custom_session')) {
+          // Immediate state updates for mobile
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            // Defer profile fetching to avoid blocking main thread
+            setTimeout(() => {
+              if (isMounted) {
+                fetchUserProfile(session.user.id).then(userProfile => {
+                  if (isMounted && userProfile) {
+                    setProfile(userProfile);
+                    console.log('📱 MOBILE: Profile loaded for', userProfile.full_name);
+                    setIsLoading(false);
+                  }
+                }).catch(error => {
+                  console.error('Error fetching profile:', error);
+                  if (isMounted) setIsLoading(false);
+                });
+              }
+            }, 0);
+          } else {
+            setProfile(null);
+            if (isMounted) setIsLoading(false);
+          }
         } else {
-          setProfile(null);
-          if (isMounted) setIsLoading(false);
+          console.log('📱 MOBILE: Ignoring Supabase auth change - using custom session');
         }
       }
     );
 
-    // Quick session check for mobile
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (isMounted && session) {
-        console.log('📱 MOBILE: Found Supabase session');
-        setSession(session);
-        setUser(session.user);
-        
-        if (session.user) {
-          fetchUserProfile(session.user.id).then(profile => {
-            if (isMounted && profile) {
-              setProfile(profile);
-              console.log('📱 MOBILE: Initial profile set for', profile.full_name);
-            }
+    // Quick session check for mobile (only if no custom session)
+    if (!localStorage.getItem('custom_session')) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (isMounted && session) {
+          console.log('📱 MOBILE: Found Supabase session');
+          setSession(session);
+          setUser(session.user);
+          
+          if (session.user) {
+            fetchUserProfile(session.user.id).then(profile => {
+              if (isMounted && profile) {
+                setProfile(profile);
+                console.log('📱 MOBILE: Initial profile set for', profile.full_name);
+              }
+              if (isMounted) setIsLoading(false);
+            });
+          } else {
             if (isMounted) setIsLoading(false);
-          });
+          }
         } else {
           if (isMounted) setIsLoading(false);
         }
-      } else {
+      }).catch(error => {
+        console.error('Error getting session:', error);
         if (isMounted) setIsLoading(false);
-      }
-    }).catch(error => {
-      console.error('Error getting session:', error);
-      if (isMounted) setIsLoading(false);
-    });
+      });
+    }
 
     return () => {
       isMounted = false;
@@ -320,6 +352,19 @@ export const useSupabaseAuth = () => {
     return activeRole?.role || profile.role;
   };
 
+  // Debug logging for mobile
+  useEffect(() => {
+    console.log('📱 MOBILE AUTH STATE:', {
+      hasUser: !!user,
+      hasSession: !!session,
+      hasProfile: !!profile,
+      profileRole: profile?.role,
+      isActive: profile?.is_active,
+      isAuthenticated: !!user && !!session && !!profile && profile?.is_active,
+      isLoading
+    });
+  }, [user, session, profile, isLoading]);
+
   return {
     user,
     session,
@@ -330,6 +375,6 @@ export const useSupabaseAuth = () => {
     hasRole,
     isSuperAdmin,
     getUserRole,
-    isAuthenticated: !!user && !!session && !!profile && profile.is_active
+    isAuthenticated: !!user && !!session && !!profile && profile?.is_active
   };
 };
