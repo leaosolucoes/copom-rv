@@ -37,7 +37,7 @@ serve(async (req) => {
       )
     }
 
-    // Fazer a consulta na API externa
+    // Fazer a consulta na API externa com a URL correta
     const apiUrl = `https://ws.hubdodesenvolvedor.com.br/v2/cadastropf/?cpf=${cpfNumbers}&token=180482805qTZObEyXPz325856232&contract=cldaSkx2b3dnazRQSUlkM1BQQ25QejRvd3ZOb05ueDhHZURMVVZqekE3ST0=`
 
     console.log('Consultando CPF:', cpfNumbers)
