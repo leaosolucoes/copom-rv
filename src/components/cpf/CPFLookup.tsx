@@ -84,9 +84,15 @@ export const CPFLookup = () => {
 
     try {
       const cpfNumbers = cpf.replace(/\D/g, ''); // Remove todos os caracteres não numéricos
-      const apiUrl = `https://ws.hubdodesenvolvedor.com.br/v2/cadastropf/?cpf=${cpfNumbers}&token=180482805qTZObEyXPz325856232&contract=cldaSkx2b3dnazRQSUlkM1BQQ25QejRvd3ZOb05ueDhHZURMVVZqekE3ST0=`;
-
-      const response = await fetch(apiUrl);
+      
+      // Usar a Edge Function para evitar problemas de CORS
+      const response = await fetch('/functions/v1/search-cpf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cpf: cpfNumbers })
+      });
       
       if (!response.ok) {
         throw new Error(`Erro na consulta: ${response.status}`);
