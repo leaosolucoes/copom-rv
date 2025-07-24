@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
@@ -12,35 +11,8 @@ import { Users, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
-  const { profile, signOut, isLoading } = useSupabaseAuth();
-  const navigate = useNavigate();
+  const { profile, signOut } = useSupabaseAuth();
   const [logoUrl, setLogoUrl] = useState<string>('');
-
-  console.log('📱 ADMIN: isLoading:', isLoading, 'profile:', !!profile, 'profile.full_name:', profile?.full_name);
-
-  useEffect(() => {
-    // Robust mobile authentication check with retry
-    const checkAuth = () => {
-      if (!isLoading) {
-        if (!profile) {
-          console.log('📱 ADMIN: No profile found, redirecting...');
-          // Mobile fallback redirection
-          try {
-            navigate('/acesso');
-          } catch (error) {
-            console.error('📱 ADMIN: Navigate failed, using window.location');
-            window.location.href = '/acesso';
-          }
-        } else {
-          console.log('📱 ADMIN: Profile confirmed:', profile.full_name, 'role:', profile.role);
-        }
-      }
-    };
-
-    // Add small delay for mobile state synchronization
-    const timeout = setTimeout(checkAuth, 100);
-    return () => clearTimeout(timeout);
-  }, [profile, navigate, isLoading]);
 
   useEffect(() => {
     const fetchLogo = async () => {
@@ -117,14 +89,7 @@ const AdminDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p>Carregando denúncias...</p>
-                  </div>
-                ) : (
-                  <ComplaintsListLazy />
-                )}
+                <ComplaintsListLazy />
               </CardContent>
             </Card>
           </TabsContent>
@@ -138,14 +103,7 @@ const AdminDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p>Carregando usuários...</p>
-                  </div>
-                ) : (
-                  <UserManagement userRole="admin" />
-                )}
+                <UserManagement userRole="admin" />
               </CardContent>
             </Card>
           </TabsContent>

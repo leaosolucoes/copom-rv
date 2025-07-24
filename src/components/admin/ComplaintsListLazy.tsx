@@ -7,9 +7,10 @@ const ComplaintsListComponent = lazy(() =>
 export const ComplaintsListLazy = () => {
   return (
     <Suspense fallback={
-      <div className="flex flex-col items-center justify-center py-8 space-y-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <p className="text-sm text-muted-foreground">Carregando denúncias...</p>
+      <div className="flex flex-col space-y-4 p-4">
+        <div className="h-4 bg-muted rounded animate-pulse"></div>
+        <div className="h-4 bg-muted rounded animate-pulse w-3/4"></div>
+        <div className="h-4 bg-muted rounded animate-pulse w-1/2"></div>
       </div>
     }>
       <ComplaintsListComponent />
