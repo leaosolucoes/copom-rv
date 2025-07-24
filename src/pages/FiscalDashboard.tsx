@@ -4,6 +4,7 @@ import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { CNPJLookup } from "@/components/cnpj/CNPJLookup";
+import { CPFLookup } from "@/components/cpf/CPFLookup";
 import { LogOut, FileSearch } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -81,6 +82,7 @@ export default function FiscalDashboard() {
           </div>
 
           <CNPJLookup />
+          <CPFLookup />
         </div>
       </div>
     </div>
