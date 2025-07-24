@@ -83,7 +83,7 @@ export const CPFLookup = () => {
     setError(null);
 
     try {
-      const cpfNumbers = cpf.replace(/\D/g, '');
+      const cpfNumbers = cpf.replace(/\D/g, ''); // Remove todos os caracteres não numéricos
       const apiUrl = `https://ws.hubdodesenvolvedor.com.br/v2/cadastropf/?cpf=${cpfNumbers}&token=180482805qTZObEyXPz325856232&contract=cldaSkx2b3dnazRQSUlkM1BQQ25QejRvd3ZOb05ueDhHZURMVVZqekE3ST0=`;
 
       const response = await fetch(apiUrl);
