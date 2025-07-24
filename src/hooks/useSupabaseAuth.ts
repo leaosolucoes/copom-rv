@@ -63,50 +63,13 @@ export const useSupabaseAuth = () => {
 
     console.log('🔄 Starting mobile auth initialization...');
 
-    // CRITICAL: Check for stored session FIRST (mobile optimization)
-    const storedSession = localStorage.getItem('custom_session');
-    const storedProfile = localStorage.getItem('custom_profile');
-    
-    if (storedSession && storedProfile) {
-      try {
-        const session = JSON.parse(storedSession);
-        const profile = JSON.parse(storedProfile);
-        
-        console.log('📱 MOBILE: Restored session for', profile.full_name, 'role:', profile.role);
-        
-        // Validate session is not expired (basic check)
-        const now = Math.floor(Date.now() / 1000);
-        if (session.expires_at && session.expires_at > now) {
-          setSession(session);
-          setUser(session.user);
-          setProfile(profile);
-          setIsLoading(false);
-          
-          console.log('📱 MOBILE: Session valid, auth complete');
-          
-          // For mobile with valid session, skip Supabase check entirely
-          return () => {
-            isMounted = false;
-          };
-        } else {
-          console.log('📱 MOBILE: Session expired, clearing storage');
-          localStorage.removeItem('custom_session');
-          localStorage.removeItem('custom_profile');
-        }
-      } catch (error) {
-        console.error('❌ Error parsing stored session:', error);
-        localStorage.removeItem('custom_session');
-        localStorage.removeItem('custom_profile');
-      }
-    }
-
-    // Mobile safety timeout - much shorter
+    // Set loading timeout
     loadingTimeout = setTimeout(() => {
-      console.warn('⚠️ MOBILE: Auth timeout reached, forcing complete');
+      console.warn('⚠️ Auth timeout reached, completing load');
       if (isMounted) {
         setIsLoading(false);
       }
-    }, 3000); // Reduced to 3 seconds for mobile
+    }, 5000);
 
     // Simplified auth state listener for mobile
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -261,46 +224,12 @@ export const useSupabaseAuth = () => {
       localStorage.setItem('custom_session', JSON.stringify(mockSession));
       localStorage.setItem('custom_profile', JSON.stringify(profileData));
       
-      // MOBILE: Force immediate redirect after successful auth
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      if (isMobile) {
-        console.log('📱 MOBILE: Immediate redirect after login for role:', userData.role);
-        
-        // Set state quickly
-        setUser(mockUser);
-        setSession(mockSession);
-        setProfile(profileData);
-        
-        // Force redirect without any React Router
-        setTimeout(() => {
-          switch (userData.role) {
-            case 'super_admin':
-              window.location.href = '/super-admin';
-              break;
-            case 'admin':
-              window.location.href = '/admin';
-              break;
-            case 'atendente':
-              window.location.href = '/atendente';
-              break;
-            case 'fiscal':
-              window.location.href = '/fiscal';
-              break;
-            default:
-              window.location.href = '/';
-          }
-        }, 200);
-        
-        console.log('📱 MOBILE: Redirect initiated');
-        return { error: null };
-      } else {
-        // Desktop normal flow
-        setUser(mockUser);
-        setSession(mockSession);
-        setProfile(profileData);
-        
-        console.log('📱 DESKTOP: Auth state set successfully - ready for redirect');
-      }
+    // Set auth state for both mobile and desktop
+    setUser(mockUser);
+    setSession(mockSession);
+    setProfile(profileData);
+    
+    console.log('✅ Auth state set successfully for', userData.full_name, 'role:', userData.role);
 
       // Update last login
       await supabase

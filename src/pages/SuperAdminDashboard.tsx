@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserManagement } from '@/components/admin/UserManagement';
-import { ComplaintsList } from '@/components/admin/ComplaintsList';
+import { ComplaintsListLazy } from '@/components/admin/ComplaintsListLazy';
 import { SystemSettings } from '@/components/admin/SystemSettings';
 import { WhatsAppConfig } from '@/components/admin/WhatsAppConfig';
 import { FormFieldsConfig } from '@/components/admin/FormFieldsConfig';
@@ -152,7 +152,7 @@ const SuperAdminDashboard = () => {
                     <p>Carregando denúncias...</p>
                   </div>
                 ) : (
-                  <ComplaintsList />
+                  <ComplaintsListLazy />
                 )}
               </CardContent>
             </Card>

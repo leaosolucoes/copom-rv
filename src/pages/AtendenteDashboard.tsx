@@ -4,7 +4,7 @@ import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
-import { ComplaintsList } from "@/components/admin/ComplaintsList";
+import { ComplaintsListLazy } from "@/components/admin/ComplaintsListLazy";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,16 +14,10 @@ export default function AtendenteDashboard() {
   const [logoUrl, setLogoUrl] = useState<string>('');
   const isMobile = useIsMobile();
 
-  console.log('📱 ATENDENTE: isLoading:', isLoading, 'profile:', !!profile, 'profile.full_name:', profile?.full_name);
-
   useEffect(() => {
     if (!isLoading && !profile) {
-      console.log('📱 ATENDENTE: No profile, redirecting to /acesso');
       navigate('/acesso');
       return;
-    }
-    if (profile) {
-      console.log('📱 ATENDENTE: Profile loaded:', profile.full_name, 'role:', profile.role);
     }
   }, [profile, navigate, isLoading]);
 
@@ -67,14 +61,7 @@ export default function AtendenteDashboard() {
           </Button>
         </div>
 
-        {isLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-sm lg:text-base">Carregando denúncias...</p>
-          </div>
-        ) : (
-          <ComplaintsList />
-        )}
+        <ComplaintsListLazy />
       </div>
     </div>
   );
