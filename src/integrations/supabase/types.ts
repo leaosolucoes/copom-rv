@@ -531,10 +531,6 @@ export type Database = {
         Args: { p_token_id: string; p_endpoint: string; p_limit: number }
         Returns: boolean
       }
-      check_user_permission: {
-        Args: { user_uuid: string; required_role: string }
-        Returns: boolean
-      }
       create_user_secure: {
         Args: {
           p_email: string

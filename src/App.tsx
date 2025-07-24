@@ -43,27 +43,15 @@ const App = () => {
           <Route path="/acesso" element={<Login />} />
           <Route 
             path="/atendente" 
-            element={
-              <ProtectedRoute allowedRoles={['atendente', 'admin', 'super_admin']}>
-                <AtendenteDashboard />
-              </ProtectedRoute>
-            } 
+            element={<AtendenteDashboard />} 
           />
           <Route 
             path="/admin" 
-            element={
-              <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } 
+            element={<AdminDashboard />} 
           />
           <Route 
             path="/super-admin" 
-            element={
-              <ProtectedRoute allowedRoles={['super_admin']}>
-                <SuperAdminDashboard />
-              </ProtectedRoute>
-            } 
+            element={<SuperAdminDashboard />} 
           />
           <Route 
             path="/fiscal" 

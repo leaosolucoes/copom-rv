@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { ComplaintsListLazy } from "@/components/admin/ComplaintsListLazy";
@@ -7,8 +9,32 @@ import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AtendenteDashboard() {
-  const { profile, signOut } = useSupabaseAuth();
+  const { profile, signOut, isLoading } = useSupabaseAuth();
+  const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    // Mobile-optimized authentication check
+    const checkAuth = () => {
+      if (!isLoading) {
+        if (!profile) {
+          console.log('📱 ATENDENTE: No profile, redirecting to /acesso');
+          try {
+            navigate('/acesso');
+          } catch (error) {
+            console.error('📱 ATENDENTE: Navigate failed, using window.location');
+            window.location.href = '/acesso';
+          }
+        } else {
+          console.log('📱 ATENDENTE: Profile confirmed:', profile.full_name);
+        }
+      }
+    };
+
+    const timeout = setTimeout(checkAuth, 100);
+    return () => clearTimeout(timeout);
+  }, [profile, navigate, isLoading]);
 
   useEffect(() => {
     const fetchLogo = async () => {
