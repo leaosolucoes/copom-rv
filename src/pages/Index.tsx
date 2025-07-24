@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { PublicComplaintForm } from "@/components/complaints/PublicComplaintForm";
-import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
@@ -37,7 +36,6 @@ const Index = () => {
           <PublicComplaintForm />
         </div>
       </main>
-      <PWAInstallButton />
     </div>
   );
 };

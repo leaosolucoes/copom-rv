@@ -10,7 +10,6 @@ import { Header } from '@/components/layout/Header';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LogIn, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { PWAInstallButton } from '@/components/PWAInstallButton';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -216,7 +215,6 @@ const Login = () => {
           </CardContent>
         </Card>
       </main>
-      <PWAInstallButton />
     </div>
   );
 };
