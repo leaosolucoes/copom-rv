@@ -8,33 +8,7 @@ import { Search, Loader2, User, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface CPFData {
-  nome?: string;
-  cpf?: string;
-  situacao_cpf?: string;
-  data_nascimento?: string;
-  sexo?: string;
-  nacionalidade?: string;
-  endereco?: {
-    logradouro?: string;
-    numero?: string;
-    complemento?: string;
-    bairro?: string;
-    cidade?: string;
-    uf?: string;
-    cep?: string;
-  };
-  telefones?: string[];
-  emails?: string[];
-  rg?: {
-    numero?: string;
-    orgao_expedidor?: string;
-    uf_expedicao?: string;
-  };
-  titulo_eleitor?: {
-    numero?: string;
-    zona?: string;
-    secao?: string;
-  };
+  [key: string]: any; // Aceita qualquer estrutura JSON
 }
 
 export const CPFLookup = () => {
@@ -101,8 +75,15 @@ export const CPFLookup = () => {
 
       const result = await response.json();
       
+      console.log('Dados recebidos da API:', result);
+      
       if (result.error) {
         throw new Error(result.error);
+      }
+
+      // Verificar se há dados válidos na resposta
+      if (!result || Object.keys(result).length === 0) {
+        throw new Error('Nenhum dado encontrado para este CPF');
       }
 
       setData(result);
@@ -194,155 +175,67 @@ export const CPFLookup = () => {
             </DialogDescription>
           </DialogHeader>
           
+          
           {data && (
             <div className="space-y-4">
-              {/* Dados Pessoais */}
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg border-b pb-1">Dados Pessoais</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {data.nome && (
-                    <div>
-                      <Label className="font-medium">Nome</Label>
-                      <p className="text-sm">{data.nome}</p>
-                    </div>
-                  )}
-                  {data.cpf && (
-                    <div>
-                      <Label className="font-medium">CPF</Label>
-                      <p className="text-sm">{data.cpf}</p>
-                    </div>
-                  )}
-                  {data.situacao_cpf && (
-                    <div>
-                      <Label className="font-medium">Situação CPF</Label>
-                      <p className="text-sm">{data.situacao_cpf}</p>
-                    </div>
-                  )}
-                  {data.data_nascimento && (
-                    <div>
-                      <Label className="font-medium">Data de Nascimento</Label>
-                      <p className="text-sm">{data.data_nascimento}</p>
-                    </div>
-                  )}
-                  {data.sexo && (
-                    <div>
-                      <Label className="font-medium">Sexo</Label>
-                      <p className="text-sm">{data.sexo}</p>
-                    </div>
-                  )}
-                  {data.nacionalidade && (
-                    <div>
-                      <Label className="font-medium">Nacionalidade</Label>
-                      <p className="text-sm">{data.nacionalidade}</p>
-                    </div>
-                  )}
-                </div>
+              {/* Exibir todos os dados da API de forma dinâmica */}
+              {Object.entries(data).map(([key, value]) => {
+                if (value === null || value === undefined || value === '') return null;
+                
+                return (
+                  <div key={key} className="space-y-2">
+                    <h3 className="font-semibold text-lg border-b pb-1 capitalize">
+                      {key.replace(/_/g, ' ')}
+                    </h3>
+                    
+                    {typeof value === 'object' && !Array.isArray(value) ? (
+                      // Se for um objeto, exibir suas propriedades
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-4">
+                        {Object.entries(value).map(([subKey, subValue]) => {
+                          if (subValue === null || subValue === undefined || subValue === '') return null;
+                          
+                          return (
+                            <div key={subKey}>
+                              <Label className="font-medium capitalize">
+                                {subKey.replace(/_/g, ' ')}
+                              </Label>
+                              <p className="text-sm">{String(subValue)}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : Array.isArray(value) ? (
+                      // Se for um array, exibir cada item
+                      <div className="ml-4">
+                        <Label className="font-medium capitalize">
+                          {key.replace(/_/g, ' ')}
+                        </Label>
+                        {value.map((item, index) => (
+                          <p key={index} className="text-sm">
+                            {typeof item === 'object' ? JSON.stringify(item, null, 2) : String(item)}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      // Se for um valor simples
+                      <div className="ml-4">
+                        <Label className="font-medium capitalize">
+                          {key.replace(/_/g, ' ')}
+                        </Label>
+                        <p className="text-sm">{String(value)}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              
+              {/* Seção com dados brutos para debug */}
+              <div className="mt-6 p-4 bg-muted rounded-lg">
+                <h3 className="font-semibold text-lg border-b pb-1 mb-2">Dados Completos (JSON)</h3>
+                <pre className="text-xs overflow-auto max-h-40 bg-background p-2 rounded border">
+                  {JSON.stringify(data, null, 2)}
+                </pre>
               </div>
-
-              {/* Endereço */}
-              {data.endereco && (
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg border-b pb-1">Endereço</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {data.endereco.logradouro && (
-                      <div>
-                        <Label className="font-medium">Logradouro</Label>
-                        <p className="text-sm">{data.endereco.logradouro}</p>
-                      </div>
-                    )}
-                    {data.endereco.numero && (
-                      <div>
-                        <Label className="font-medium">Número</Label>
-                        <p className="text-sm">{data.endereco.numero}</p>
-                      </div>
-                    )}
-                    {data.endereco.complemento && (
-                      <div>
-                        <Label className="font-medium">Complemento</Label>
-                        <p className="text-sm">{data.endereco.complemento}</p>
-                      </div>
-                    )}
-                    {data.endereco.bairro && (
-                      <div>
-                        <Label className="font-medium">Bairro</Label>
-                        <p className="text-sm">{data.endereco.bairro}</p>
-                      </div>
-                    )}
-                    {data.endereco.cidade && (
-                      <div>
-                        <Label className="font-medium">Cidade</Label>
-                        <p className="text-sm">{data.endereco.cidade}</p>
-                      </div>
-                    )}
-                    {data.endereco.uf && (
-                      <div>
-                        <Label className="font-medium">UF</Label>
-                        <p className="text-sm">{data.endereco.uf}</p>
-                      </div>
-                    )}
-                    {data.endereco.cep && (
-                      <div>
-                        <Label className="font-medium">CEP</Label>
-                        <p className="text-sm">{data.endereco.cep}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Contatos */}
-              {(data.telefones || data.emails) && (
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg border-b pb-1">Contatos</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {data.telefones && data.telefones.length > 0 && (
-                      <div>
-                        <Label className="font-medium">Telefones</Label>
-                        {data.telefones.map((telefone, index) => (
-                          <p key={index} className="text-sm">{telefone}</p>
-                        ))}
-                      </div>
-                    )}
-                    {data.emails && data.emails.length > 0 && (
-                      <div>
-                        <Label className="font-medium">E-mails</Label>
-                        {data.emails.map((email, index) => (
-                          <p key={index} className="text-sm">{email}</p>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Documentos */}
-              {(data.rg || data.titulo_eleitor) && (
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg border-b pb-1">Documentos</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {data.rg && (
-                      <div>
-                        <Label className="font-medium">RG</Label>
-                        <p className="text-sm">
-                          {data.rg.numero}
-                          {data.rg.orgao_expedidor && ` - ${data.rg.orgao_expedidor}`}
-                          {data.rg.uf_expedicao && ` - ${data.rg.uf_expedicao}`}
-                        </p>
-                      </div>
-                    )}
-                    {data.titulo_eleitor && (
-                      <div>
-                        <Label className="font-medium">Título de Eleitor</Label>
-                        <p className="text-sm">
-                          {data.titulo_eleitor.numero}
-                          {data.titulo_eleitor.zona && ` - Zona: ${data.titulo_eleitor.zona}`}
-                          {data.titulo_eleitor.secao && ` - Seção: ${data.titulo_eleitor.secao}`}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </DialogContent>
