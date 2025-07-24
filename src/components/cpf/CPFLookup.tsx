@@ -85,11 +85,12 @@ export const CPFLookup = () => {
     try {
       const cpfNumbers = cpf.replace(/\D/g, ''); // Remove todos os caracteres não numéricos
       
-      // Usar a Edge Function para evitar problemas de CORS
-      const response = await fetch('/functions/v1/search-cpf', {
+      // Usar a Edge Function com URL completa
+      const response = await fetch('https://smytdnkylauxocqrkchn.supabase.co/functions/v1/search-cpf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNteXRkbmt5bGF1eG9jcXJrY2huIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE3MzQ3OTAsImV4cCI6MjA2NzMxMDc5MH0.lw_fYUvIUY7Q9OPumJLD9rP-oG3p4OcLs_PKl6MgN0Y`
         },
         body: JSON.stringify({ cpf: cpfNumbers })
       });

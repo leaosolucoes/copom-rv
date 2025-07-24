@@ -2,3 +2,6 @@ project_id = "smytdnkylauxocqrkchn"
 
 [functions.api-complaints]
 verify_jwt = false
+
+[functions.search-cpf]
+verify_jwt = false
