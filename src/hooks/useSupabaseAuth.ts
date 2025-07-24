@@ -71,32 +71,36 @@ export const useSupabaseAuth = () => {
       }
     }, 5000);
 
-    // Simplified auth state listener for mobile
+    // Mobile-optimized auth state listener 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('🔄 MOBILE: Auth state change -', event, !!session);
         
         if (!isMounted) return;
         
+        // Immediate state updates for mobile
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          try {
-            const userProfile = await fetchUserProfile(session.user.id);
-            if (isMounted && userProfile) {
-              setProfile(userProfile);
-              console.log('📱 MOBILE: Profile loaded for', userProfile.full_name);
+          // Defer profile fetching to avoid blocking main thread
+          setTimeout(() => {
+            if (isMounted) {
+              fetchUserProfile(session.user.id).then(userProfile => {
+                if (isMounted && userProfile) {
+                  setProfile(userProfile);
+                  console.log('📱 MOBILE: Profile loaded for', userProfile.full_name);
+                  setIsLoading(false);
+                }
+              }).catch(error => {
+                console.error('Error fetching profile:', error);
+                if (isMounted) setIsLoading(false);
+              });
             }
-          } catch (error) {
-            console.error('Error fetching profile:', error);
-          }
+          }, 0);
         } else {
           setProfile(null);
-        }
-        
-        if (isMounted) {
-          setIsLoading(false);
+          if (isMounted) setIsLoading(false);
         }
       }
     );

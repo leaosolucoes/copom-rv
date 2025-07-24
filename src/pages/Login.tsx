@@ -22,28 +22,38 @@ const Login = () => {
   const [error, setError] = useState('');
   const [logoUrl, setLogoUrl] = useState<string>('');
 
-  // Hook de autenticação simplificado
+  // Mobile-optimized authentication redirection
   useEffect(() => {
     if (!authLoading && isAuthenticated && profile) {
       console.log('🔐 AUTH: Authenticated user confirmed:', profile.full_name, 'role:', profile.role);
+      console.log('📱 MOBILE: Starting redirection process...');
       
-      // Usar React Router para redirecionamento consistente
-      switch (profile.role) {
-        case 'super_admin':
-          navigate('/super-admin', { replace: true });
-          break;
-        case 'admin':
-          navigate('/admin', { replace: true });
-          break;
-        case 'atendente':
-          navigate('/atendente', { replace: true });
-          break;
-        case 'fiscal':
-          navigate('/fiscal', { replace: true });
-          break;
-        default:
-          navigate('/', { replace: true });
-      }
+      // Add delay for mobile state synchronization
+      const redirectToRole = () => {
+        const routes = {
+          'super_admin': '/super-admin',
+          'admin': '/admin', 
+          'atendente': '/atendente',
+          'fiscal': '/fiscal'
+        };
+        
+        const targetRoute = routes[profile.role as keyof typeof routes] || '/';
+        console.log('📱 MOBILE: Redirecting to:', targetRoute);
+        
+        try {
+          navigate(targetRoute, { replace: true });
+          console.log('✅ MOBILE: React Router navigation attempted');
+        } catch (error) {
+          console.error('❌ MOBILE: React Router failed, using window.location');
+          window.location.href = targetRoute;
+        }
+      };
+
+      // Mobile-specific delay for state synchronization
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const delay = isMobile ? 500 : 100;
+      
+      setTimeout(redirectToRole, delay);
     }
   }, [isAuthenticated, profile, navigate, authLoading]);
 
@@ -78,18 +88,26 @@ const Login = () => {
     setError('');
 
     try {
-      console.log('🔐 Starting login process...');
+      console.log('🔐 Starting mobile-optimized login process...');
       const { error } = await signIn(email.toLowerCase().trim(), password);
       
       if (error) {
         setError('Email ou senha incorretos');
+        setLoading(false);
       } else {
-        console.log('✅ Login successful, redirect handled by useEffect');
+        console.log('✅ Login successful, waiting for state sync...');
+        // Keep loading state until redirection happens
+        // useEffect will handle the redirection and clear loading
+        setTimeout(() => {
+          if (loading) {
+            console.log('📱 MOBILE: Redirection timeout, clearing loading');
+            setLoading(false);
+          }
+        }, 3000);
       }
     } catch (error: any) {
       console.error('❌ Login error:', error);
       setError('Erro ao fazer login');
-    } finally {
       setLoading(false);
     }
   };

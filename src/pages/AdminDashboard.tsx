@@ -19,14 +19,27 @@ const AdminDashboard = () => {
   console.log('📱 ADMIN: isLoading:', isLoading, 'profile:', !!profile, 'profile.full_name:', profile?.full_name);
 
   useEffect(() => {
-    if (!isLoading && !profile) {
-      console.log('📱 ADMIN: No profile, redirecting to /acesso');
-      navigate('/acesso');
-      return;
-    }
-    if (profile) {
-      console.log('📱 ADMIN: Profile loaded:', profile.full_name, 'role:', profile.role);
-    }
+    // Robust mobile authentication check with retry
+    const checkAuth = () => {
+      if (!isLoading) {
+        if (!profile) {
+          console.log('📱 ADMIN: No profile found, redirecting...');
+          // Mobile fallback redirection
+          try {
+            navigate('/acesso');
+          } catch (error) {
+            console.error('📱 ADMIN: Navigate failed, using window.location');
+            window.location.href = '/acesso';
+          }
+        } else {
+          console.log('📱 ADMIN: Profile confirmed:', profile.full_name, 'role:', profile.role);
+        }
+      }
+    };
+
+    // Add small delay for mobile state synchronization
+    const timeout = setTimeout(checkAuth, 100);
+    return () => clearTimeout(timeout);
   }, [profile, navigate, isLoading]);
 
   useEffect(() => {

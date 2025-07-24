@@ -26,14 +26,25 @@ const SuperAdminDashboard = () => {
   console.log('📱 SUPER_ADMIN: isLoading:', isLoading, 'profile:', !!profile, 'profile.full_name:', profile?.full_name);
 
   useEffect(() => {
-    if (!isLoading && !profile) {
-      console.log('📱 SUPER_ADMIN: No profile, redirecting to /acesso');
-      navigate('/acesso');
-      return;
-    }
-    if (profile) {
-      console.log('📱 SUPER_ADMIN: Profile loaded:', profile.full_name, 'role:', profile.role);
-    }
+    // Enhanced mobile authentication verification
+    const checkAuth = () => {
+      if (!isLoading) {
+        if (!profile) {
+          console.log('📱 SUPER_ADMIN: No profile, redirecting to /acesso');
+          try {
+            navigate('/acesso');
+          } catch (error) {
+            console.error('📱 SUPER_ADMIN: Navigate failed, using window.location');
+            window.location.href = '/acesso';
+          }
+        } else {
+          console.log('📱 SUPER_ADMIN: Profile confirmed:', profile.full_name, 'role:', profile.role);
+        }
+      }
+    };
+
+    const timeout = setTimeout(checkAuth, 100);
+    return () => clearTimeout(timeout);
   }, [profile, navigate, isLoading]);
 
   useEffect(() => {

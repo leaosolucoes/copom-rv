@@ -15,10 +15,25 @@ export default function AtendenteDashboard() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    if (!isLoading && !profile) {
-      navigate('/acesso');
-      return;
-    }
+    // Mobile-optimized authentication check
+    const checkAuth = () => {
+      if (!isLoading) {
+        if (!profile) {
+          console.log('📱 ATENDENTE: No profile, redirecting to /acesso');
+          try {
+            navigate('/acesso');
+          } catch (error) {
+            console.error('📱 ATENDENTE: Navigate failed, using window.location');
+            window.location.href = '/acesso';
+          }
+        } else {
+          console.log('📱 ATENDENTE: Profile confirmed:', profile.full_name);
+        }
+      }
+    };
+
+    const timeout = setTimeout(checkAuth, 100);
+    return () => clearTimeout(timeout);
   }, [profile, navigate, isLoading]);
 
   useEffect(() => {
