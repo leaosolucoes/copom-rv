@@ -132,19 +132,19 @@ export const FormFieldsConfig = () => {
           type: 'text', required: true, visible: true, order_index: 4, section: 'complainant'
         },
         { 
-          id: '5', name: 'complainant_neighborhood', label: 'Bairro do Denunciante', 
+          id: '5', name: 'complainant_neighborhood', label: 'Nome do seu Bairro', 
           type: 'text', required: true, visible: true, order_index: 5, section: 'complainant' 
         },
         { 
-          id: '6', name: 'complainant_number', label: 'Número (Denunciante)', 
+          id: '6', name: 'complainant_number', label: 'Número da sua residência', 
           type: 'text', required: false, visible: true, order_index: 6, section: 'complainant' 
         },
         { 
-          id: '7', name: 'complainant_block', label: 'Quadra (Denunciante)', 
+          id: '7', name: 'complainant_block', label: 'Quadra da sua residência', 
           type: 'text', required: false, visible: false, order_index: 7, section: 'complainant' 
         },
         { 
-          id: '8', name: 'complainant_lot', label: 'Lote (Denunciante)', 
+          id: '8', name: 'complainant_lot', label: 'Lote da sua residência', 
           type: 'text', required: false, visible: false, order_index: 8, section: 'complainant' 
         },
         
@@ -167,15 +167,15 @@ export const FormFieldsConfig = () => {
           type: 'text', required: true, visible: true, order_index: 3, section: 'occurrence' 
         },
         { 
-          id: '12', name: 'occurrence_number', label: 'Número (Ocorrência)', 
+          id: '12', name: 'occurrence_number', label: 'Número do local da Ocorrência', 
           type: 'text', required: false, visible: true, order_index: 4, section: 'occurrence' 
         },
         { 
-          id: '13', name: 'occurrence_block', label: 'Quadra (Ocorrência)', 
+          id: '13', name: 'occurrence_block', label: 'Quadra do local da Ocorrência', 
           type: 'text', required: false, visible: false, order_index: 5, section: 'occurrence' 
         },
         { 
-          id: '14', name: 'occurrence_lot', label: 'Lote (Ocorrência)', 
+          id: '14', name: 'occurrence_lot', label: 'Lote do local da Ocorrência', 
           type: 'text', required: false, visible: false, order_index: 6, section: 'occurrence' 
         },
         { 
