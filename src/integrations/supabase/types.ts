@@ -652,6 +652,7 @@ export type Database = {
         | "finalizada"
         | "a_verificar"
         | "verificado"
+        | "fiscal_solicitado"
       user_role: "super_admin" | "admin" | "atendente" | "fiscal"
     }
     CompositeTypes: {
@@ -787,6 +788,7 @@ export const Constants = {
         "finalizada",
         "a_verificar",
         "verificado",
+        "fiscal_solicitado",
       ],
       user_role: ["super_admin", "admin", "atendente", "fiscal"],
     },

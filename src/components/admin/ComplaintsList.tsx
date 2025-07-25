@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, UserCheck } from 'lucide-react';
 import { MediaModal } from "@/components/ui/media-modal";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -22,7 +23,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 
-type ComplaintStatus = 'nova' | 'cadastrada' | 'finalizada' | 'a_verificar' | 'verificado';
+type ComplaintStatus = 'nova' | 'cadastrada' | 'finalizada' | 'a_verificar' | 'verificado' | 'fiscal_solicitado';
 
 // ... keep existing code (interfaces and types)
 
@@ -900,9 +901,9 @@ export const ComplaintsList = () => {
     }
 
     try {
-      // Filtrar denúncias do histórico (finalizada e cadastrada) - sempre usar histórico para PDF
+      // Filtrar denúncias do histórico (finalizada, cadastrada e fiscal_solicitado) - sempre usar histórico para PDF
       let complaintsToExport = complaints.filter(complaint => 
-        complaint.status === 'finalizada' || complaint.status === 'cadastrada'
+        complaint.status === 'finalizada' || complaint.status === 'cadastrada' || complaint.status === 'fiscal_solicitado'
       );
       
       // Aplicar filtros de busca se houver
@@ -1094,7 +1095,8 @@ export const ComplaintsList = () => {
       cadastrada: 'bg-blue-500',
       finalizada: 'bg-green-500',
       a_verificar: 'bg-red-500',
-      verificado: 'bg-purple-500'
+      verificado: 'bg-purple-500',
+      fiscal_solicitado: 'bg-orange-500'
     };
     
     const labels = {
@@ -1102,7 +1104,8 @@ export const ComplaintsList = () => {
       cadastrada: 'Cadastrada',
       finalizada: 'Finalizada',
       a_verificar: 'A Verificar',
-      verificado: 'Verificado'
+      verificado: 'Verificado',
+      fiscal_solicitado: 'Fiscal Solicitado'
     };
 
     return (
@@ -1110,6 +1113,36 @@ export const ComplaintsList = () => {
         {labels[status]}
       </Badge>
     );
+  };
+
+  // Função para marcar como fiscal solicitado
+  const markAsFiscalSolicitado = async (complaintId: string) => {
+    try {
+      const { error } = await supabase
+        .from('complaints')
+        .update({ 
+          status: 'fiscal_solicitado' as any,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', complaintId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Denúncia marcada como fiscal já solicitado",
+      });
+
+      // Atualizar a lista
+      fetchComplaints();
+    } catch (error) {
+      console.error('Erro ao marcar como fiscal solicitado:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao marcar como fiscal solicitado",
+        variant: "destructive",
+      });
+    }
   };
 
   // Filter complaints based on search term
@@ -1701,17 +1734,52 @@ export const ComplaintsList = () => {
                                </DialogContent>
                              </Dialog>
                             
-                            {userRole === 'atendente' && complaint.status === 'nova' && (
-                              <Button 
-                                size="sm" 
-                                variant="secondary"
-                                onClick={() => sendToAdmin(complaint.id)}
-                                title="Enviar para Admin"
-                              >
-                                <Send className="h-4 w-4 mr-1" />
-                                Enviar
-                              </Button>
-                            )}
+                             {userRole === 'atendente' && complaint.status === 'nova' && (
+                               <Button 
+                                 size="sm" 
+                                 variant="secondary"
+                                 onClick={() => sendToAdmin(complaint.id)}
+                                 title="Enviar para Admin"
+                               >
+                                 <Send className="h-4 w-4 mr-1" />
+                                 Enviar
+                               </Button>
+                             )}
+                             
+                             {/* Botão para denúncias duplicadas (2ª solicitação em diante) */}
+                             {userRole === 'atendente' && duplicateInfo.isDuplicate && duplicateInfo.sequence >= 2 && complaint.status === 'nova' && (
+                               <AlertDialog>
+                                 <AlertDialogTrigger asChild>
+                                   <Button 
+                                     size="sm" 
+                                     variant="outline"
+                                     title="Marcar como fiscal já solicitado"
+                                     className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                                   >
+                                     <UserCheck className="h-4 w-4 mr-1" />
+                                     Fiscal Solicitado
+                                   </Button>
+                                 </AlertDialogTrigger>
+                                 <AlertDialogContent>
+                                   <AlertDialogHeader>
+                                     <AlertDialogTitle>Confirmar Solicitação ao Fiscal</AlertDialogTitle>
+                                     <AlertDialogDescription>
+                                       Você confirma que já foi feito o cadastro da solicitação e repassado ao fiscal para esta denúncia? 
+                                       A denúncia será movida para o histórico com status "Fiscal Já Solicitado".
+                                     </AlertDialogDescription>
+                                   </AlertDialogHeader>
+                                   <AlertDialogFooter>
+                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                     <AlertDialogAction 
+                                       onClick={() => markAsFiscalSolicitado(complaint.id)}
+                                       className="bg-orange-500 hover:bg-orange-600"
+                                     >
+                                       Confirmar
+                                     </AlertDialogAction>
+                                   </AlertDialogFooter>
+                                 </AlertDialogContent>
+                               </AlertDialog>
+                             )}
                             
                          </div>
                      </TableCell>
@@ -1745,16 +1813,16 @@ export const ComplaintsList = () => {
                  </TableRow>
                </TableHeader>
                <TableBody>
-                 {filteredComplaints
-                   .filter(complaint => {
-                     // Excluir "nova" e "verificado" da aba histórico
-                     if (complaint.status === 'nova' || complaint.status === 'verificado') return false;
-                     // Para admin e super_admin, excluir "a_verificar" do histórico (pois aparece em Novas)
-                     if ((userRole === 'admin' || userRole === 'super_admin') && complaint.status === 'a_verificar') return false;
-                     // Para atendentes, ocultar denúncias "A Verificar" e "finalizada"
-                     if (userRole === 'atendente' && (complaint.status === 'a_verificar' || complaint.status === 'finalizada')) return false;
-                     return true;
-                   })
+                  {filteredComplaints
+                    .filter(complaint => {
+                      // Excluir "nova" e "verificado" da aba histórico
+                      if (complaint.status === 'nova' || complaint.status === 'verificado') return false;
+                      // Para admin e super_admin, excluir "a_verificar" do histórico (pois aparece em Novas)
+                      if ((userRole === 'admin' || userRole === 'super_admin') && complaint.status === 'a_verificar') return false;
+                      // Para atendentes, ocultar denúncias "A Verificar" e "finalizada", mas mostrar "fiscal_solicitado"
+                      if (userRole === 'atendente' && (complaint.status === 'a_verificar' || complaint.status === 'finalizada')) return false;
+                      return true;
+                    })
                     .map((complaint) => {
                       const duplicateInfo = getDuplicateInfo(complaint, complaints);
                       
