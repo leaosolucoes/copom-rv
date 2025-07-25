@@ -1978,14 +1978,19 @@ export const ComplaintsList = () => {
                          </TableCell>
                          <TableCell>
                            <div>
-                             {complaint.user_device_type && (
-                               <div className="text-sm">{complaint.user_device_type}</div>
-                             )}
-                             {complaint.user_browser && (
-                               <div className="text-xs text-gray-500">{complaint.user_browser}</div>
-                             )}
-                             {!complaint.user_device_type && !complaint.user_browser && (
-                               <span className="text-gray-400">-</span>
+                             {(complaint.user_device_type || complaint.user_browser) ? (
+                               <>
+                                 {complaint.user_device_type && (
+                                   <div className="text-sm font-medium">
+                                     {complaint.user_device_type.charAt(0).toUpperCase() + complaint.user_device_type.slice(1)}
+                                   </div>
+                                 )}
+                                 {complaint.user_browser && (
+                                   <div className="text-xs text-gray-500">{complaint.user_browser}</div>
+                                 )}
+                               </>
+                             ) : (
+                               <span className="text-gray-400">Não informado</span>
                              )}
                            </div>
                          </TableCell>
