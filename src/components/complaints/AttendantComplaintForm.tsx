@@ -223,14 +223,28 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
       const { rural_zone, ...cleanFormData } = formData;
       
       const complaintData = {
-        ...cleanFormData,
+        complainant_name: formData.complainant_name,
+        complainant_phone: formData.complainant_phone,
+        complainant_type: formData.complainant_type,
+        complainant_address: formData.complainant_address,
+        complainant_number: formData.complainant_number || '',
+        complainant_block: formData.complainant_block || '',
+        complainant_lot: formData.complainant_lot || '',
+        complainant_neighborhood: formData.complainant_neighborhood,
+        occurrence_type: formData.occurrence_type,
+        occurrence_address: formData.occurrence_address,
+        occurrence_number: formData.occurrence_number || '',
+        occurrence_block: formData.occurrence_block || '',
+        occurrence_lot: formData.occurrence_lot || '',
+        occurrence_neighborhood: formData.occurrence_neighborhood,
+        occurrence_reference: formData.occurrence_reference || '',
+        occurrence_date: formData.occurrence_date || null,
+        occurrence_time: formData.occurrence_time || null,
+        narrative: formData.narrative,
+        classification: formData.classification,
         user_device_type: 'registro feito por ligação telefônica',
         user_browser: 'Sistema Interno - Atendimento',
-        user_ip: null,
-        user_location: null,
         user_agent: 'Sistema Interno - Registro por Ligação',
-        photos: [],
-        videos: [],
       };
 
       console.log('Complaint data to be sent:', complaintData);
