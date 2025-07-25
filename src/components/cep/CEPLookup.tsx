@@ -53,15 +53,28 @@ export function CEPLookup() {
 
     try {
       const cleanCep = cep.replace(/\D/g, "");
-      const apiUrl = `https://ws.hubdodesenvolvedor.com.br/v2/cep3/?cep=${cleanCep}&token=180482805qTZObEyXPz325856232`;
+      console.log('CEP limpo para consulta:', cleanCep);
       
-      const response = await fetch(apiUrl);
+      // URL da API sem traços no CEP
+      const apiUrl = `https://ws.hubdodesenvolvedor.com.br/v2/cep3/?cep=${cleanCep}&token=180482805qTZObEyXPz325856232`;
+      console.log('URL da API:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        mode: 'cors'
+      });
+      
+      console.log('Status da resposta:', response.status);
       
       if (!response.ok) {
         throw new Error(`Erro HTTP: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Dados recebidos:', data);
       
       if (data.resultado === "0") {
         setError("CEP não encontrado");
@@ -82,11 +95,11 @@ export function CEPLookup() {
       });
 
     } catch (err) {
-      console.error("Erro ao buscar CEP:", err);
-      setError("Erro ao consultar CEP. Tente novamente.");
+      console.error("Erro detalhado ao buscar CEP:", err);
+      setError(`Erro ao consultar CEP: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
       toast({
         title: "Erro na consulta",
-        description: "Não foi possível consultar o CEP. Verifique sua conexão.",
+        description: `Não foi possível consultar o CEP: ${err instanceof Error ? err.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
     } finally {
