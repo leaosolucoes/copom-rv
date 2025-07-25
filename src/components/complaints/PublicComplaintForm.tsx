@@ -59,6 +59,7 @@ interface SystemSettings {
 export const PublicComplaintForm = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Estado de carregamento
   const [logoUrl, setLogoUrl] = useState<string>('');
   const [settings, setSettings] = useState<SystemSettings>({
     public_neighborhoods: [],
@@ -102,7 +103,10 @@ export const PublicComplaintForm = () => {
 
   useEffect(() => {
     loadSystemSettings();
-    collectUserInfo();
+    // Mover coleta de dados do usuário para depois do carregamento principal
+    setTimeout(() => {
+      collectUserInfo();
+    }, 100);
   }, []);
 
   // Adicionar efeito para recarregar quando houver mudanças nos tipos
@@ -152,9 +156,9 @@ export const PublicComplaintForm = () => {
             });
           },
           {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 300000
+            enableHighAccuracy: false, // Reduzir precisão para velocidade
+            timeout: 3000, // Reduzir timeout para 3 segundos
+            maximumAge: 600000 // Aumentar cache para 10 minutos
           }
         );
       } else {
@@ -216,8 +220,10 @@ export const PublicComplaintForm = () => {
 
       setSettings(settingsObj);
       setFieldConfig(fieldsConfig);
+      setIsLoading(false); // Definir carregamento como concluído
     } catch (error) {
       console.error('Erro ao processar configurações:', error);
+      setIsLoading(false); // Definir carregamento como concluído mesmo em caso de erro
     }
   };
 
@@ -796,8 +802,54 @@ export const PublicComplaintForm = () => {
         </CardContent>
       </Card>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {renderSection('complainant', 'Dados do Reclamante')}
+      {/* Skeleton loader enquanto carrega as configurações */}
+      {isLoading ? (
+        <div className="space-y-6">
+          {/* Skeleton para seção do reclamante */}
+          <Card className="shadow-form">
+            <CardHeader>
+              <div className="h-6 bg-muted rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-4 bg-muted rounded animate-pulse w-1/3"></div>
+                  <div className="h-10 bg-muted rounded animate-pulse"></div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          
+          {/* Skeleton para seção da ocorrência */}
+          <Card className="shadow-form">
+            <CardHeader>
+              <div className="h-6 bg-muted rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-4 bg-muted rounded animate-pulse w-1/3"></div>
+                  <div className="h-10 bg-muted rounded animate-pulse"></div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          
+          {/* Skeleton para seção da reclamação */}
+          <Card className="shadow-form">
+            <CardHeader>
+              <div className="h-6 bg-muted rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="h-4 bg-muted rounded animate-pulse w-1/4"></div>
+                <div className="h-24 bg-muted rounded animate-pulse"></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">{renderSection('complainant', 'Dados do Reclamante')}
         {renderSection('occurrence', 'Endereço da Ocorrência')}
         {renderSection('complaint', 'Dados da Reclamação')}
 
@@ -822,7 +874,9 @@ export const PublicComplaintForm = () => {
             </Button>
           </CardContent>
         </Card>
-      </form>
+        </form>
+      )}
+
     </div>
   );
 };
