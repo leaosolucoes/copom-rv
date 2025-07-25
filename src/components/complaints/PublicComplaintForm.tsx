@@ -849,31 +849,32 @@ export const PublicComplaintForm = () => {
           </Card>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-6">{renderSection('complainant', 'Dados do Reclamante')}
-        {renderSection('occurrence', 'Endereço da Ocorrência')}
-        {renderSection('complaint', 'Dados da Reclamação')}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {renderSection('complainant', 'Dados do Reclamante')}
+          {renderSection('occurrence', 'Endereço da Ocorrência')}
+          {renderSection('complaint', 'Dados da Reclamação')}
 
-        {/* Botão de envio */}
-        <Card className="shadow-form">
-          <CardContent className="pt-6">
-            <Button 
-              type="submit" 
-              variant="government" 
-              size="lg" 
-              className="w-full"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                "Enviando..."
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Enviar Denúncia
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+          {/* Botão de envio */}
+          <Card className="shadow-form">
+            <CardContent className="pt-6">
+              <Button 
+                type="submit" 
+                variant="government" 
+                size="lg" 
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  "Enviando..."
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Enviar Denúncia
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
         </form>
       )}
 
