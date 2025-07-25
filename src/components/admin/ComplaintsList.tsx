@@ -229,6 +229,16 @@ export const ComplaintsList = () => {
     };
   }, [userRole, soundEnabled]);
 
+  // Novo useEffect para atualização automática da lista a cada 30 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('🔄 Atualizando lista automaticamente...');
+      fetchComplaints();
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
+  }, [userRole]);
+
   const setupRealtimeUpdates = () => {
     console.log(`🔗 Configurando realtime para: ${userRole}`);
     
@@ -255,8 +265,15 @@ export const ComplaintsList = () => {
           if (shouldShow) {
             console.log(`✅ Adicionando nova denúncia à lista...`);
             
-            // Primeiro recarregar os dados para garantir consistência
-            refetch();
+            // Adicionar imediatamente à lista em tempo real
+            setComplaints(prevComplaints => {
+              // Verificar se já existe para evitar duplicatas
+              const exists = prevComplaints.some(c => c.id === newComplaint.id);
+              if (exists) return prevComplaints;
+              
+              // Adicionar no início da lista
+              return [newComplaint as Complaint, ...prevComplaints];
+            });
             
             // Tocar som se for uma denúncia nova
             if (newComplaint.status === 'nova' && soundEnabled) {
@@ -266,9 +283,9 @@ export const ComplaintsList = () => {
             
             // Mostrar toast de notificação
             toast({
-              title: "Nova Denúncia",
-              description: `Denúncia de ${newComplaint.complainant_name} recebida`,
-              duration: 5000,
+              title: "Nova Denúncia Recebida",
+              description: `Denúncia de ${newComplaint.complainant_name} foi registrada no sistema`,
+              duration: 8000,
             });
           }
         }
@@ -289,13 +306,44 @@ export const ComplaintsList = () => {
           setComplaints(prevComplaints => 
             prevComplaints.map(complaint => 
               complaint.id === updatedComplaint.id ? updatedComplaint : complaint
-            )
+            ).filter(complaint => {
+              // Filtrar denúncias que não devem mais ser visíveis para atendentes
+              if (userRole === 'atendente') {
+                return complaint.status !== 'finalizada' && complaint.status !== 'a_verificar';
+              }
+              return true;
+            })
           );
+          
+          // Mostrar toast para atualizações importantes
+          if (payload.old && payload.new && payload.old.status !== payload.new.status) {
+            toast({
+              title: "Status Atualizado",
+              description: `Denúncia de ${updatedComplaint.complainant_name} teve status alterado para ${updatedComplaint.status}`,
+              duration: 5000,
+            });
+          }
         }
       )
       .subscribe(
         (status) => {
           console.log(`📡 Status da conexão realtime: ${status}`);
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Conectado ao realtime com sucesso!');
+            toast({
+              title: "Sistema Atualizado",
+              description: "Atualizações em tempo real ativadas",
+              duration: 3000,
+            });
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('❌ Erro na conexão realtime');
+            toast({
+              title: "Erro de Conexão",
+              description: "Problema nas atualizações em tempo real",
+              variant: "destructive",
+              duration: 5000,
+            });
+          }
         }
       );
 
