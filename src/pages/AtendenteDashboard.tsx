@@ -3,8 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ComplaintsListLazy } from "@/components/admin/ComplaintsListLazy";
-import { LogOut } from "lucide-react";
+import { CNPJLookup } from "@/components/cnpj/CNPJLookup";
+import { CPFLookup } from "@/components/cpf/CPFLookup";
+import { LogOut, FileText, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AtendenteDashboard() {
@@ -69,7 +73,41 @@ export default function AtendenteDashboard() {
           </Button>
         </div>
 
-        <ComplaintsListLazy />
+        <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
+          <TabsList className="grid w-full grid-cols-2 md:w-fit">
+            <TabsTrigger value="complaints" className="flex items-center gap-2 text-xs md:text-sm">
+              <FileText className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Denúncias</span>
+              <span className="sm:hidden">Lista</span>
+            </TabsTrigger>
+            <TabsTrigger value="consultas" className="flex items-center gap-2 text-xs md:text-sm">
+              <Search className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Consultas</span>
+              <span className="sm:hidden">Busca</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="complaints" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Acompanhar Denúncias</CardTitle>
+                <CardDescription>
+                  Visualize todas as denúncias e o fluxo de atendimento
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ComplaintsListLazy />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="consultas" className="space-y-6">
+            <div className="space-y-6">
+              <CNPJLookup />
+              <CPFLookup />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
