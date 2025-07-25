@@ -1896,32 +1896,42 @@ export const ComplaintsList = () => {
                           <span className="text-gray-400">-</span>
                         )}
                       </TableCell>
-                        <TableCell>
-                          {complaint.status === 'finalizada' ? (
-                            // Para denúncias finalizadas, mostrar quem arquivou
-                            (complaint as any).archived_by_user?.full_name ? (
-                              <span className="text-sm">{(complaint as any).archived_by_user.full_name}</span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )
-                          ) : complaint.status === 'fiscal_solicitado' ? (
-                            // Para denúncias marcadas como fiscal solicitado, mostrar quem marcou
-                            (complaint as any).attendant?.full_name ? (
-                              <div>
+                         <TableCell>
+                          {(() => {
+                            console.log('Complaint data for attendant column:', {
+                              id: complaint.id,
+                              status: complaint.status,
+                              attendant: (complaint as any).attendant,
+                              archived_by_user: (complaint as any).archived_by_user,
+                              processed_at: complaint.processed_at
+                            });
+
+                            if (complaint.status === 'finalizada') {
+                              // Para denúncias finalizadas, mostrar quem arquivou
+                              return (complaint as any).archived_by_user?.full_name ? (
+                                <span className="text-sm">{(complaint as any).archived_by_user.full_name}</span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              );
+                            } else if (complaint.status === 'fiscal_solicitado') {
+                              // Para denúncias marcadas como fiscal solicitado, mostrar quem marcou
+                              return (complaint as any).attendant?.full_name ? (
+                                <div>
+                                  <span className="text-sm">{(complaint as any).attendant.full_name}</span>
+                                  <div className="text-xs text-gray-500">Marcou fiscal solicitado</div>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              );
+                            } else {
+                              // Para outras denúncias, mostrar quem cadastrou
+                              return (complaint as any).attendant?.full_name ? (
                                 <span className="text-sm">{(complaint as any).attendant.full_name}</span>
-                                <div className="text-xs text-gray-500">Marcou fiscal solicitado</div>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )
-                          ) : (
-                            // Para outras denúncias, mostrar quem cadastrou
-                            (complaint as any).attendant?.full_name ? (
-                              <span className="text-sm">{(complaint as any).attendant.full_name}</span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )
-                          )}
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              );
+                            }
+                          })()}
                         </TableCell>
                      <TableCell>
                        <Dialog>
