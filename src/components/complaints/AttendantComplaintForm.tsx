@@ -246,22 +246,50 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
     }
   };
 
+  // Mapeamento de labels amigáveis conforme formulário público
+  const getFieldLabel = (fieldName: string): string => {
+    const labelMap: Record<string, string> = {
+      complainant_name: 'Nome do Denunciante',
+      complainant_phone: 'Telefone do Denunciante',
+      complainant_type: 'Tipo do Denunciante',
+      complainant_address: 'Endereço do Denunciante',
+      complainant_number: 'Número do Denunciante',
+      complainant_block: 'Quadra do Denunciante',
+      complainant_lot: 'Lote do Denunciante',
+      complainant_neighborhood: 'Bairro do Denunciante',
+      occurrence_type: 'Tipo de Ocorrência',
+      occurrence_address: 'Endereço da Ocorrência',
+      occurrence_number: 'Número da Ocorrência',
+      occurrence_block: 'Quadra da Ocorrência',
+      occurrence_lot: 'Lote da Ocorrência',
+      occurrence_neighborhood: 'Bairro da Ocorrência',
+      occurrence_reference: 'Ponto de Referência',
+      occurrence_date: 'Data da Ocorrência',
+      occurrence_time: 'Horário da Ocorrência',
+      narrative: 'Relato da Ocorrência',
+      classification: 'Classificação',
+    };
+    
+    return labelMap[fieldName] || fieldName.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
   const renderField = (field: FormField) => {
     if (!field.visible) return null;
 
     const value = formData[field.name as keyof FormData];
     const options = getFieldOptions(field);
+    const fieldLabel = getFieldLabel(field.name);
 
     if (options.length > 0) {
       return (
         <div key={field.name} className="space-y-2">
           <Label htmlFor={field.name}>
-            {field.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            {fieldLabel}
             {field.required && <span className="text-red-500 ml-1">*</span>}
           </Label>
           <Select value={value as string} onValueChange={(val) => handleInputChange(field.name as keyof FormData, val)}>
             <SelectTrigger>
-              <SelectValue placeholder={`Selecione ${field.name.replace('_', ' ')}`} />
+              <SelectValue placeholder={`Selecione ${fieldLabel.toLowerCase()}`} />
             </SelectTrigger>
             <SelectContent>
               {options.map(option => (
@@ -277,14 +305,14 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
       return (
         <div key={field.name} className="space-y-2">
           <Label htmlFor={field.name}>
-            {field.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            {fieldLabel}
             {field.required && <span className="text-red-500 ml-1">*</span>}
           </Label>
           <Textarea
             id={field.name}
             value={value as string}
             onChange={(e) => handleInputChange(field.name as keyof FormData, e.target.value)}
-            placeholder={`Digite ${field.name.replace('_', ' ')}`}
+            placeholder={`Digite ${fieldLabel.toLowerCase()}`}
             rows={4}
           />
         </div>
@@ -294,7 +322,7 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
     return (
       <div key={field.name} className="space-y-2">
         <Label htmlFor={field.name}>
-          {field.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          {fieldLabel}
           {field.required && <span className="text-red-500 ml-1">*</span>}
         </Label>
         <Input
@@ -302,7 +330,7 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
           type={field.type === 'date' ? 'date' : field.type === 'time' ? 'time' : 'text'}
           value={value as string}
           onChange={(e) => handleInputChange(field.name as keyof FormData, e.target.value)}
-          placeholder={`Digite ${field.name.replace('_', ' ')}`}
+          placeholder={`Digite ${fieldLabel.toLowerCase()}`}
         />
       </div>
     );
