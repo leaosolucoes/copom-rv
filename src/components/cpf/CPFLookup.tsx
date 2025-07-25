@@ -189,64 +189,56 @@ export const CPFLookup = () => {
           {data && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Nome Completo */}
-                {data.nomeCompleto && (
+                <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Nome Completo</label>
-                    <p className="text-lg font-semibold">{data.nomeCompleto}</p>
+                    <p className="text-lg font-semibold">{data.nomeCompleto || "Não informado"}</p>
                   </div>
-                )}
+                </div>
                 
-                {/* Documento */}
-                {data.documento && (
+                <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">CPF</label>
-                    <p className="text-lg font-semibold">{data.documento}</p>
+                    <p className="text-lg font-semibold">{data.documento || "Não informado"}</p>
                   </div>
-                )}
+                </div>
                 
-                {/* Gênero */}
-                {data.genero && (
+                <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Gênero</label>
-                    <p className="text-lg font-semibold">{data.genero}</p>
+                    <p className="text-lg font-semibold">{data.genero || "Não informado"}</p>
                   </div>
-                )}
+                </div>
                 
-                {/* Data de Nascimento */}
-                {data.dataDeNascimento && (
+                <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Data de Nascimento</label>
-                    <p className="text-lg font-semibold">{data.dataDeNascimento}</p>
+                    <p className="text-lg font-semibold">{data.dataDeNascimento || "Não informado"}</p>
                   </div>
-                )}
+                </div>
                 
-                {/* Idade */}
-                {data.anos && (
+                <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Idade</label>
-                    <p className="text-lg font-semibold">{data.anos} anos</p>
+                    <p className="text-lg font-semibold">{data.anos ? `${data.anos} anos` : "Não informado"}</p>
                   </div>
-                )}
+                </div>
                 
-                {/* Signo */}
-                {data.zodiaco && (
+                <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Signo</label>
-                    <p className="text-lg font-semibold">{data.zodiaco}</p>
+                    <p className="text-lg font-semibold">{data.zodiaco || "Não informado"}</p>
                   </div>
-                )}
-                
-                {/* Salário Estimado */}
-                {data.salarioEstimado && (
-                  <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">Salário Estimado</label>
-                    <p className="text-lg font-semibold">R$ {data.salarioEstimado}</p>
-                  </div>
-                )}
+                </div>
               </div>
               
-              {/* Telefones */}
+              <div className="space-y-2">
+                <div className="p-3 bg-muted rounded-lg">
+                  <label className="text-sm font-medium text-muted-foreground">Salário Estimado</label>
+                  <p className="text-lg font-semibold">{data.salarioEstimado ? `R$ ${data.salarioEstimado}` : "Não informado"}</p>
+                </div>
+              </div>
+              
               {data.listaTelefones && Array.isArray(data.listaTelefones) && data.listaTelefones.length > 0 && (
                 <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
@@ -262,7 +254,6 @@ export const CPFLookup = () => {
                 </div>
               )}
               
-              {/* Emails */}
               {data.listaEmails && Array.isArray(data.listaEmails) && data.listaEmails.length > 0 && (
                 <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
@@ -278,7 +269,6 @@ export const CPFLookup = () => {
                 </div>
               )}
               
-              {/* Endereços */}
               {data.listaEnderecos && Array.isArray(data.listaEnderecos) && data.listaEnderecos.length > 0 && (
                 <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
