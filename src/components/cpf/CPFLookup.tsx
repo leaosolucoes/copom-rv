@@ -183,64 +183,106 @@ export const CPFLookup = () => {
           
           {data && (
             <div className="space-y-4">
-              {/* Exibir todos os dados da API de forma dinâmica */}
-              {Object.entries(data).map(([key, value]) => {
-                if (value === null || value === undefined || value === '') return null;
-                
-                return (
-                  <div key={key} className="space-y-2">
-                    <h3 className="font-semibold text-lg border-b pb-1 capitalize">
-                      {key.replace(/_/g, ' ')}
-                    </h3>
-                    
-                    {typeof value === 'object' && !Array.isArray(value) ? (
-                      // Se for um objeto, exibir suas propriedades
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-4">
-                        {Object.entries(value).map(([subKey, subValue]) => {
-                          if (subValue === null || subValue === undefined || subValue === '') return null;
-                          
-                          return (
-                            <div key={subKey}>
-                              <Label className="font-medium capitalize">
-                                {subKey.replace(/_/g, ' ')}
-                              </Label>
-                              <p className="text-sm">{String(subValue)}</p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : Array.isArray(value) ? (
-                      // Se for um array, exibir cada item
-                      <div className="ml-4">
-                        <Label className="font-medium capitalize">
-                          {key.replace(/_/g, ' ')}
-                        </Label>
-                        {value.map((item, index) => (
-                          <p key={index} className="text-sm">
-                            {typeof item === 'object' ? JSON.stringify(item, null, 2) : String(item)}
-                          </p>
-                        ))}
-                      </div>
-                    ) : (
-                      // Se for um valor simples
-                      <div className="ml-4">
-                        <Label className="font-medium capitalize">
-                          {key.replace(/_/g, ' ')}
-                        </Label>
-                        <p className="text-sm">{String(value)}</p>
-                      </div>
-                    )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Dados básicos */}
+                {data.nomeDaMae && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">Nome da Mãe</label>
+                    <p className="text-lg font-semibold">{data.nomeDaMae}</p>
                   </div>
-                );
-              })}
-              
-              {/* Seção com dados brutos para debug */}
-              <div className="mt-6 p-4 bg-muted rounded-lg">
-                <h3 className="font-semibold text-lg border-b pb-1 mb-2">Dados Completos (JSON)</h3>
-                <pre className="text-xs overflow-auto max-h-40 bg-background p-2 rounded border">
-                  {JSON.stringify(data, null, 2)}
-                </pre>
+                )}
+                
+                {data.documento && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">Documento</label>
+                    <p className="text-lg font-semibold">{data.documento}</p>
+                  </div>
+                )}
+                
+                {data.anos && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">Idade</label>
+                    <p className="text-lg font-semibold">{data.anos} anos</p>
+                  </div>
+                )}
+                
+                {data.zodiaco && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">Signo</label>
+                    <p className="text-lg font-semibold">{data.zodiaco}</p>
+                  </div>
+                )}
+                
+                {data.salarioEstimado && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">Salário Estimado</label>
+                    <p className="text-lg font-semibold">R$ {data.salarioEstimado}</p>
+                  </div>
+                )}
+                
+                {data.lastUpdate && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">Última Atualização</label>
+                    <p className="text-lg font-semibold">{data.lastUpdate}</p>
+                  </div>
+                )}
               </div>
+              
+              {/* Telefones */}
+              {data.listaTelefones && Array.isArray(data.listaTelefones) && data.listaTelefones.length > 0 && (
+                <div className="space-y-2">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">Telefones</label>
+                    <div className="mt-2 space-y-1">
+                      {data.listaTelefones.map((telefone: any, index: number) => (
+                        <p key={index} className="text-lg font-semibold">
+                          {typeof telefone === 'object' ? 
+                            `${telefone.telefone || telefone.numero || 'N/A'} ${telefone.tipo ? `(${telefone.tipo})` : ''}` 
+                            : telefone
+                          }
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Emails */}
+              {data.listaEmails && Array.isArray(data.listaEmails) && data.listaEmails.length > 0 && (
+                <div className="space-y-2">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">E-mails</label>
+                    <div className="mt-2 space-y-1">
+                      {data.listaEmails.map((email: any, index: number) => (
+                        <p key={index} className="text-lg font-semibold">
+                          {typeof email === 'object' ? email.email || email.endereco : email}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Endereços */}
+              {data.listaEnderecos && Array.isArray(data.listaEnderecos) && data.listaEnderecos.length > 0 && (
+                <div className="space-y-2">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">Endereços</label>
+                    <div className="mt-2 space-y-2">
+                      {data.listaEnderecos.map((endereco: any, index: number) => (
+                        <div key={index} className="border-l-4 border-primary pl-3">
+                          <p className="text-lg font-semibold">
+                            {typeof endereco === 'object' ? 
+                              `${endereco.logradouro || endereco.rua || ''} ${endereco.numero || ''}, ${endereco.bairro || ''} - ${endereco.cidade || ''}, ${endereco.estado || endereco.uf || ''} ${endereco.cep || ''}`.trim() 
+                              : endereco
+                            }
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
