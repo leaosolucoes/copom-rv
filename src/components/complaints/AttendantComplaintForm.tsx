@@ -208,7 +208,13 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    console.log('Form submitted');
+    console.log('FormData:', formData);
+    
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -227,11 +233,19 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
         videos: [],
       };
 
-      const { error } = await supabase
-        .from('complaints')
-        .insert([complaintData]);
+      console.log('Complaint data to be sent:', complaintData);
 
-      if (error) throw error;
+      const { data, error } = await supabase
+        .from('complaints')
+        .insert([complaintData])
+        .select();
+
+      console.log('Supabase response:', { data, error });
+
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw error;
+      }
 
       toast({
         title: "Sucesso!",
@@ -269,7 +283,7 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
       console.error('Erro ao enviar denúncia:', error);
       toast({
         title: "Erro",
-        description: "Erro ao registrar denúncia. Tente novamente.",
+        description: `Erro ao registrar denúncia: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
     } finally {
