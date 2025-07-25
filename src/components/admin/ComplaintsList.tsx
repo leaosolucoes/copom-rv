@@ -1859,10 +1859,11 @@ export const ComplaintsList = () => {
                    <TableHead>Ocorrência</TableHead>
                    <TableHead>Endereço</TableHead>
                    <TableHead>Status</TableHead>
-                   <TableHead>Data Recebida</TableHead>
-                   <TableHead>Data Cadastro</TableHead>
-                   <TableHead>Atendente</TableHead>
-                   <TableHead>Ações</TableHead>
+                    <TableHead>Data Recebida</TableHead>
+                    <TableHead>Data Cadastro</TableHead>
+                    <TableHead>Atendente</TableHead>
+                    <TableHead>Dispositivo</TableHead>
+                    <TableHead>Ações</TableHead>
                  </TableRow>
                </TableHeader>
                <TableBody>
@@ -1973,9 +1974,22 @@ export const ComplaintsList = () => {
                                 <span className="text-gray-400">-</span>
                               );
                             }
-                          })()}
-                        </TableCell>
-                     <TableCell>
+                           })()}
+                         </TableCell>
+                         <TableCell>
+                           <div>
+                             {complaint.user_device_type && (
+                               <div className="text-sm">{complaint.user_device_type}</div>
+                             )}
+                             {complaint.user_browser && (
+                               <div className="text-xs text-gray-500">{complaint.user_browser}</div>
+                             )}
+                             {!complaint.user_device_type && !complaint.user_browser && (
+                               <span className="text-gray-400">-</span>
+                             )}
+                           </div>
+                         </TableCell>
+                      <TableCell>
                        <Dialog>
                          <DialogTrigger asChild>
                            <Button 
