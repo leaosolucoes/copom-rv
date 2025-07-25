@@ -252,7 +252,8 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
       case 'occurrence_neighborhood':
         return systemSettings.neighborhoods || [];
       case 'complainant_type':
-        return systemSettings.complainant_types || [];
+        // Definir opções fixas para tipo de denunciante
+        return ['Zona Urbana', 'Zona Rural'];
       case 'classification':
         return systemSettings.classifications || [];
       default:
