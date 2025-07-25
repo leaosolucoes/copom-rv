@@ -1122,6 +1122,8 @@ export const ComplaintsList = () => {
         .from('complaints')
         .update({ 
           status: 'fiscal_solicitado' as any,
+          attendant_id: user?.id, // Salvar quem marcou como fiscal solicitado
+          processed_at: new Date().toISOString(), // Salvar quando foi marcado
           updated_at: new Date().toISOString()
         })
         .eq('id', complaintId);
@@ -1872,33 +1874,48 @@ export const ComplaintsList = () => {
                          <div className="text-sm text-gray-500">{new Date(complaint.created_at).toLocaleTimeString('pt-BR')}</div>
                        </div>
                      </TableCell>
-                     <TableCell>
-                       {complaint.processed_at ? (
-                         <div>
-                           <div>{new Date(complaint.processed_at).toLocaleDateString('pt-BR')}</div>
-                           <div className="text-sm text-gray-500">{new Date(complaint.processed_at).toLocaleTimeString('pt-BR')}</div>
-                         </div>
-                       ) : (
-                         <span className="text-gray-400">-</span>
-                       )}
-                     </TableCell>
-                       <TableCell>
-                         {complaint.status === 'finalizada' ? (
-                           // Para denúncias finalizadas, mostrar quem arquivou
-                           (complaint as any).archived_by_user?.full_name ? (
-                             <span className="text-sm">{(complaint as any).archived_by_user.full_name}</span>
-                           ) : (
-                             <span className="text-gray-400">-</span>
-                           )
-                         ) : (
-                           // Para outras denúncias, mostrar quem cadastrou
-                           (complaint as any).attendant?.full_name ? (
-                             <span className="text-sm">{(complaint as any).attendant.full_name}</span>
-                           ) : (
-                             <span className="text-gray-400">-</span>
-                           )
-                         )}
-                       </TableCell>
+                      <TableCell>
+                        {complaint.processed_at ? (
+                          <div>
+                            <div>{new Date(complaint.processed_at).toLocaleDateString('pt-BR')}</div>
+                            <div className="text-sm text-gray-500">
+                              {new Date(complaint.processed_at).toLocaleTimeString('pt-BR')}
+                              {complaint.status === 'fiscal_solicitado' && (
+                                <div className="text-xs text-orange-600">Fiscal solicitado</div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </TableCell>
+                        <TableCell>
+                          {complaint.status === 'finalizada' ? (
+                            // Para denúncias finalizadas, mostrar quem arquivou
+                            (complaint as any).archived_by_user?.full_name ? (
+                              <span className="text-sm">{(complaint as any).archived_by_user.full_name}</span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )
+                          ) : complaint.status === 'fiscal_solicitado' ? (
+                            // Para denúncias marcadas como fiscal solicitado, mostrar quem marcou
+                            (complaint as any).attendant?.full_name ? (
+                              <div>
+                                <span className="text-sm">{(complaint as any).attendant.full_name}</span>
+                                <div className="text-xs text-gray-500">Marcou fiscal solicitado</div>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )
+                          ) : (
+                            // Para outras denúncias, mostrar quem cadastrou
+                            (complaint as any).attendant?.full_name ? (
+                              <span className="text-sm">{(complaint as any).attendant.full_name}</span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )
+                          )}
+                        </TableCell>
                      <TableCell>
                        <Dialog>
                          <DialogTrigger asChild>
