@@ -1836,28 +1836,26 @@ export const ComplaintsList = () => {
                       const duplicateInfo = getDuplicateInfo(complaint, complaints);
                       
                       return (
-                    <TableRow 
-                      key={complaint.id}
-                      className={cn(
-                        duplicateInfo.isDuplicate && "bg-red-50 border-red-200",
-                        duplicateInfo.isLatest && duplicateInfo.isDuplicate && "animate-pulse"
-                      )}
-                    >
+                     <TableRow 
+                       key={complaint.id}
+                       className={cn(
+                         duplicateInfo.isDuplicate && "bg-red-50 border-red-200"
+                         // Remover a animação de piscar no histórico
+                       )}
+                     >
                       <TableCell>
                         <div>
                           <div className="font-medium flex items-center gap-2">
                             {complaint.complainant_name}
-                            {duplicateInfo.isDuplicate && (
-                              <Badge 
-                                variant="destructive" 
-                                className={cn(
-                                  "text-xs",
-                                  duplicateInfo.isLatest && "animate-pulse"
-                                )}
-                              >
-                                {duplicateInfo.sequence}ª solicitação
-                              </Badge>
-                            )}
+                             {duplicateInfo.isDuplicate && (
+                               <Badge 
+                                 variant="destructive" 
+                                 className="text-xs"
+                                 // Remover animação de piscar no histórico
+                               >
+                                 {duplicateInfo.sequence}ª solicitação
+                               </Badge>
+                             )}
                           </div>
                           <div className="text-sm text-gray-500">{complaint.complainant_phone}</div>
                         </div>
