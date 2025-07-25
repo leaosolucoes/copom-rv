@@ -304,6 +304,7 @@ export const ComplaintsList = () => {
 
   const refetch = async () => {
     try {
+      console.log('🔄 Recarregando denúncias...');
       const { data, error } = await supabase
         .from('complaints')
         .select(`
@@ -313,21 +314,39 @@ export const ComplaintsList = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro na query refetch:', error);
+        throw error;
+      }
       
-      console.log(`🔍 ComplaintsList - userRole: ${userRole}`);
-      console.log(`🔍 ComplaintsList - complaints: ${data?.length || 0}`);
-      console.log(`🔍 ComplaintsList - classifications: ${JSON.stringify(classifications)}`);
+      console.log(`🔍 Refetch - Raw data count: ${data?.length || 0}`);
+      console.log(`🔍 Refetch - userRole: ${userRole}`);
+      console.log(`🔍 Refetch - profile role: ${profile?.role}`);
       
-      setComplaints(data as Complaint[]);
+      // Apply the same filtering logic as fetchComplaints
+      let filteredData = data || [];
+      
+      if (profile?.role === 'atendente') {
+        filteredData = data?.filter(complaint => 
+          complaint.status !== 'finalizada' && complaint.status !== 'a_verificar'
+        ) || [];
+        console.log(`🔍 Refetch - Filtered data for atendente: ${filteredData?.length || 0}`);
+      }
+      
+      setComplaints(filteredData as Complaint[]);
     } catch (error) {
-      console.error('Erro ao recarregar denúncias:', error);
+      console.error('❌ Erro ao recarregar denúncias:', error);
     }
   };
 
   const fetchComplaints = async () => {
     try {
       setLoading(true);
+      console.log('🔍 FETCH COMPLAINTS - Iniciando...');
+      console.log('- Auth user:', user?.id);
+      console.log('- Profile:', profile);
+      console.log('- User role:', userRole);
+      
       // Clear any cached data and force fresh query
       const { data, error } = await supabase
         .from('complaints')
@@ -338,7 +357,19 @@ export const ComplaintsList = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('🔍 QUERY RESULT:');
+      console.log('- Error:', error);
+      console.log('- Data length:', data?.length || 0);
+
+      if (error) {
+        console.error('❌ Erro na query:', error);
+        toast({
+          title: "Erro",
+          description: `Erro ao carregar denúncias: ${error.message}`,
+          variant: "destructive",
+        });
+        throw error;
+      }
       
       // Filter complaints based on user role for attendants
       let filteredData = data || [];
@@ -348,17 +379,18 @@ export const ComplaintsList = () => {
         filteredData = data?.filter(complaint => 
           complaint.status !== 'finalizada' && complaint.status !== 'a_verificar'
         ) || [];
+        console.log(`🔍 Filtered for atendente: ${filteredData?.length || 0}`);
       }
       
-      console.log(`🔍 ComplaintsList - userRole: ${userRole}`);
-      console.log(`🔍 ComplaintsList - profile role: ${profile?.role}`);
-      console.log(`🔍 ComplaintsList - total complaints: ${data?.length || 0}`);
-      console.log(`🔍 ComplaintsList - filtered complaints: ${filteredData?.length || 0}`);
-      console.log(`🔍 ComplaintsList - classifications: ${JSON.stringify(classifications)}`);
-      
+      console.log(`🔍 Final complaints set: ${filteredData?.length || 0}`);
       setComplaints(filteredData as Complaint[]);
     } catch (error) {
-      console.error('Erro ao carregar denúncias:', error);
+      console.error('❌ Erro ao carregar denúncias:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar denúncias. Verifique sua conexão.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -1160,6 +1192,18 @@ export const ComplaintsList = () => {
     complaint.occurrence_address.toLowerCase().includes(searchTerm.toLowerCase()) ||
     complaint.classification.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  console.log('🔍 RENDER DEBUG:');
+  console.log('- Total complaints:', complaints.length);
+  console.log('- Filtered complaints:', filteredComplaints.length);
+  console.log('- User role:', userRole);
+  console.log('- Profile role:', profile?.role);
+  console.log('- Loading:', loading);
+  console.log('- Search term:', searchTerm);
+  
+  if (complaints.length > 0) {
+    console.log('- First complaint:', complaints[0]);
+  }
 
   if (loading) {
     return <div>Carregando denúncias...</div>;
