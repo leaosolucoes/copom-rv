@@ -213,9 +213,11 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
     setIsSubmitting(true);
 
     try {
+      // Remove rural_zone from formData before sending
+      const { rural_zone, ...cleanFormData } = formData;
+      
       const complaintData = {
-        ...formData,
-        rural_zone: formData.complainant_type === 'Zona Rural',
+        ...cleanFormData,
         user_device_type: 'registro feito por ligação telefônica',
         user_browser: 'Sistema Interno - Atendimento',
         user_ip: null,
