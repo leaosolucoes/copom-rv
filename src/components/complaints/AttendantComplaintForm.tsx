@@ -144,13 +144,27 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
   const validateForm = (): boolean => {
     const visibleFields = systemSettings.form_fields_config?.filter(field => field.visible) || [];
     
+    // Verificar se é zona rural para ajustar campos obrigatórios
+    const isZonaRural = formData.rural_zone;
+    
     for (const field of visibleFields) {
       if (field.required) {
+        // Se for zona rural, tornar opcionais os campos de bairro, quadra e número
+        if (isZonaRural) {
+          const optionalFieldsInRural = [
+            'complainant_neighborhood', 'complainant_block', 'complainant_number',
+            'occurrence_neighborhood', 'occurrence_block', 'occurrence_number'
+          ];
+          if (optionalFieldsInRural.includes(field.name)) {
+            continue; // Pular validação deste campo em zona rural
+          }
+        }
+        
         const value = formData[field.name as keyof FormData];
         if (!value || (typeof value === 'string' && value.trim() === '')) {
           toast({
             title: "Campo obrigatório",
-            description: `O campo ${field.name.replace('_', ' ')} é obrigatório.`,
+            description: `O campo ${getFieldLabel(field.name)} é obrigatório.`,
             variant: "destructive",
           });
           return false;
@@ -279,14 +293,25 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
     const value = formData[field.name as keyof FormData];
     const options = getFieldOptions(field);
     const fieldLabel = getFieldLabel(field.name);
+    
+    // Verificar se é zona rural para ajustar exibição dos campos
+    const isZonaRural = formData.rural_zone;
+    const optionalFieldsInRural = [
+      'complainant_neighborhood', 'complainant_block', 'complainant_number',
+      'occurrence_neighborhood', 'occurrence_block', 'occurrence_number'
+    ];
+    
+    const isOptionalInRural = isZonaRural && optionalFieldsInRural.includes(field.name);
+    const isRequired = field.required && !isOptionalInRural;
+    
+    // Mostrar indicação quando campo se torna opcional em zona rural
+    const showOptionalText = !isZonaRural && optionalFieldsInRural.includes(field.name) && field.required;
+    const label = `${fieldLabel}${isRequired ? ' *' : ''}${showOptionalText ? ' (opcional em zona rural)' : ''}`;
 
     if (options.length > 0) {
       return (
         <div key={field.name} className="space-y-2">
-          <Label htmlFor={field.name}>
-            {fieldLabel}
-            {field.required && <span className="text-red-500 ml-1">*</span>}
-          </Label>
+          <Label htmlFor={field.name}>{label}</Label>
           <Select value={value as string} onValueChange={(val) => handleInputChange(field.name as keyof FormData, val)}>
             <SelectTrigger>
               <SelectValue placeholder={`Selecione ${fieldLabel.toLowerCase()}`} />
@@ -304,10 +329,7 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
     if (field.type === 'textarea') {
       return (
         <div key={field.name} className="space-y-2">
-          <Label htmlFor={field.name}>
-            {fieldLabel}
-            {field.required && <span className="text-red-500 ml-1">*</span>}
-          </Label>
+          <Label htmlFor={field.name}>{label}</Label>
           <Textarea
             id={field.name}
             value={value as string}
@@ -321,10 +343,7 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
 
     return (
       <div key={field.name} className="space-y-2">
-        <Label htmlFor={field.name}>
-          {fieldLabel}
-          {field.required && <span className="text-red-500 ml-1">*</span>}
-        </Label>
+        <Label htmlFor={field.name}>{label}</Label>
         <Input
           id={field.name}
           type={field.type === 'date' ? 'date' : field.type === 'time' ? 'time' : 'text'}
