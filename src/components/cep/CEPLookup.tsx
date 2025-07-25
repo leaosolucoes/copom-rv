@@ -83,6 +83,9 @@ export function CEPLookup() {
         return;
       }
 
+      console.log('Dados finais para exibir:', result.data);
+      console.log('Estrutura completa:', JSON.stringify(result.data, null, 2));
+      
       setCepData(result.data);
       setIsModalOpen(true);
       
