@@ -205,6 +205,7 @@ export const PublicComplaintForm = () => {
       data.forEach(item => {
         if (item.key === 'form_fields_config') {
           fieldsConfig = (item.value as unknown as FormField[]) || [];
+          console.log('🔧 Configuração de campos carregada:', fieldsConfig);
         } else if (item.key === 'public_logo_url') {
           setLogoUrl(item.value as string);
         } else {
