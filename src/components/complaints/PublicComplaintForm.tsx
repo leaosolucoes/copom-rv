@@ -434,7 +434,10 @@ export const PublicComplaintForm = () => {
     
     const isOptionalInRural = isZonaRural && optionalFieldsInRural.includes(field.name);
     const isRequired = field.required && !isOptionalInRural;
-    const label = `${field.label}${isRequired ? ' *' : ''}${isOptionalInRural ? ' (opcional em zona rural)' : ''}`;
+    
+    // Mostrar "(opcional em zona rural)" apenas quando NÃO está em zona rural, mas o campo se torna opcional em zona rural
+    const showOptionalText = !isZonaRural && optionalFieldsInRural.includes(field.name) && !field.required;
+    const label = `${field.label}${isRequired ? ' *' : ''}${showOptionalText ? ' (opcional em zona rural)' : ''}`;
 
     switch (field.type) {
       case 'text':
