@@ -58,8 +58,9 @@ serve(async (req) => {
       );
     }
 
+    // Retornar apenas os dados do result
     return new Response(
-      JSON.stringify({ success: true, data }),
+      JSON.stringify({ success: true, data: data.result }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }

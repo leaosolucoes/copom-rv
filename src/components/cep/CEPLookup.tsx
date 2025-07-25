@@ -7,12 +7,12 @@ import { MapPin, Loader2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface CEPData {
-  resultado: string;
+  cep: string;
+  logradouro: string;
+  complemento: string;
+  bairro: string;
+  localidade: string;
   uf: string;
-  cidade: string;
-  distrito: string;
-  endereco: string;
-  cep_consultado: string;
 }
 
 export function CEPLookup() {
@@ -158,7 +158,7 @@ export function CEPLookup() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              Dados do CEP {cepData?.cep_consultado}
+              Dados do CEP {cepData?.cep}
             </DialogTitle>
           </DialogHeader>
           
@@ -168,7 +168,7 @@ export function CEPLookup() {
                 <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">CEP</label>
-                    <p className="text-lg font-semibold">{cepData.cep_consultado}</p>
+                    <p className="text-lg font-semibold">{cepData.cep}</p>
                   </div>
                 </div>
                 
@@ -182,24 +182,33 @@ export function CEPLookup() {
                 <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Cidade</label>
-                    <p className="text-lg font-semibold">{cepData.cidade}</p>
+                    <p className="text-lg font-semibold">{cepData.localidade}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">Distrito</label>
-                    <p className="text-lg font-semibold">{cepData.distrito || "Não informado"}</p>
+                    <label className="text-sm font-medium text-muted-foreground">Bairro</label>
+                    <p className="text-lg font-semibold">{cepData.bairro || "Não informado"}</p>
                   </div>
                 </div>
               </div>
               
               <div className="space-y-2">
                 <div className="p-3 bg-muted rounded-lg">
-                  <label className="text-sm font-medium text-muted-foreground">Endereço</label>
-                  <p className="text-lg font-semibold">{cepData.endereco}</p>
+                  <label className="text-sm font-medium text-muted-foreground">Logradouro</label>
+                  <p className="text-lg font-semibold">{cepData.logradouro}</p>
                 </div>
               </div>
+              
+              {cepData.complemento && (
+                <div className="space-y-2">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">Complemento</label>
+                    <p className="text-lg font-semibold">{cepData.complemento}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
