@@ -174,6 +174,13 @@ interface Complaint {
   whatsapp_sent?: boolean;
 }
 
+interface DuplicateInfo {
+  isDuplicate: boolean;
+  sequence: number;
+  isLatest: boolean;
+  totalCount: number;
+}
+
 export const ComplaintsList = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -408,6 +415,59 @@ export const ComplaintsList = () => {
     } catch (error) {
       console.error('Erro ao carregar logo:', error);
     }
+  };
+
+  // Função para normalizar endereço para comparação
+  const normalizeAddress = (complaint: Complaint): string => {
+    const parts = [
+      complaint.occurrence_address?.trim().toLowerCase(),
+      complaint.occurrence_number?.trim(),
+      complaint.occurrence_neighborhood?.trim().toLowerCase()
+    ].filter(Boolean);
+    return parts.join('-');
+  };
+
+  // Função para obter data em São Paulo timezone
+  const getDateInSaoPaulo = (dateString: string): string => {
+    const date = new Date(dateString);
+    // Converter para timezone America/Sao_Paulo
+    const saoPauloDate = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(date);
+    
+    // Retornar no formato YYYY-MM-DD
+    const [day, month, year] = saoPauloDate.split('/');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Função para detectar denúncias duplicadas
+  const getDuplicateInfo = (complaint: Complaint, allComplaints: Complaint[]): DuplicateInfo => {
+    const complaintDate = getDateInSaoPaulo(complaint.created_at);
+    const complaintAddress = normalizeAddress(complaint);
+    
+    // Filtrar denúncias do mesmo dia e endereço
+    const sameAddressSameDay = allComplaints.filter(c => {
+      const cDate = getDateInSaoPaulo(c.created_at);
+      const cAddress = normalizeAddress(c);
+      return cDate === complaintDate && cAddress === complaintAddress;
+    });
+
+    // Ordenar por horário de criação
+    sameAddressSameDay.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    
+    const isDuplicate = sameAddressSameDay.length > 1;
+    const sequence = sameAddressSameDay.findIndex(c => c.id === complaint.id) + 1;
+    const isLatest = sameAddressSameDay[sameAddressSameDay.length - 1].id === complaint.id;
+    
+    return {
+      isDuplicate,
+      sequence,
+      isLatest,
+      totalCount: sameAddressSameDay.length
+    };
   };
 
   const searchCnpj = async () => {
@@ -1208,14 +1268,36 @@ export const ComplaintsList = () => {
                       // Para atendentes, mostrar "nova" e "verificado"
                       return complaint.status === 'nova' || complaint.status === 'verificado';
                     })
-                    .map((complaint) => (
-                    <TableRow key={complaint.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{complaint.complainant_name}</div>
-                          <div className="text-sm text-gray-500">{complaint.complainant_phone}</div>
-                        </div>
-                      </TableCell>
+                    .map((complaint) => {
+                      const duplicateInfo = getDuplicateInfo(complaint, complaints);
+                      
+                      return (
+                    <TableRow 
+                      key={complaint.id}
+                      className={cn(
+                        duplicateInfo.isDuplicate && "bg-red-50 border-red-200",
+                        duplicateInfo.isLatest && duplicateInfo.isDuplicate && "animate-pulse"
+                      )}
+                    >
+                       <TableCell>
+                         <div>
+                           <div className="font-medium flex items-center gap-2">
+                             {complaint.complainant_name}
+                             {duplicateInfo.isDuplicate && (
+                               <Badge 
+                                 variant="destructive" 
+                                 className={cn(
+                                   "text-xs",
+                                   duplicateInfo.isLatest && "animate-pulse"
+                                 )}
+                               >
+                                 {duplicateInfo.sequence}ª solicitação
+                               </Badge>
+                             )}
+                           </div>
+                           <div className="text-sm text-gray-500">{complaint.complainant_phone}</div>
+                         </div>
+                       </TableCell>
                       <TableCell>
                         <div>
                           <div>{complaint.occurrence_type}</div>
@@ -1631,10 +1713,11 @@ export const ComplaintsList = () => {
                               </Button>
                             )}
                             
-                        </div>
+                         </div>
                      </TableCell>
                    </TableRow>
-                 ))}
+                   );
+                 })}
                </TableBody>
              </Table>
            </CardContent>
@@ -1672,14 +1755,36 @@ export const ComplaintsList = () => {
                      if (userRole === 'atendente' && (complaint.status === 'a_verificar' || complaint.status === 'finalizada')) return false;
                      return true;
                    })
-                   .map((complaint) => (
-                   <TableRow key={complaint.id}>
-                     <TableCell>
-                       <div>
-                         <div className="font-medium">{complaint.complainant_name}</div>
-                         <div className="text-sm text-gray-500">{complaint.complainant_phone}</div>
-                       </div>
-                     </TableCell>
+                    .map((complaint) => {
+                      const duplicateInfo = getDuplicateInfo(complaint, complaints);
+                      
+                      return (
+                    <TableRow 
+                      key={complaint.id}
+                      className={cn(
+                        duplicateInfo.isDuplicate && "bg-red-50 border-red-200",
+                        duplicateInfo.isLatest && duplicateInfo.isDuplicate && "animate-pulse"
+                      )}
+                    >
+                      <TableCell>
+                        <div>
+                          <div className="font-medium flex items-center gap-2">
+                            {complaint.complainant_name}
+                            {duplicateInfo.isDuplicate && (
+                              <Badge 
+                                variant="destructive" 
+                                className={cn(
+                                  "text-xs",
+                                  duplicateInfo.isLatest && "animate-pulse"
+                                )}
+                              >
+                                {duplicateInfo.sequence}ª solicitação
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-500">{complaint.complainant_phone}</div>
+                        </div>
+                      </TableCell>
                      <TableCell>
                        <div>
                          <div>{complaint.occurrence_type}</div>
@@ -1852,10 +1957,11 @@ export const ComplaintsList = () => {
                            )}
                          </DialogContent>
                        </Dialog>
-                     </TableCell>
-                   </TableRow>
-                 ))}
-               </TableBody>
+                      </TableCell>
+                    </TableRow>
+                    );
+                  })}
+                </TableBody>
              </Table>
            </CardContent>
          </Card>
