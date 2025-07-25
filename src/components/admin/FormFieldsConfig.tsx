@@ -128,8 +128,8 @@ export const FormFieldsConfig = () => {
           required: true, visible: true, order_index: 3, section: 'complainant' 
         },
         { 
-          id: '4', name: 'complainant_address', label: 'Endereço do Denunciante', 
-          type: 'text', required: true, visible: true, order_index: 4, section: 'complainant' 
+          id: '4', name: 'complainant_address', label: 'Nome da sua Rua', 
+          type: 'text', required: true, visible: true, order_index: 4, section: 'complainant'
         },
         { 
           id: '5', name: 'complainant_neighborhood', label: 'Bairro do Denunciante', 
@@ -159,8 +159,8 @@ export const FormFieldsConfig = () => {
           required: true, visible: true, order_index: 1, section: 'occurrence' 
         },
         { 
-          id: '10', name: 'occurrence_address', label: 'Endereço da Ocorrência', 
-          type: 'text', required: true, visible: true, order_index: 2, section: 'occurrence' 
+          id: '10', name: 'occurrence_address', label: 'Nome da Rua da Ocorrência', 
+          type: 'text', required: true, visible: true, order_index: 2, section: 'occurrence'
         },
         { 
           id: '11', name: 'occurrence_neighborhood', label: 'Bairro da Ocorrência', 

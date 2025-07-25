@@ -1280,7 +1280,7 @@ export const ComplaintsList = () => {
                                    </div>
 
                                    <div className="space-y-4">
-                                     <h3 className="text-lg font-semibold">Endereço da Ocorrência</h3>
+                                      <h3 className="text-lg font-semibold">Nome da Rua da Ocorrência</h3>
                                      <div className="grid grid-cols-2 gap-4">
                                        <div>
                                          <strong>Tipo de Ocorrência:</strong> {selectedComplaint.occurrence_type}
@@ -1795,7 +1795,7 @@ export const ComplaintsList = () => {
                                </div>
 
                                <div className="space-y-4">
-                                 <h3 className="text-lg font-semibold">Endereço da Ocorrência</h3>
+                                 <h3 className="text-lg font-semibold">Nome da Rua da Ocorrência</h3>
                                  <div className="grid grid-cols-2 gap-4">
                                    <div>
                                      <strong>Tipo de Ocorrência:</strong> {selectedComplaint.occurrence_type}
