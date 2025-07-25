@@ -330,19 +330,8 @@ export const ComplaintsList = () => {
           console.log(`📡 Status da conexão realtime: ${status}`);
           if (status === 'SUBSCRIBED') {
             console.log('✅ Conectado ao realtime com sucesso!');
-            toast({
-              title: "Sistema Atualizado",
-              description: "Atualizações em tempo real ativadas",
-              duration: 3000,
-            });
           } else if (status === 'CHANNEL_ERROR') {
             console.error('❌ Erro na conexão realtime');
-            toast({
-              title: "Erro de Conexão",
-              description: "Problema nas atualizações em tempo real",
-              variant: "destructive",
-              duration: 5000,
-            });
           }
         }
       );
