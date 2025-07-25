@@ -5,16 +5,19 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ComplaintsListLazy } from "@/components/admin/ComplaintsListLazy";
 import { CNPJLookup } from "@/components/cnpj/CNPJLookup";
 import { CPFLookup } from "@/components/cpf/CPFLookup";
-import { LogOut, FileText, Search } from "lucide-react";
+import { AttendantComplaintForm } from "@/components/complaints/AttendantComplaintForm";
+import { LogOut, FileText, Search, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AtendenteDashboard() {
   const { profile, signOut, isLoading } = useSupabaseAuth();
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !profile) {
@@ -67,10 +70,26 @@ export default function AtendenteDashboard() {
               Bem-vindo, {profile?.full_name || 'Carregando...'}
             </p>
           </div>
-          <Button variant="outline" onClick={signOut} size="sm" className="w-full sm:w-auto">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sair
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+              <DialogTrigger asChild>
+                <Button variant="default" size="sm" className="w-full sm:w-auto">
+                  <Phone className="h-4 w-4 mr-2" />
+                  Registrar Ligação
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Registrar Denúncia por Ligação</DialogTitle>
+                </DialogHeader>
+                <AttendantComplaintForm onSuccess={() => setIsModalOpen(false)} />
+              </DialogContent>
+            </Dialog>
+            <Button variant="outline" onClick={signOut} size="sm" className="w-full sm:w-auto">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
