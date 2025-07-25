@@ -1118,15 +1118,22 @@ export const ComplaintsList = () => {
   // Função para marcar como fiscal solicitado
   const markAsFiscalSolicitado = async (complaintId: string) => {
     try {
+      console.log('Marking as fiscal solicitado:', { complaintId, userId: profile?.id, profileData: profile });
+      
       const { error } = await supabase
         .from('complaints')
         .update({ 
           status: 'fiscal_solicitado' as any,
-          attendant_id: user?.id, // Salvar quem marcou como fiscal solicitado
+          attendant_id: profile?.id, // Usar profile?.id ao invés de user?.id
           processed_at: new Date().toISOString(), // Salvar quando foi marcado
           updated_at: new Date().toISOString()
         })
         .eq('id', complaintId);
+
+      if (error) {
+        console.error('Error updating complaint:', error);
+        throw error;
+      }
 
       if (error) throw error;
 
