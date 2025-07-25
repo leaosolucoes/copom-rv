@@ -8,7 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ComplaintsListLazy } from '@/components/admin/ComplaintsListLazy';
-import { Users, FileText } from 'lucide-react';
+import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
+import { CPFLookup } from '@/components/cpf/CPFLookup';
+import { Users, FileText, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
@@ -95,7 +97,7 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-4 md:py-8">
         <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:w-fit">
+          <TabsList className="grid w-full grid-cols-3 md:w-fit">
             <TabsTrigger value="complaints" className="flex items-center gap-2 text-xs md:text-sm">
               <FileText className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Denúncias</span>
@@ -105,6 +107,11 @@ const AdminDashboard = () => {
               <Users className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Atendentes</span>
               <span className="sm:hidden">Users</span>
+            </TabsTrigger>
+            <TabsTrigger value="consultas" className="flex items-center gap-2 text-xs md:text-sm">
+              <Search className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Consultas</span>
+              <span className="sm:hidden">Busca</span>
             </TabsTrigger>
           </TabsList>
 
@@ -148,6 +155,13 @@ const AdminDashboard = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="consultas" className="space-y-6">
+            <div className="space-y-6">
+              <CNPJLookup />
+              <CPFLookup />
+            </div>
           </TabsContent>
         </Tabs>
       </main>

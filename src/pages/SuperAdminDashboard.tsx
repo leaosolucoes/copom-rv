@@ -15,7 +15,9 @@ import { LogoUpload } from '@/components/admin/LogoUpload';
 import { OccurrenceTypesConfig } from '@/components/admin/OccurrenceTypesConfig';
 import { SoundNotificationControl } from '@/components/admin/SoundNotificationControl';
 import { ApiManagement } from '@/components/admin/ApiManagement';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code } from 'lucide-react';
+import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
+import { CPFLookup } from '@/components/cpf/CPFLookup';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -104,7 +106,7 @@ const SuperAdminDashboard = () => {
       <main className="container mx-auto px-4 py-4 md:py-8">
         <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
           <div className="overflow-x-auto">
-            <TabsList className="flex w-max md:grid md:grid-cols-8 md:w-fit gap-1">
+            <TabsList className="flex w-max md:grid md:grid-cols-9 md:w-fit gap-1">
               <TabsTrigger value="complaints" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <FileText className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Denúncias</span>
@@ -139,6 +141,11 @@ const SuperAdminDashboard = () => {
                 <Code className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">API</span>
                 <span className="sm:hidden">API</span>
+              </TabsTrigger>
+              <TabsTrigger value="consultas" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Search className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Consultas</span>
+                <span className="sm:hidden">Busca</span>
               </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Settings className="h-3 w-3 md:h-4 md:w-4" />
@@ -251,6 +258,13 @@ const SuperAdminDashboard = () => {
                 <ApiManagement />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="consultas" className="space-y-6">
+            <div className="space-y-6">
+              <CNPJLookup />
+              <CPFLookup />
+            </div>
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
