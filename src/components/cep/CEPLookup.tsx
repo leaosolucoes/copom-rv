@@ -55,38 +55,35 @@ export function CEPLookup() {
       const cleanCep = cep.replace(/\D/g, "");
       console.log('CEP limpo para consulta:', cleanCep);
       
-      // URL da API sem traços no CEP
-      const apiUrl = `https://ws.hubdodesenvolvedor.com.br/v2/cep3/?cep=${cleanCep}&token=180482805qTZObEyXPz325856232`;
-      console.log('URL da API:', apiUrl);
-      
-      const response = await fetch(apiUrl, {
-        method: 'GET',
+      // Usar a edge function do Supabase
+      const response = await fetch('https://smytdnkylauxocqrkchn.supabase.co/functions/v1/search-cep', {
+        method: 'POST',
         headers: {
-          'Accept': 'application/json',
+          'Content-Type': 'application/json',
         },
-        mode: 'cors'
+        body: JSON.stringify({ cep: cleanCep })
       });
       
       console.log('Status da resposta:', response.status);
       
+      const result = await response.json();
+      console.log('Resultado recebido:', result);
+      
       if (!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status}`);
+        throw new Error(result.error || `Erro HTTP: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('Dados recebidos:', data);
-      
-      if (data.resultado === "0") {
-        setError("CEP não encontrado");
+      if (result.error) {
+        setError(result.error);
         toast({
           title: "CEP não encontrado",
-          description: "Verifique o CEP informado e tente novamente.",
+          description: result.error,
           variant: "destructive",
         });
         return;
       }
 
-      setCepData(data);
+      setCepData(result.data);
       setIsModalOpen(true);
       
       toast({
