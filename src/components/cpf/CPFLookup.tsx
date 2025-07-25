@@ -189,21 +189,39 @@ export const CPFLookup = () => {
           {data && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Dados básicos */}
-                {data.nomeDaMae && (
+                {/* Nome Completo */}
+                {data.nomeCompleto && (
                   <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">Nome da Mãe</label>
-                    <p className="text-lg font-semibold">{data.nomeDaMae}</p>
+                    <label className="text-sm font-medium text-muted-foreground">Nome Completo</label>
+                    <p className="text-lg font-semibold">{data.nomeCompleto}</p>
                   </div>
                 )}
                 
+                {/* Documento */}
                 {data.documento && (
                   <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">Documento</label>
+                    <label className="text-sm font-medium text-muted-foreground">CPF</label>
                     <p className="text-lg font-semibold">{data.documento}</p>
                   </div>
                 )}
                 
+                {/* Gênero */}
+                {data.genero && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">Gênero</label>
+                    <p className="text-lg font-semibold">{data.genero}</p>
+                  </div>
+                )}
+                
+                {/* Data de Nascimento */}
+                {data.dataDeNascimento && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">Data de Nascimento</label>
+                    <p className="text-lg font-semibold">{data.dataDeNascimento}</p>
+                  </div>
+                )}
+                
+                {/* Idade */}
                 {data.anos && (
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Idade</label>
@@ -211,6 +229,7 @@ export const CPFLookup = () => {
                   </div>
                 )}
                 
+                {/* Signo */}
                 {data.zodiaco && (
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Signo</label>
@@ -218,17 +237,11 @@ export const CPFLookup = () => {
                   </div>
                 )}
                 
+                {/* Salário Estimado */}
                 {data.salarioEstimado && (
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Salário Estimado</label>
                     <p className="text-lg font-semibold">R$ {data.salarioEstimado}</p>
-                  </div>
-                )}
-                
-                {data.lastUpdate && (
-                  <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">Última Atualização</label>
-                    <p className="text-lg font-semibold">{data.lastUpdate}</p>
                   </div>
                 )}
               </div>
@@ -241,10 +254,7 @@ export const CPFLookup = () => {
                     <div className="mt-2 space-y-1">
                       {data.listaTelefones.map((telefone: any, index: number) => (
                         <p key={index} className="text-lg font-semibold">
-                          {typeof telefone === 'object' ? 
-                            `${telefone.telefone || telefone.numero || 'N/A'} ${telefone.tipo ? `(${telefone.tipo})` : ''}` 
-                            : telefone
-                          }
+                          {telefone.telefoneComDDD} {telefone.operadora && `(${telefone.operadora})`} {telefone.tipoTelefone && `- ${telefone.tipoTelefone}`}
                         </p>
                       ))}
                     </div>
@@ -258,9 +268,9 @@ export const CPFLookup = () => {
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">E-mails</label>
                     <div className="mt-2 space-y-1">
-                      {data.listaEmails.map((email: any, index: number) => (
+                      {data.listaEmails.map((emailItem: any, index: number) => (
                         <p key={index} className="text-lg font-semibold">
-                          {typeof email === 'object' ? email.email || email.endereco : email}
+                          {emailItem.enderecoEmail || emailItem.email || emailItem}
                         </p>
                       ))}
                     </div>
@@ -277,42 +287,16 @@ export const CPFLookup = () => {
                       {data.listaEnderecos.map((endereco: any, index: number) => (
                         <div key={index} className="border-l-4 border-primary pl-3">
                           <p className="text-lg font-semibold">
-                            {typeof endereco === 'object' ? 
-                              `${endereco.logradouro || endereco.rua || ''} ${endereco.numero || ''}, ${endereco.bairro || ''} - ${endereco.cidade || ''}, ${endereco.estado || endereco.uf || ''} ${endereco.cep || ''}`.trim() 
-                              : endereco
-                            }
+                            {endereco.logradouro} {endereco.numero && `, ${endereco.numero}`}
+                            {endereco.complemento && `, ${endereco.complemento}`}
+                            <br />
+                            {endereco.bairro} - {endereco.cidade}
+                            {endereco.cep && ` - CEP: ${endereco.cep}`}
                           </p>
                         </div>
                       ))}
                     </div>
                   </div>
-                </div>
-              )}
-              
-              {/* Fallback: Mostrar todos os dados dinamicamente se não houver campos específicos */}
-              {!data.nomeDaMae && !data.documento && !data.listaTelefones && !data.listaEmails && !data.listaEnderecos && (
-                <div className="space-y-4">
-                  {Object.entries(data).map(([key, value]) => {
-                    if (value === null || value === undefined || value === '') return null;
-                    
-                    return (
-                      <div key={key} className="p-3 bg-muted rounded-lg">
-                        <label className="text-sm font-medium text-muted-foreground">
-                          {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
-                        </label>
-                        <p className="text-lg font-semibold">
-                          {Array.isArray(value) ? 
-                            value.map((item, idx) => (
-                              typeof item === 'object' ? JSON.stringify(item) : String(item)
-                            )).join(', ') :
-                            typeof value === 'object' ? 
-                              JSON.stringify(value) : 
-                              String(value)
-                          }
-                        </p>
-                      </div>
-                    );
-                  })}
                 </div>
               )}
             </div>
