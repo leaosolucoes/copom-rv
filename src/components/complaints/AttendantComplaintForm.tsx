@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -144,8 +143,8 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
   const validateForm = (): boolean => {
     const visibleFields = systemSettings.form_fields_config?.filter(field => field.visible) || [];
     
-    // Verificar se é zona rural para ajustar campos obrigatórios
-    const isZonaRural = formData.rural_zone;
+    // Verificar se é zona rural através do campo complainant_type
+    const isZonaRural = formData.complainant_type === 'Zona Rural';
     
     for (const field of visibleFields) {
       if (field.required) {
@@ -185,6 +184,7 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
     try {
       const complaintData = {
         ...formData,
+        rural_zone: formData.complainant_type === 'Zona Rural',
         user_device_type: 'registro feito por ligação telefônica',
         user_browser: 'Sistema Interno - Atendimento',
         user_ip: null,
@@ -294,8 +294,8 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
     const options = getFieldOptions(field);
     const fieldLabel = getFieldLabel(field.name);
     
-    // Verificar se é zona rural para ajustar exibição dos campos
-    const isZonaRural = formData.rural_zone;
+    // Verificar se é zona rural através do campo complainant_type
+    const isZonaRural = formData.complainant_type === 'Zona Rural';
     const optionalFieldsInRural = [
       'complainant_neighborhood', 'complainant_block', 'complainant_number',
       'occurrence_neighborhood', 'occurrence_block', 'occurrence_number'
@@ -388,15 +388,6 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
       {renderSection('complainant', 'Dados do Denunciante')}
       {renderSection('occurrence', 'Dados da Ocorrência')}
       {renderSection('complaint', 'Detalhes da Denúncia')}
-
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="rural_zone"
-          checked={formData.rural_zone}
-          onCheckedChange={(checked) => handleInputChange('rural_zone', !!checked)}
-        />
-        <Label htmlFor="rural_zone">Zona rural</Label>
-      </div>
 
       <div className="flex justify-end">
         <Button 
