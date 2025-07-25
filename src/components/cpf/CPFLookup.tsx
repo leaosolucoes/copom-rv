@@ -59,12 +59,11 @@ export const CPFLookup = () => {
     try {
       const cpfNumbers = cpf.replace(/\D/g, ''); // Remove todos os caracteres não numéricos
       
-      // Usar a Edge Function com URL completa
+      // Usar a Edge Function - mesmo padrão do CEP
       const response = await fetch('https://smytdnkylauxocqrkchn.supabase.co/functions/v1/search-cpf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNteXRkbmt5bGF1eG9jcXJrY2huIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE3MzQ3OTAsImV4cCI6MjA2NzMxMDc5MH0.lw_fYUvIUY7Q9OPumJLD9rP-oG3p4OcLs_PKl6MgN0Y`
         },
         body: JSON.stringify({ cpf: cpfNumbers })
       });
@@ -78,15 +77,21 @@ export const CPFLookup = () => {
       console.log('Dados recebidos da API:', result);
       
       if (result.error) {
-        throw new Error(result.error);
+        setError(result.error);
+        toast({
+          title: "CPF não encontrado",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
       }
 
       // Verificar se há dados válidos na resposta
-      if (!result || Object.keys(result).length === 0) {
+      if (!result.data || Object.keys(result.data).length === 0) {
         throw new Error('Nenhum dado encontrado para este CPF');
       }
 
-      setData(result);
+      setData(result.data);
       setIsModalOpen(true);
       
       toast({

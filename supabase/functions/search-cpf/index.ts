@@ -58,8 +58,19 @@ serve(async (req) => {
     const data = await response.json()
     console.log('Resposta da API:', data)
 
+    // Verificar se houve erro na resposta
+    if (data.erro || !data) {
+      return new Response(
+        JSON.stringify({ error: 'CPF não encontrado ou dados indisponíveis' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify({ success: true, data }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
