@@ -99,6 +99,7 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
         .select('key, value')
         .in('key', [
           'occurrence_types',
+          'public_occurrence_types',
           'neighborhoods',
           'complainant_types',
           'classifications',
@@ -117,7 +118,37 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
 
       data?.forEach(setting => {
         const key = setting.key as keyof SystemSettings;
-        settings[key] = setting.value as any;
+        
+        // Para occurrence_types, usar public_occurrence_types se disponível
+        if (setting.key === 'public_occurrence_types') {
+          try {
+            const value = typeof setting.value === 'string' ? JSON.parse(setting.value) : setting.value;
+            
+            // Verificar se está no novo formato (objetos com name e visible)
+            const hasNewFormat = Array.isArray(value) && value.some((item: any) => 
+              item && typeof item === 'object' && 'name' in item && 'visible' in item
+            );
+            
+            if (hasNewFormat) {
+              // Novo formato com objetos - filtrar apenas tipos visíveis
+              const visibleTypes = value
+                .filter((type: any) => type && type.visible)
+                .map((type: any) => type.name);
+              settings.occurrence_types = visibleTypes;
+            } else {
+              // Formato antigo com strings
+              settings.occurrence_types = value as string[];
+            }
+          } catch (e) {
+            console.error('Erro ao processar public_occurrence_types:', e);
+            settings.occurrence_types = [];
+          }
+        } else if (setting.key === 'occurrence_types' && settings.occurrence_types.length === 0) {
+          // Fallback para occurrence_types se public_occurrence_types não estiver disponível
+          settings[key] = setting.value as any;
+        } else if (setting.key !== 'public_occurrence_types') {
+          settings[key] = setting.value as any;
+        }
       });
 
       setSystemSettings(settings);
