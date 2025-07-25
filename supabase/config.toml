@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.search-cpf]
 verify_jwt = false
+
+[functions.search-cep]
+verify_jwt = false
