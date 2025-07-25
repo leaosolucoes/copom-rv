@@ -105,8 +105,8 @@ const SuperAdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-4 md:py-8">
         <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
-          <div className="overflow-x-auto">
-            <TabsList className="flex w-max md:grid md:grid-cols-9 md:w-fit gap-1">
+          <div className="overflow-x-auto pb-2">
+            <TabsList className="inline-flex w-max gap-1 bg-muted p-1 rounded-md">
               <TabsTrigger value="complaints" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <FileText className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Denúncias</span>
