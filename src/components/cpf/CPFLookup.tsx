@@ -75,6 +75,7 @@ export const CPFLookup = () => {
       const result = await response.json();
       
       console.log('Dados recebidos da API:', result);
+      console.log('Estrutura completa:', JSON.stringify(result, null, 2));
       
       if (result.error) {
         setError(result.error);
@@ -86,12 +87,16 @@ export const CPFLookup = () => {
         return;
       }
 
+      // Usar result.data se existir, senão usar result diretamente
+      const cpfData = result.data || result;
+      console.log('Dados do CPF para exibir:', cpfData);
+      
       // Verificar se há dados válidos na resposta
-      if (!result.data || Object.keys(result.data).length === 0) {
+      if (!cpfData || Object.keys(cpfData).length === 0) {
         throw new Error('Nenhum dado encontrado para este CPF');
       }
 
-      setData(result.data);
+      setData(cpfData);
       setIsModalOpen(true);
       
       toast({
@@ -281,6 +286,33 @@ export const CPFLookup = () => {
                       ))}
                     </div>
                   </div>
+                </div>
+              )}
+              
+              {/* Fallback: Mostrar todos os dados dinamicamente se não houver campos específicos */}
+              {!data.nomeDaMae && !data.documento && !data.listaTelefones && !data.listaEmails && !data.listaEnderecos && (
+                <div className="space-y-4">
+                  {Object.entries(data).map(([key, value]) => {
+                    if (value === null || value === undefined || value === '') return null;
+                    
+                    return (
+                      <div key={key} className="p-3 bg-muted rounded-lg">
+                        <label className="text-sm font-medium text-muted-foreground">
+                          {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
+                        </label>
+                        <p className="text-lg font-semibold">
+                          {Array.isArray(value) ? 
+                            value.map((item, idx) => (
+                              typeof item === 'object' ? JSON.stringify(item) : String(item)
+                            )).join(', ') :
+                            typeof value === 'object' ? 
+                              JSON.stringify(value) : 
+                              String(value)
+                          }
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
