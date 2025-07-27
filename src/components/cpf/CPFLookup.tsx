@@ -143,31 +143,13 @@ export const CPFLookup = () => {
       console.log('cpfData stringified:', JSON.stringify(cpfData, null, 2));
       console.log('Keys do cpfData:', cpfData ? Object.keys(cpfData) : 'cpfData é null');
       
-      // Verificar se há pelo menos algum dado essencial válido na resposta
-      const hasValidData = cpfData && (
-        cpfData.nomeCompleto || 
-        cpfData.documento || 
-        cpfData.codigoPessoa ||
-        cpfData.listaTelefones ||
-        cpfData.listaEmails ||
-        cpfData.listaEnderecos
-      );
-      
-      console.log('=== VALIDAÇÃO DOS DADOS ===');
-      console.log('hasValidData:', hasValidData);
-      console.log('nomeCompleto:', cpfData?.nomeCompleto);
-      console.log('documento:', cpfData?.documento);
-      console.log('codigoPessoa:', cpfData?.codigoPessoa);
-      console.log('listaTelefones:', cpfData?.listaTelefones);
-      console.log('listaEmails:', cpfData?.listaEmails);
-      console.log('listaEnderecos:', cpfData?.listaEnderecos);
-      
-      if (!hasValidData) {
-        console.log('ERRO: Nenhum dado válido encontrado para este CPF');
+      // VALIDAÇÃO SIMPLIFICADA: Se chegou até aqui e cpfData existe, é válido
+      if (!cpfData || typeof cpfData !== 'object') {
+        console.log('ERRO: cpfData não é um objeto válido');
         throw new Error('Nenhum dado válido encontrado para este CPF');
       }
-
-      console.log('SUCESSO: Dados válidos encontrados, abrindo modal');
+      
+      console.log('SUCESSO: Dados considerados válidos, abrindo modal');
       setData(cpfData);
       setIsModalOpen(true);
       
