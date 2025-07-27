@@ -10,6 +10,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { logConsultation } from '@/lib/auditLogger';
 
 interface CNPJData {
   cnpj: string;
@@ -122,12 +123,28 @@ export function CNPJLookup() {
 
       setCnpjData(result.data);
       setIsModalOpen(true);
+      
+      // Registrar auditoria
+      await logConsultation({
+        consultationType: 'CNPJ',
+        searchedData: cleanCnpj,
+        searchResult: result.data,
+        success: true
+      });
     } catch (error: any) {
       console.error('Erro na consulta:', error);
       toast({
         title: "Erro na consulta",
         description: error.message || "Erro interno do servidor",
         variant: "destructive",
+      });
+      
+      // Registrar auditoria de erro
+      await logConsultation({
+        consultationType: 'CNPJ',
+        searchedData: cleanCnpj,
+        success: false,
+        errorMessage: error.message || 'Erro desconhecido'
       });
     } finally {
       setIsLoading(false);

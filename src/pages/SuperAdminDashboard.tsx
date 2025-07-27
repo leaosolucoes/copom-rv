@@ -15,9 +15,10 @@ import { LogoUpload } from '@/components/admin/LogoUpload';
 import { OccurrenceTypesConfig } from '@/components/admin/OccurrenceTypesConfig';
 import { SoundNotificationControl } from '@/components/admin/SoundNotificationControl';
 import { ApiManagement } from '@/components/admin/ApiManagement';
+import { ConsultationAuditDashboard } from '@/components/admin/ConsultationAuditDashboard';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search } from 'lucide-react';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -147,6 +148,11 @@ const SuperAdminDashboard = () => {
                 <span className="hidden sm:inline">Consultas</span>
                 <span className="sm:hidden">Busca</span>
               </TabsTrigger>
+              <TabsTrigger value="auditoria" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Shield className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Auditoria</span>
+                <span className="sm:hidden">Audit</span>
+              </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Settings className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Config</span>
@@ -265,6 +271,20 @@ const SuperAdminDashboard = () => {
               <CNPJLookup />
               <CPFLookup />
             </div>
+          </TabsContent>
+
+          <TabsContent value="auditoria" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Auditoria de Consultas LGPD</CardTitle>
+                <CardDescription>
+                  Monitore e audite todas as consultas realizadas no sistema para compliance com LGPD
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ConsultationAuditDashboard />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">

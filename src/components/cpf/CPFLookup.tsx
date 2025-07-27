@@ -6,6 +6,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label';
 import { Search, Loader2, User, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { logConsultation } from '@/lib/auditLogger';
+import { supabase } from "@/integrations/supabase/client";
 
 interface CPFData {
   [key: string]: any; // Aceita qualquer estrutura JSON
@@ -178,6 +180,14 @@ export const CPFLookup = () => {
         title: 'Consulta realizada',
         description: 'Dados do CPF encontrados com sucesso',
       });
+      
+      // Registrar auditoria
+      await logConsultation({
+        consultationType: 'CPF',
+        searchedData: cpfNumbers,
+        searchResult: cpfData,
+        success: true
+      });
     } catch (error: any) {
       console.error('Erro na consulta CPF:', error);
       setError(error.message || 'Erro na consulta do CPF');
@@ -185,6 +195,14 @@ export const CPFLookup = () => {
         title: 'Erro na consulta',
         description: error.message || 'Não foi possível consultar o CPF',
         variant: 'destructive',
+      });
+      
+      // Registrar auditoria de erro
+      await logConsultation({
+        consultationType: 'CPF',
+        searchedData: cpf.replace(/\D/g, ''),
+        success: false,
+        errorMessage: error.message || 'Erro desconhecido'
       });
     } finally {
       setLoading(false);

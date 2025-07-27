@@ -373,6 +373,48 @@ export type Database = {
           },
         ]
       }
+      consultation_audit_logs: {
+        Row: {
+          consultation_type: Database["public"]["Enums"]["consultation_type"]
+          created_at: string
+          error_message: string | null
+          id: string
+          ip_address: unknown | null
+          search_result: Json | null
+          searched_data: string
+          success: boolean
+          user_agent: string | null
+          user_id: string | null
+          user_name: string
+        }
+        Insert: {
+          consultation_type: Database["public"]["Enums"]["consultation_type"]
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          search_result?: Json | null
+          searched_data: string
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+          user_name: string
+        }
+        Update: {
+          consultation_type?: Database["public"]["Enums"]["consultation_type"]
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          search_result?: Json | null
+          searched_data?: string
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+          user_name?: string
+        }
+        Relationships: []
+      }
       rate_limits: {
         Row: {
           attempts: number | null
@@ -653,6 +695,7 @@ export type Database = {
         | "a_verificar"
         | "verificado"
         | "fiscal_solicitado"
+      consultation_type: "CPF" | "CNPJ" | "CEP"
       user_role: "super_admin" | "admin" | "atendente" | "fiscal"
     }
     CompositeTypes: {
@@ -790,6 +833,7 @@ export const Constants = {
         "verificado",
         "fiscal_solicitado",
       ],
+      consultation_type: ["CPF", "CNPJ", "CEP"],
       user_role: ["super_admin", "admin", "atendente", "fiscal"],
     },
   },

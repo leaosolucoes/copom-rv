@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MapPin, Loader2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { logConsultation } from "@/lib/auditLogger";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CEPData {
   cep: string;
@@ -80,6 +82,14 @@ export function CEPLookup() {
           description: result.error,
           variant: "destructive",
         });
+        
+        // Registrar auditoria de erro
+        await logConsultation({
+          consultationType: 'CEP',
+          searchedData: cleanCep,
+          success: false,
+          errorMessage: result.error
+        });
         return;
       }
 
@@ -93,6 +103,14 @@ export function CEPLookup() {
         title: "CEP encontrado!",
         description: "Dados do endereço carregados com sucesso.",
       });
+      
+      // Registrar auditoria
+      await logConsultation({
+        consultationType: 'CEP',
+        searchedData: cleanCep,
+        searchResult: result.data,
+        success: true
+      });
 
     } catch (err) {
       console.error("Erro detalhado ao buscar CEP:", err);
@@ -101,6 +119,14 @@ export function CEPLookup() {
         title: "Erro na consulta",
         description: `Não foi possível consultar o CEP: ${err instanceof Error ? err.message : 'Erro desconhecido'}`,
         variant: "destructive",
+      });
+      
+      // Registrar auditoria de erro
+      await logConsultation({
+        consultationType: 'CEP',
+        searchedData: cep.replace(/\D/g, ''),
+        success: false,
+        errorMessage: err instanceof Error ? err.message : 'Erro desconhecido'
       });
     } finally {
       setIsLoading(false);
