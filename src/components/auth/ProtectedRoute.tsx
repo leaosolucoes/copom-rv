@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { logger } from '@/lib/secureLogger';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,9 +16,9 @@ export const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { isAuthenticated, hasRole, isLoading, profile } = useSupabaseAuth();
 
-  // Debug logs for mobile
+  // Security logs for authentication tracking
   useEffect(() => {
-    console.log('🛡️ ProtectedRoute state:', {
+    logger.debug('🛡️ ProtectedRoute state:', {
       isLoading,
       isAuthenticated,
       profile: profile?.role,
@@ -29,11 +30,11 @@ export const ProtectedRoute = ({
   useEffect(() => {
     if (isLoading) {
       const timeout = setTimeout(() => {
-        console.warn('⚠️ ProtectedRoute loading timeout reached');
+        logger.warn('⚠️ ProtectedRoute loading timeout reached');
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
         if (isMobile) {
-          console.warn('📱 Mobile timeout detected - forcing redirect to login');
+          logger.warn('📱 Mobile timeout detected - forcing redirect to login');
           window.location.href = '/acesso';
         } else {
           window.location.reload();
@@ -46,7 +47,7 @@ export const ProtectedRoute = ({
 
   // Show loading while checking authentication
   if (isLoading) {
-    console.log('🔄 ProtectedRoute showing loading screen...');
+    logger.debug('🔄 ProtectedRoute showing loading screen...');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -60,13 +61,13 @@ export const ProtectedRoute = ({
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    console.log('❌ User not authenticated, redirecting to login');
+    logger.warn('❌ User not authenticated, redirecting to login');
     return <Navigate to={redirectTo} replace />;
   }
 
   // Check if user has required role
   if (!hasRole(allowedRoles)) {
-    console.log('🚫 User does not have required role:', { userRole: profile?.role, requiredRoles: allowedRoles });
+    logger.warn('🚫 User does not have required role:', { userRole: profile?.role, requiredRoles: allowedRoles });
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
@@ -88,7 +89,7 @@ export const ProtectedRoute = ({
     );
   }
 
-  console.log('✅ ProtectedRoute allowing access');
+  logger.debug('✅ ProtectedRoute allowing access');
   return <>{children}</>;
 };
 

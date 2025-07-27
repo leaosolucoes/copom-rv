@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useSystemColors } from "@/hooks/useSystemColors";
 import { useDevToolsProtection } from "@/hooks/useDevToolsProtection";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { SecurityProvider } from "@/components/security/SecurityProvider";
 import { validateDomain, checkIntegrity, initAntiTamper } from "@/utils/codeProtection";
 import { logger } from "@/lib/secureLogger";
 import Index from "./pages/Index";
@@ -24,34 +25,63 @@ const App = () => {
   // Carregar e aplicar cores do sistema
   useSystemColors();
   
-  // Proteções desativadas temporariamente para debugging
-  // useDevToolsProtection();
+  // Proteções ativadas para produção
+  useDevToolsProtection();
   
   useEffect(() => {
-    console.log('Sistema iniciado com proteções desativadas');
-    logger.info('Sistema iniciado');
+    // Inicializar proteções de segurança
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        if (!validateDomain()) {
+          throw new Error('Domínio não autorizado');
+        }
+        if (!checkIntegrity()) {
+          throw new Error('Integridade comprometida');
+        }
+        const cleanup = initAntiTamper();
+        return cleanup;
+      } catch (error) {
+        logger.error('Falha na verificação de segurança');
+        window.location.href = '/';
+      }
+    }
+    
+    logger.info('Sistema iniciado com proteções ativas');
   }, []);
 
   return (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+    <SecurityProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/acesso" element={<Login />} />
           <Route 
             path="/atendente" 
-            element={<AtendenteDashboard />} 
+            element={
+              <ProtectedRoute allowedRoles={['atendente', 'admin', 'super_admin']}>
+                <AtendenteDashboard />
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/admin" 
-            element={<AdminDashboard />} 
+            element={
+              <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/super-admin" 
-            element={<SuperAdminDashboard />} 
+            element={
+              <ProtectedRoute allowedRoles={['super_admin']}>
+                <SuperAdminDashboard />
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/fiscal" 
@@ -64,7 +94,8 @@ const App = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-    </TooltipProvider>
+      </TooltipProvider>
+    </SecurityProvider>
   </QueryClientProvider>
 );
 };
