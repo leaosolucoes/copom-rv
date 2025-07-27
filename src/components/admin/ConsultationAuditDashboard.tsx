@@ -287,6 +287,155 @@ export function ConsultationAuditDashboard() {
     setIsDetailModalOpen(true);
   };
 
+  const exportSingleLogToPDF = async (log: AuditLog) => {
+    try {
+      // Criar PDF usando jsPDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      
+      // Configurar fontes
+      pdf.setFont('helvetica', 'bold');
+      
+      let yPosition = 30;
+      
+      // Adicionar logo se disponível
+      if (logoUrl) {
+        try {
+          const logoResponse = await fetch(logoUrl);
+          if (logoResponse.ok) {
+            const logoBlob = await logoResponse.blob();
+            const logoBase64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(logoBlob);
+            });
+            
+            const imageFormat = logoBlob.type.includes('png') ? 'PNG' : 
+                               logoBlob.type.includes('jpeg') || logoBlob.type.includes('jpg') ? 'JPEG' : 'PNG';
+            
+            pdf.addImage(logoBase64, imageFormat, 20, 10, 30, 30);
+          }
+          
+          pdf.setFontSize(18);
+          pdf.text('CONSULTA DE AUDITORIA LGPD', 60, 20);
+          yPosition = 50;
+        } catch (logoError) {
+          console.error('Erro ao carregar logo:', logoError);
+          pdf.setFontSize(18);
+          pdf.text('CONSULTA DE AUDITORIA LGPD', 20, 20);
+          yPosition = 30;
+        }
+      } else {
+        pdf.setFontSize(18);
+        pdf.text('CONSULTA DE AUDITORIA LGPD', 20, 20);
+        yPosition = 30;
+      }
+      
+      // Adicionar informações da consulta
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      
+      const today = new Date();
+      pdf.text(`Data de geração: ${format(today, 'dd/MM/yyyy HH:mm')}`, 20, yPosition + 5);
+      pdf.text(`Tipo de consulta: ${log.consultation_type}`, 20, yPosition + 15);
+      pdf.text(`Status: ${log.success ? 'Sucesso' : 'Erro'}`, 20, yPosition + 25);
+      
+      yPosition += 50;
+
+      // Dados da consulta
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14);
+      pdf.text('DADOS DA CONSULTA', 20, yPosition);
+      yPosition += 15;
+
+      // Informações básicas usando autoTable
+      const basicData = [
+        ['Data/Hora', format(new Date(log.created_at), 'dd/MM/yyyy HH:mm:ss')],
+        ['Usuário', log.user_name],
+        ['Tipo de Consulta', log.consultation_type],
+        ['Dados Consultados', log.searched_data],
+        ['Status', log.success ? 'Sucesso' : 'Erro'],
+        ['Endereço IP', log.ip_address ? String(log.ip_address) : 'Não disponível'],
+        ['ID do Usuário', log.user_id || 'Não disponível']
+      ];
+
+      if (log.error_message) {
+        basicData.push(['Mensagem de Erro', log.error_message]);
+      }
+      
+      autoTable(pdf, {
+        body: basicData,
+        startY: yPosition,
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+        },
+        columnStyles: {
+          0: { cellWidth: 40, fontStyle: 'bold' },
+          1: { cellWidth: 130 },
+        },
+        margin: { left: 20, right: 20 },
+      });
+
+      // User Agent
+      if (log.user_agent) {
+        const finalY = (pdf as any).lastAutoTable.finalY + 20;
+        
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.text('INFORMAÇÕES TÉCNICAS', 20, finalY);
+        
+        autoTable(pdf, {
+          body: [['User Agent', log.user_agent]],
+          startY: finalY + 10,
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+          },
+          columnStyles: {
+            0: { cellWidth: 25, fontStyle: 'bold' },
+            1: { cellWidth: 145 },
+          },
+          margin: { left: 20, right: 20 },
+        });
+      }
+
+      // Resultado da consulta
+      if (log.search_result) {
+        const finalY2 = (pdf as any).lastAutoTable.finalY + 20;
+        
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.text('RESULTADO DA CONSULTA', 20, finalY2);
+        
+        autoTable(pdf, {
+          body: [['Resultado JSON', JSON.stringify(log.search_result, null, 2)]],
+          startY: finalY2 + 10,
+          styles: {
+            fontSize: 7,
+            cellPadding: 2,
+          },
+          columnStyles: {
+            0: { cellWidth: 25, fontStyle: 'bold' },
+            1: { cellWidth: 145 },
+          },
+          margin: { left: 20, right: 20 },
+        });
+      }
+      
+      // Salvar PDF
+      const fileName = `consulta-auditoria-${log.consultation_type}-${log.searched_data}-${format(today, 'yyyy-MM-dd')}.pdf`;
+      pdf.save(fileName);
+      
+      toast.success('PDF da consulta gerado com sucesso!');
+      
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast.error('Erro ao gerar PDF da consulta');
+    }
+  };
+
   console.log('🎯 ConsultationAuditDashboard: Renderizando componente, logs:', logs.length);
 
   return (
@@ -512,13 +661,26 @@ export function ConsultationAuditDashboard() {
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Detalhes da Consulta de Auditoria
-            </DialogTitle>
-            <DialogDescription>
-              Informações completas do log de auditoria LGPD
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Detalhes da Consulta de Auditoria
+                </DialogTitle>
+                <DialogDescription>
+                  Informações completas do log de auditoria LGPD
+                </DialogDescription>
+              </div>
+              <Button
+                onClick={() => selectedLog && exportSingleLogToPDF(selectedLog)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Gerar PDF
+              </Button>
+            </div>
           </DialogHeader>
           
           {selectedLog && (
