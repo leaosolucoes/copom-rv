@@ -83,9 +83,11 @@ export function CEPLookup() {
         return;
       }
 
-      console.log('Dados finais para exibir:', data);
+      // A API retorna { success: true, data: {...} }
+      const cepResult = data.data || data;
+      console.log('Dados finais para exibir:', cepResult);
       
-      setCepData(data);
+      setCepData(cepResult);
       setIsModalOpen(true);
       toast.success('CEP consultado com sucesso!');
       
