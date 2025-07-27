@@ -1,20 +1,12 @@
 import { useState, useEffect } from "react";
-import { AuditStatsDashboard } from "./AuditStatsDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Download, Eye, Filter, RefreshCw } from "lucide-react";
+import { Eye, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 
 interface AuditLog {
   id: string;
@@ -35,62 +27,38 @@ export function ConsultationAuditDashboard() {
   
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
-  const [filters, setFilters] = useState({
-    search: '',
-    type: '',
-    success: '',
-    startDate: null as Date | null,
-    endDate: null as Date | null
-  });
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
       console.log('🔍 ConsultationAuditDashboard: Iniciando busca de logs...');
       
-      let query = supabase
+      const { data, error } = await supabase
         .from('consultation_audit_logs')
         .select('*')
-        .order('created_at', { ascending: false });
-
-      // Aplicar filtros
-      if (filters.search) {
-        query = query.or(`user_name.ilike.%${filters.search}%,searched_data.ilike.%${filters.search}%`);
-      }
-      
-      if (filters.type) {
-        query = query.eq('consultation_type', filters.type as 'CPF' | 'CNPJ' | 'CEP');
-      }
-      
-      if (filters.success !== '') {
-        query = query.eq('success', filters.success === 'true');
-      }
-      
-      if (filters.startDate) {
-        query = query.gte('created_at', filters.startDate.toISOString());
-      }
-      
-      if (filters.endDate) {
-        const endDate = new Date(filters.endDate);
-        endDate.setHours(23, 59, 59, 999);
-        query = query.lte('created_at', endDate.toISOString());
-      }
-
-      const { data, error } = await query.limit(1000);
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       console.log('🔍 ConsultationAuditDashboard: Resposta da consulta:', { data, error });
 
       if (error) {
         console.error('❌ ConsultationAuditDashboard: Erro na consulta:', error);
-        throw error;
+        toast.error(`Erro ao carregar logs: ${error.message}`);
+        return;
       }
       
       console.log('✅ ConsultationAuditDashboard: Logs encontrados:', data?.length || 0);
       setLogs(data || []);
+      
+      if (data && data.length > 0) {
+        toast.success(`${data.length} logs carregados com sucesso!`);
+      } else {
+        toast.info('Nenhum log de auditoria encontrado');
+      }
+      
     } catch (error) {
       console.error('❌ ConsultationAuditDashboard: Erro ao buscar logs:', error);
-      toast.error('Erro ao carregar logs de auditoria');
+      toast.error('Erro inesperado ao carregar logs de auditoria');
     } finally {
       setLoading(false);
     }
@@ -98,64 +66,11 @@ export function ConsultationAuditDashboard() {
 
   useEffect(() => {
     fetchLogs();
-  }, [filters]);
-
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    
-    // Título
-    doc.setFontSize(16);
-    doc.text('Relatório de Auditoria de Consultas', 20, 20);
-    
-    // Data do relatório
-    doc.setFontSize(12);
-    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, 30);
-    
-    // Filtros aplicados
-    let yPos = 45;
-    doc.setFontSize(10);
-    doc.text('Filtros aplicados:', 20, yPos);
-    yPos += 10;
-    
-    if (filters.type) {
-      doc.text(`- Tipo: ${filters.type}`, 25, yPos);
-      yPos += 8;
-    }
-    if (filters.success !== '') {
-      doc.text(`- Status: ${filters.success === 'true' ? 'Sucesso' : 'Erro'}`, 25, yPos);
-      yPos += 8;
-    }
-    if (filters.startDate || filters.endDate) {
-      const dateRange = `${filters.startDate ? format(filters.startDate, 'dd/MM/yyyy') : 'Início'} - ${filters.endDate ? format(filters.endDate, 'dd/MM/yyyy') : 'Fim'}`;
-      doc.text(`- Período: ${dateRange}`, 25, yPos);
-      yPos += 8;
-    }
-
-    // Tabela
-    const tableData = logs.map(log => [
-      format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
-      log.user_name,
-      log.consultation_type,
-      log.searched_data,
-      log.success ? 'Sucesso' : 'Erro',
-      (log.ip_address as string) || 'N/A'
-    ]);
-
-    (doc as any).autoTable({
-      head: [['Data/Hora', 'Usuário', 'Tipo', 'Dados', 'Status', 'IP']],
-      body: tableData,
-      startY: yPos + 10,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [66, 139, 202] }
-    });
-
-    doc.save(`auditoria-consultas-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-    toast.success('Relatório PDF gerado com sucesso!');
-  };
+  }, []);
 
   const getStatusBadge = (success: boolean) => {
     return success ? (
-      <Badge variant="default" className="bg-green-100 text-green-800">
+      <Badge className="bg-green-100 text-green-800 border-green-300">
         Sucesso
       </Badge>
     ) : (
@@ -167,111 +82,65 @@ export function ConsultationAuditDashboard() {
 
   const getTypeBadge = (type: string) => {
     const colors = {
-      CPF: 'bg-blue-100 text-blue-800',
-      CNPJ: 'bg-purple-100 text-purple-800',
-      CEP: 'bg-orange-100 text-orange-800'
+      CPF: 'bg-blue-100 text-blue-800 border-blue-300',
+      CNPJ: 'bg-purple-100 text-purple-800 border-purple-300',
+      CEP: 'bg-orange-100 text-orange-800 border-orange-300'
     };
     
     return (
-      <Badge variant="outline" className={colors[type as keyof typeof colors] || ''}>
+      <Badge className={colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-800'}>
         {type}
       </Badge>
     );
   };
 
+  console.log('🎯 ConsultationAuditDashboard: Renderizando componente, logs:', logs.length);
+
   return (
     <div className="space-y-6">
-      {/* Dashboard de Estatísticas */}
-      <AuditStatsDashboard />
+      {/* Informações de Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>📊 Status da Auditoria</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="font-semibold text-blue-800">Total de Logs</h3>
+              <p className="text-2xl font-bold text-blue-600">{logs.length}</p>
+            </div>
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h3 className="font-semibold text-green-800">Consultas com Sucesso</h3>
+              <p className="text-2xl font-bold text-green-600">
+                {logs.filter(log => log.success).length}
+              </p>
+            </div>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <h3 className="font-semibold text-red-800">Consultas com Erro</h3>
+              <p className="text-2xl font-bold text-red-600">
+                {logs.filter(log => !log.success).length}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
       {/* Dashboard de Logs */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Eye className="h-5 w-5" />
-            Auditoria de Consultas LGPD
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Filtros */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-            <Input
-              placeholder="Buscar por usuário ou dados..."
-              value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-            />
-            
-            <Select value={filters.type} onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tipo de consulta" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
-                <SelectItem value="CPF">CPF</SelectItem>
-                <SelectItem value="CNPJ">CNPJ</SelectItem>
-                <SelectItem value="CEP">CEP</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={filters.success} onValueChange={(value) => setFilters(prev => ({ ...prev, success: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
-                <SelectItem value="true">Sucesso</SelectItem>
-                <SelectItem value="false">Erro</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filters.startDate ? format(filters.startDate, 'dd/MM/yyyy') : 'Data inicial'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={filters.startDate}
-                  onSelect={(date) => setFilters(prev => ({ ...prev, startDate: date }))}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filters.endDate ? format(filters.endDate, 'dd/MM/yyyy') : 'Data final'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={filters.endDate}
-                  onSelect={(date) => setFilters(prev => ({ ...prev, endDate: date }))}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Ações */}
-          <div className="flex gap-2 mb-4">
-            <Button onClick={fetchLogs} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Logs de Auditoria LGPD
+            </CardTitle>
+            <Button onClick={fetchLogs} variant="outline" size="sm" disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
-            <Button onClick={exportToPDF} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar PDF
-            </Button>
           </div>
-
-          {/* Tabela */}
+        </CardHeader>
+        <CardContent>
+          {/* Tabela Simplificada */}
           <div className="rounded-md border">
             <Table>
               <TableHeader>
@@ -279,105 +148,39 @@ export function ConsultationAuditDashboard() {
                   <TableHead>Data/Hora</TableHead>
                   <TableHead>Usuário</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Dados Pesquisados</TableHead>
+                  <TableHead>Dados</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>IP</TableHead>
-                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      Carregando...
+                    <TableCell colSpan={5} className="text-center py-8">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                        Carregando logs de auditoria...
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : logs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      Nenhum log encontrado
+                    <TableCell colSpan={5} className="text-center py-8">
+                      <div className="text-muted-foreground">
+                        <p className="font-medium">Nenhum log encontrado</p>
+                        <p className="text-sm">Realize algumas consultas (CPF, CNPJ, CEP) para gerar dados de auditoria.</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   logs.map((log) => (
                     <TableRow key={log.id}>
-                      <TableCell>
+                      <TableCell className="text-sm">
                         {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm')}
                       </TableCell>
-                      <TableCell className="font-medium">{log.user_name}</TableCell>
+                      <TableCell className="font-medium text-sm">{log.user_name}</TableCell>
                       <TableCell>{getTypeBadge(log.consultation_type)}</TableCell>
-                      <TableCell className="font-mono text-sm">{log.searched_data}</TableCell>
+                      <TableCell className="font-mono text-xs">{log.searched_data}</TableCell>
                       <TableCell>{getStatusBadge(log.success)}</TableCell>
-                      <TableCell className="text-sm">{(log.ip_address as string) || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedLog(log)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Detalhes da Consulta</DialogTitle>
-                            </DialogHeader>
-                            {selectedLog && (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="text-sm font-medium">Usuário:</label>
-                                    <p className="text-sm">{selectedLog.user_name}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Tipo:</label>
-                                    <p className="text-sm">{selectedLog.consultation_type}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Dados Pesquisados:</label>
-                                    <p className="text-sm font-mono">{selectedLog.searched_data}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Status:</label>
-                                    <p className="text-sm">{selectedLog.success ? 'Sucesso' : 'Erro'}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">IP:</label>
-                                    <p className="text-sm">{(selectedLog.ip_address as string) || 'N/A'}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Data/Hora:</label>
-                                    <p className="text-sm">{format(new Date(selectedLog.created_at), 'dd/MM/yyyy HH:mm:ss')}</p>
-                                  </div>
-                                </div>
-                                
-                                <div>
-                                  <label className="text-sm font-medium">User Agent:</label>
-                                  <p className="text-xs bg-muted p-2 rounded">{selectedLog.user_agent}</p>
-                                </div>
-                                
-                                {selectedLog.error_message && (
-                                  <div>
-                                    <label className="text-sm font-medium">Mensagem de Erro:</label>
-                                    <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{selectedLog.error_message}</p>
-                                  </div>
-                                )}
-                                
-                                {selectedLog.search_result && (
-                                  <div>
-                                    <label className="text-sm font-medium">Resultado da Consulta:</label>
-                                    <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-40">
-                                      {JSON.stringify(selectedLog.search_result, null, 2)}
-                                    </pre>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
                     </TableRow>
                   ))
                 )}
