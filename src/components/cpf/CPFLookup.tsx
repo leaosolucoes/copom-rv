@@ -95,11 +95,12 @@ export const CPFLookup = () => {
         return;
       }
 
-      // Os dados estão dentro de result.result conforme visto no console
-      let cpfData = result.result;
+      // Os dados estão dentro de result.data conforme visto no console
+      let cpfData = result.data || result.result;
       
       if (!cpfData) {
-        throw new Error('Dados do CPF não encontrados na resposta');
+        console.log('Tentando acessar diretamente result:', result);
+        cpfData = result; // Se não encontrar em data ou result, usa o próprio result
       }
       
       console.log('=== DADOS FINAIS PARA EXIBIR ===');
