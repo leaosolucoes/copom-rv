@@ -77,13 +77,10 @@ export const CPFLookup = () => {
       console.log('=== DADOS RECEBIDOS DA API CPF ===');
       console.log('Result completo:', result);
       console.log('Result stringified:', JSON.stringify(result, null, 2));
-      console.log('Tipo do result:', typeof result);
       
       if (!result) {
         throw new Error('Resposta vazia da API');
       }
-      
-      console.log('Keys do result:', Object.keys(result));
       
       if (result.error) {
         setError(result.error);
@@ -95,18 +92,27 @@ export const CPFLookup = () => {
         return;
       }
 
+      // Verificar se a API retornou status false ou erro
+      if (result.status === false) {
+        throw new Error(result.return || 'CPF não encontrado');
+      }
+
       // Os dados estão dentro de result.result conforme estrutura da API
       let cpfData = result.result;
       
       if (!cpfData) {
-        throw new Error('Dados do CPF não encontrados na resposta');
+        console.log('Tentando acessar diretamente result:', result);
+        // Se não encontrar em result, verifica se os dados estão diretamente no result
+        if (result.nomeCompleto || result.documento || result.codigoPessoa) {
+          cpfData = result;
+        } else {
+          throw new Error('Dados do CPF não encontrados na resposta da API');
+        }
       }
       
       console.log('=== DADOS FINAIS PARA EXIBIR ===');
       console.log('cpfData:', cpfData);
       console.log('cpfData stringified:', JSON.stringify(cpfData, null, 2));
-      console.log('Tipo do cpfData:', typeof cpfData);
-      console.log('Keys do cpfData:', Object.keys(cpfData));
       
       // Log de cada campo específico
       console.log('nomeCompleto:', cpfData.nomeCompleto);
