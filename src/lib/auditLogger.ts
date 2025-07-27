@@ -71,7 +71,9 @@ export async function logConsultation(data: ConsultationAuditData): Promise<void
 
     // Se temos perfil customizado, usar ele, senão buscar no banco
     let userData = userProfile;
-    if (!userData) {
+    let validUserId = null;
+    
+    if (!userData && user?.id) {
       const { data: dbUserData, error: userError } = await supabase
         .from('users')
         .select('full_name')
@@ -79,7 +81,13 @@ export async function logConsultation(data: ConsultationAuditData): Promise<void
         .maybeSingle();
         
       console.log('📋 Dados do usuário do banco:', dbUserData, userError ? 'Erro:' + userError.message : '');
-      userData = dbUserData;
+      
+      if (dbUserData && !userError) {
+        userData = dbUserData;
+        validUserId = user.id;
+      }
+    } else if (userProfile && user?.id) {
+      validUserId = user.id;
     }
 
     // Obter informações do navegador
@@ -91,8 +99,8 @@ export async function logConsultation(data: ConsultationAuditData): Promise<void
     console.log('🌐 IP obtido:', ipData?.ip || 'Falhou ao obter IP');
 
     const insertData = {
-      user_id: user.id,
-      user_name: userData?.full_name || user.email || 'Usuário Desconhecido',
+      user_id: validUserId, // Usar apenas se for um ID válido
+      user_name: userData?.full_name || user?.email || 'Usuário Desconhecido',
       consultation_type: data.consultationType,
       searched_data: data.searchedData,
       search_result: data.searchResult,
