@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/secureLogger';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface UserProfile {
@@ -41,18 +42,18 @@ export const useSupabaseAuth = () => {
         .maybeSingle();
 
       if (userError) {
-        console.error('Error fetching user profile:', userError);
+        logger.error('Error fetching user profile:', userError);
         return null;
       }
 
       if (!userData) {
-        console.log('No user profile found for:', userId);
+        logger.debug('No user profile found for:', userId);
         return null;
       }
 
       return userData as UserProfile;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      logger.error('Error fetching user profile:', error);
       return null;
     }
   };
@@ -61,11 +62,11 @@ export const useSupabaseAuth = () => {
     let isMounted = true;
     let loadingTimeout: NodeJS.Timeout;
 
-    console.log('🔄 Starting custom auth initialization...');
+    logger.debug('🔄 Starting custom auth initialization...');
 
     // Set loading timeout
     loadingTimeout = setTimeout(() => {
-      console.warn('⚠️ Auth timeout reached, completing load');
+      logger.warn('⚠️ Auth timeout reached, completing load');
       if (isMounted) {
         setIsLoading(false);
       }
@@ -80,7 +81,7 @@ export const useSupabaseAuth = () => {
         const session = JSON.parse(customSession);
         const profile = JSON.parse(customProfile);
         
-        console.log('📱 MOBILE: Found custom session for', profile.full_name);
+        logger.debug('📱 MOBILE: Found custom session for', profile.full_name);
         
         setSession(session);
         setUser(session.user);
@@ -88,11 +89,11 @@ export const useSupabaseAuth = () => {
         
         if (isMounted) setIsLoading(false);
       } else {
-        console.log('📱 MOBILE: No custom session found');
+        logger.debug('📱 MOBILE: No custom session found');
         if (isMounted) setIsLoading(false);
       }
     } catch (error) {
-      console.error('Error loading custom session:', error);
+      logger.error('Error loading custom session:', error);
       if (isMounted) setIsLoading(false);
     }
 
@@ -104,7 +105,7 @@ export const useSupabaseAuth = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('🔑 Authenticating with custom system...');
+      logger.debug('🔑 Authenticating with custom system...');
       
       const { data: customData, error: customError } = await supabase
         .rpc('authenticate_user', {
@@ -113,7 +114,7 @@ export const useSupabaseAuth = () => {
         });
 
       if (customError) {
-        console.error('Custom auth error:', customError);
+        logger.error('Custom auth error:', customError);
         toast({
           title: "Erro no login",
           description: "Erro interno do servidor",
@@ -155,7 +156,7 @@ export const useSupabaseAuth = () => {
       } as any;
 
       // Set user and profile data immediately for mobile
-      console.log('📱 MOBILE: Setting immediate auth data for', userData.full_name, 'role:', userData.role);
+      logger.debug('📱 MOBILE: Setting immediate auth data for', userData.full_name, 'role:', userData.role);
       
       const profileData = {
         id: userData.user_id,
@@ -174,7 +175,7 @@ export const useSupabaseAuth = () => {
     setSession(mockSession);
     setProfile(profileData);
     
-    console.log('✅ Auth state set successfully for', userData.full_name, 'role:', userData.role);
+    logger.debug('✅ Auth state set successfully for', userData.full_name, 'role:', userData.role);
 
       // Update last login
       await supabase
@@ -190,7 +191,7 @@ export const useSupabaseAuth = () => {
       return { error: null };
 
     } catch (error: any) {
-      console.error('Error in signIn:', error);
+      logger.error('Error in signIn:', error);
       toast({
         title: "Erro no login",
         description: "Erro interno do servidor",
@@ -216,7 +217,7 @@ export const useSupabaseAuth = () => {
       
       return { error: null };
     } catch (error: any) {
-      console.error('Error in signOut:', error);
+      logger.error('Error in signOut:', error);
       return { error };
     }
   };
