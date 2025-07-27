@@ -78,6 +78,11 @@ export const CPFLookup = () => {
       console.log('Result completo:', result);
       console.log('Result stringified:', JSON.stringify(result, null, 2));
       console.log('Tipo do result:', typeof result);
+      
+      if (!result) {
+        throw new Error('Resposta vazia da API');
+      }
+      
       console.log('Keys do result:', Object.keys(result));
       
       if (result.error) {
@@ -92,6 +97,11 @@ export const CPFLookup = () => {
 
       // Os dados estão dentro de result.result conforme visto no console
       let cpfData = result.result;
+      
+      if (!cpfData) {
+        throw new Error('Dados do CPF não encontrados na resposta');
+      }
+      
       console.log('=== DADOS FINAIS PARA EXIBIR ===');
       console.log('cpfData:', cpfData);
       console.log('cpfData stringified:', JSON.stringify(cpfData, null, 2));
