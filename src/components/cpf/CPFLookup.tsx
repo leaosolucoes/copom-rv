@@ -74,8 +74,11 @@ export const CPFLookup = () => {
 
       const result = await response.json();
       
-      console.log('Dados recebidos da API:', result);
-      console.log('Estrutura completa:', JSON.stringify(result, null, 2));
+      console.log('=== DADOS RECEBIDOS DA API CPF ===');
+      console.log('Result completo:', result);
+      console.log('Result stringified:', JSON.stringify(result, null, 2));
+      console.log('Tipo do result:', typeof result);
+      console.log('Keys do result:', Object.keys(result));
       
       if (result.error) {
         setError(result.error);
@@ -89,7 +92,17 @@ export const CPFLookup = () => {
 
       // Usar result.data se existir, senão usar result diretamente
       const cpfData = result.data || result;
-      console.log('Dados do CPF para exibir:', cpfData);
+      console.log('=== DADOS FINAIS PARA EXIBIR ===');
+      console.log('cpfData:', cpfData);
+      console.log('cpfData stringified:', JSON.stringify(cpfData, null, 2));
+      console.log('Tipo do cpfData:', typeof cpfData);
+      console.log('Keys do cpfData:', Object.keys(cpfData));
+      
+      // Log de cada campo específico
+      console.log('nomeCompleto:', cpfData.nomeCompleto);
+      console.log('nome:', cpfData.nome);
+      console.log('documento:', cpfData.documento);
+      console.log('cpf:', cpfData.cpf);
       
       // Verificar se há dados válidos na resposta
       if (!cpfData || Object.keys(cpfData).length === 0) {
