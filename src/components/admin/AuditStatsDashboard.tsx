@@ -25,6 +25,8 @@ interface AuditStats {
 }
 
 export function AuditStatsDashboard() {
+  console.log('🚀 AuditStatsDashboard: Componente iniciado');
+  
   const [stats, setStats] = useState<AuditStats | null>(null);
   const [loading, setLoading] = useState(true);
 

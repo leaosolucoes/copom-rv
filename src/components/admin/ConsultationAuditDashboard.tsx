@@ -31,6 +31,8 @@ interface AuditLog {
 }
 
 export function ConsultationAuditDashboard() {
+  console.log('🚀 ConsultationAuditDashboard: Componente iniciado');
+  
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
@@ -177,210 +179,53 @@ export function ConsultationAuditDashboard() {
     );
   };
 
+  console.log('🎯 ConsultationAuditDashboard: Renderizando componente');
+  
   return (
     <div className="space-y-6">
-      {/* Dashboard de Estatísticas */}
-      <AuditStatsDashboard />
-      
-      {/* Dashboard de Logs */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Eye className="h-5 w-5" />
-            Auditoria de Consultas LGPD
-          </CardTitle>
+          <CardTitle>🛡️ Auditoria de Consultas LGPD - TESTE</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Filtros */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-            <Input
-              placeholder="Buscar por usuário ou dados..."
-              value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-            />
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="font-semibold text-blue-800">Status do Sistema</h3>
+              <p className="text-blue-600">
+                Componente de auditoria carregado com sucesso!
+              </p>
+              <p className="text-sm text-blue-500 mt-2">
+                Loading: {loading ? 'Sim' : 'Não'} | Logs: {logs.length}
+              </p>
+            </div>
             
-            <Select value={filters.type} onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tipo de consulta" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
-                <SelectItem value="CPF">CPF</SelectItem>
-                <SelectItem value="CNPJ">CNPJ</SelectItem>
-                <SelectItem value="CEP">CEP</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={filters.success} onValueChange={(value) => setFilters(prev => ({ ...prev, success: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
-                <SelectItem value="true">Sucesso</SelectItem>
-                <SelectItem value="false">Erro</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filters.startDate ? format(filters.startDate, 'dd/MM/yyyy') : 'Data inicial'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={filters.startDate}
-                  onSelect={(date) => setFilters(prev => ({ ...prev, startDate: date }))}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filters.endDate ? format(filters.endDate, 'dd/MM/yyyy') : 'Data final'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={filters.endDate}
-                  onSelect={(date) => setFilters(prev => ({ ...prev, endDate: date }))}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Ações */}
-          <div className="flex gap-2 mb-4">
-            <Button onClick={fetchLogs} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Atualizar
+            <Button onClick={fetchLogs} className="w-full">
+              Testar Busca de Logs
             </Button>
-            <Button onClick={exportToPDF} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar PDF
-            </Button>
-          </div>
-
-          {/* Tabela */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data/Hora</TableHead>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Dados Pesquisados</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>IP</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      Carregando...
-                    </TableCell>
-                  </TableRow>
-                ) : logs.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      Nenhum log encontrado
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  logs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell>
-                        {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm')}
-                      </TableCell>
-                      <TableCell className="font-medium">{log.user_name}</TableCell>
-                      <TableCell>{getTypeBadge(log.consultation_type)}</TableCell>
-                      <TableCell className="font-mono text-sm">{log.searched_data}</TableCell>
-                      <TableCell>{getStatusBadge(log.success)}</TableCell>
-                      <TableCell className="text-sm">{(log.ip_address as string) || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedLog(log)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Detalhes da Consulta</DialogTitle>
-                            </DialogHeader>
-                            {selectedLog && (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="text-sm font-medium">Usuário:</label>
-                                    <p className="text-sm">{selectedLog.user_name}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Tipo:</label>
-                                    <p className="text-sm">{selectedLog.consultation_type}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Dados Pesquisados:</label>
-                                    <p className="text-sm font-mono">{selectedLog.searched_data}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Status:</label>
-                                    <p className="text-sm">{selectedLog.success ? 'Sucesso' : 'Erro'}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">IP:</label>
-                                    <p className="text-sm">{(selectedLog.ip_address as string) || 'N/A'}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Data/Hora:</label>
-                                    <p className="text-sm">{format(new Date(selectedLog.created_at), 'dd/MM/yyyy HH:mm:ss')}</p>
-                                  </div>
-                                </div>
-                                
-                                <div>
-                                  <label className="text-sm font-medium">User Agent:</label>
-                                  <p className="text-xs bg-muted p-2 rounded">{selectedLog.user_agent}</p>
-                                </div>
-                                
-                                {selectedLog.error_message && (
-                                  <div>
-                                    <label className="text-sm font-medium">Mensagem de Erro:</label>
-                                    <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{selectedLog.error_message}</p>
-                                  </div>
-                                )}
-                                
-                                {selectedLog.search_result && (
-                                  <div>
-                                    <label className="text-sm font-medium">Resultado da Consulta:</label>
-                                    <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-40">
-                                      {JSON.stringify(selectedLog.search_result, null, 2)}
-                                    </pre>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                    </TableRow>
-                  ))
+            
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p>Carregando dados de auditoria...</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <h4 className="font-medium">Logs encontrados: {logs.length}</h4>
+                {logs.length > 0 && (
+                  <div className="bg-green-50 border border-green-200 rounded p-4">
+                    <p className="text-green-800">✅ Dados carregados com sucesso!</p>
+                    <p className="text-sm text-green-600">
+                      Primeiro log: {logs[0]?.user_name} - {logs[0]?.consultation_type}
+                    </p>
+                  </div>
                 )}
-              </TableBody>
-            </Table>
+                {logs.length === 0 && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded p-4">
+                    <p className="text-yellow-800">⚠️ Nenhum log encontrado</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
