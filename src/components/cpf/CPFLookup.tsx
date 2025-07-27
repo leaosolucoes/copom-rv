@@ -26,6 +26,10 @@ export const CPFLookup = () => {
       console.log('data.nomeCompleto no modal:', data.nomeCompleto);
       console.log('data.documento no modal:', data.documento);
       console.log('JSON do data no modal:', JSON.stringify(data, null, 2));
+      
+      // VERIFICAR ESTRUTURA REAL DOS DADOS
+      console.log('Todas as keys do data:', Object.keys(data));
+      console.log('Verificando se data é um objeto:', typeof data);
     }
   }, [data]);
 
@@ -265,32 +269,48 @@ export const CPFLookup = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Nome Completo</label>
-                    <p className="text-lg font-semibold">{data?.nomeCompleto || "Não informado"}</p>
+                    <p className="text-lg font-semibold">
+                      {data?.nomeCompleto || data?.result?.nomeCompleto || (typeof data === 'string' ? JSON.parse(data)?.nomeCompleto : null) || "Não informado"}
+                    </p>
                   </div>
                   
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Documento (CPF)</label>
-                    <p className="text-lg font-semibold">{data?.documento || data?.codigoPessoa || "Não informado"}</p>
+                    <p className="text-lg font-semibold">
+                      {data?.documento || data?.codigoPessoa || data?.result?.documento || data?.result?.codigoPessoa || 
+                       (typeof data === 'string' ? JSON.parse(data)?.documento : null) || "Não informado"}
+                    </p>
                   </div>
                   
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Gênero</label>
-                    <p className="text-lg font-semibold">{data?.genero || "Não informado"}</p>
+                    <p className="text-lg font-semibold">
+                      {data?.genero || data?.result?.genero || (typeof data === 'string' ? JSON.parse(data)?.genero : null) || "Não informado"}
+                    </p>
                   </div>
                   
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Data de Nascimento</label>
-                    <p className="text-lg font-semibold">{data?.dataDeNascimento || "Não informado"}</p>
+                    <p className="text-lg font-semibold">
+                      {data?.dataDeNascimento || data?.result?.dataDeNascimento || 
+                       (typeof data === 'string' ? JSON.parse(data)?.dataDeNascimento : null) || "Não informado"}
+                    </p>
                   </div>
                   
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Idade</label>
-                    <p className="text-lg font-semibold">{data?.anos ? `${data.anos} anos` : "Não informado"}</p>
+                    <p className="text-lg font-semibold">
+                      {(data?.anos || data?.result?.anos) 
+                       ? `${data?.anos || data?.result?.anos} anos` : "Não informado"}
+                    </p>
                   </div>
                   
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Nome da Mãe</label>
-                    <p className="text-lg font-semibold">{data?.nomeDaMae || "Não informado"}</p>
+                    <p className="text-lg font-semibold">
+                      {data?.nomeDaMae || data?.result?.nomeDaMae || 
+                       (typeof data === 'string' ? JSON.parse(data)?.nomeDaMae : null) || "Não informado"}
+                    </p>
                   </div>
                 </div>
               </div>
