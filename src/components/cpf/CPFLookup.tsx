@@ -108,15 +108,33 @@ export const CPFLookup = () => {
       console.log('result.data existe?', !!result.data);
       console.log('result.data:', result.data);
 
-      // CORREÇÃO: Os dados estão em result.data (conforme visto nos logs)
-      let cpfData = result.data;
+      // CORREÇÃO: Verificar múltiplas estruturas possíveis da API
+      let cpfData = null;
+      
+      // Primeira tentativa: result.result (estrutura original mencionada)
+      if (result.result && typeof result.result === 'object') {
+        cpfData = result.result;
+        console.log('SUCESSO: Dados encontrados em result.result');
+      }
+      // Segunda tentativa: result.data 
+      else if (result.data && typeof result.data === 'object') {
+        cpfData = result.data;
+        console.log('SUCESSO: Dados encontrados em result.data');
+      }
+      // Terceira tentativa: dados diretamente no result
+      else if (result.nomeCompleto || result.documento || result.codigoPessoa) {
+        cpfData = result;
+        console.log('SUCESSO: Dados encontrados diretamente no result');
+      }
       
       console.log('=== DADOS SELECIONADOS ===');
-      console.log('cpfData (result.data):', cpfData);
+      console.log('cpfData final:', cpfData);
       console.log('cpfData existe?', !!cpfData);
+      console.log('cpfData tipo:', typeof cpfData);
       
       if (!cpfData) {
-        console.log('ERRO: result.data é null/undefined');
+        console.log('ERRO: Nenhuma estrutura de dados válida encontrada');
+        console.log('Estruturas verificadas: result.result, result.data, result direto');
         throw new Error('Dados do CPF não encontrados na resposta da API');
       }
       
