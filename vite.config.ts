@@ -23,49 +23,51 @@ export default defineConfig(({ mode }) => ({
     // MÁXIMA PROTEÇÃO ANTI-EXPOSIÇÃO DE CÓDIGO
     sourcemap: mode === 'development', // Source maps apenas em dev
     minify: mode === 'production' ? 'terser' : false, // Minify apenas em produção
-    terserOptions: {
-      compress: {
-        drop_console: mode === 'production', // Remove console.logs apenas em produção
-        drop_debugger: true, // Remove debugger statements
-        pure_funcs: mode === 'production' ? ['console.log', 'console.info', 'console.debug', 'console.warn', 'console.error'] : [], // Remove todos os logs em produção
-        dead_code: true, // Remove código morto
-        conditionals: true, // Otimiza condicionais
-        evaluate: true, // Avalia expressões constantes
-        booleans: true, // Otimiza booleanos
-        loops: true, // Otimiza loops
-        unused: true, // Remove código não usado
-        toplevel: true, // Remove declarações não usadas no nível superior
-        hoist_funs: true, // Içar declarações de função
-        hoist_props: true, // Içar propriedades constantes
-        hoist_vars: true, // Içar declarações var
-        if_return: true, // Otimiza if-return
-        join_vars: true, // Une declarações var
-        cascade: true, // Otimiza sequências
-        collapse_vars: true, // Colapsa variáveis
-        reduce_vars: true, // Reduz referências de variáveis
-        warnings: false, // Remove avisos
-        negate_iife: true, // Nega IIFEs
-        pure_getters: true, // Assume getters puros
-        keep_fargs: false, // Remove parâmetros não usados
-        keep_fnames: false, // Remove nomes de função
-        passes: 3, // Múltiplas passadas de otimização
-      },
-      mangle: {
-        // OBFUSCAÇÃO MÁXIMA
-        toplevel: true, // Obfusca nomes no nível superior
-        keep_classnames: false, // Obfusca nomes de classe
-        keep_fnames: false, // Obfusca nomes de função
-        properties: {
-          regex: /^_/, // Obfusca propriedades que começam com _
+    ...(mode === 'production' && {
+      terserOptions: {
+        compress: {
+          drop_console: true, // Remove console.logs em produção
+          drop_debugger: true, // Remove debugger statements
+          pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn', 'console.error'], // Remove todos os logs em produção
+          dead_code: true, // Remove código morto
+          conditionals: true, // Otimiza condicionais
+          evaluate: true, // Avalia expressões constantes
+          booleans: true, // Otimiza booleanos
+          loops: true, // Otimiza loops
+          unused: true, // Remove código não usado
+          toplevel: true, // Remove declarações não usadas no nível superior
+          hoist_funs: true, // Içar declarações de função
+          hoist_props: true, // Içar propriedades constantes
+          hoist_vars: true, // Içar declarações var
+          if_return: true, // Otimiza if-return
+          join_vars: true, // Une declarações var
+          cascade: true, // Otimiza sequências
+          collapse_vars: true, // Colapsa variáveis
+          reduce_vars: true, // Reduz referências de variáveis
+          warnings: false, // Remove avisos
+          negate_iife: true, // Nega IIFEs
+          pure_getters: true, // Assume getters puros
+          keep_fargs: false, // Remove parâmetros não usados
+          keep_fnames: false, // Remove nomes de função
+          passes: 3, // Múltiplas passadas de otimização
         },
-        safari10: true, // Compatibilidade Safari 10
+        mangle: {
+          // OBFUSCAÇÃO MÁXIMA
+          toplevel: true, // Obfusca nomes no nível superior
+          keep_classnames: false, // Obfusca nomes de classe
+          keep_fnames: false, // Obfusca nomes de função
+          properties: {
+            regex: /^_/, // Obfusca propriedades que começam com _
+          },
+          safari10: true, // Compatibilidade Safari 10
+        },
+        format: {
+          comments: false, // Remove TODOS os comentários
+          preamble: "", // Remove preamble
+          wrap_iife: true, // Wrap IIFEs
+        },
       },
-      format: {
-        comments: false, // Remove TODOS os comentários
-        preamble: "", // Remove preamble
-        wrap_iife: true, // Wrap IIFEs
-      },
-    },
+    }),
     rollupOptions: {
       output: {
         // OBFUSCAÇÃO DE NOMES DE ARQUIVO EM PRODUÇÃO
