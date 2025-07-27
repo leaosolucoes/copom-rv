@@ -1,113 +1,196 @@
 import { useEffect, useRef } from 'react';
+import { logger } from '@/lib/secureLogger';
 
 /**
- * Hook para detectar se DevTools está aberto e aplicar contramedidas
+ * Hook AGRESSIVO para detectar e bloquear DevTools
+ * MÁXIMA PROTEÇÃO contra F12, inspeção de código e engenharia reversa
  */
 export const useDevToolsProtection = () => {
   const devToolsOpen = useRef(false);
   const threshold = 160; // Diferença de tamanho que indica DevTools aberto
+  const detectionInterval = useRef<NodeJS.Timeout>();
+  const redirectTimeout = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
-    // Só ativa proteção em produção
-    if (process.env.NODE_ENV !== 'production') {
-      return;
-    }
+    // PROTEÇÃO ATIVA EM TODOS OS AMBIENTES (desenvolvimento e produção)
+    // Remover esta verificação significa PROTEÇÃO TOTAL
 
-    const detectDevTools = () => {
+    // DETECÇÃO MÚLTIPLA E AGRESSIVA DE DEVTOOLS
+    const detectDevToolsMultiple = () => {
       const widthThreshold = window.outerWidth - window.innerWidth > threshold;
       const heightThreshold = window.outerHeight - window.innerHeight > threshold;
       
+      // Método 1: Diferença de tamanho da janela
       if (widthThreshold || heightThreshold) {
         if (!devToolsOpen.current) {
           devToolsOpen.current = true;
-          handleDevToolsOpen();
+          handleDevToolsDetected('window_size');
         }
       } else {
         devToolsOpen.current = false;
       }
+      
+      // Método 2: Console timing attack
+      let start = performance.now();
+      debugger; // Essa linha vai pausar se DevTools estiver aberto
+      let end = performance.now();
+      if (end - start > 100) { // Se demorou mais que 100ms, DevTools está aberto
+        handleDevToolsDetected('debugger_timing');
+      }
+      
+      // Método 3: Detecção via console.clear
+      try {
+        const devtools = /./;
+        devtools.toString = function() {
+          handleDevToolsDetected('console_access');
+          return 'DevTools detectado';
+        };
+        console.log('%c', devtools);
+      } catch (e) {}
     };
 
-    const handleDevToolsOpen = () => {
-      // Limpar dados sensíveis do localStorage/sessionStorage
+    // AÇÃO IMEDIATA E AGRESSIVA QUANDO DEVTOOLS É DETECTADO
+    const handleDevToolsDetected = (method: string) => {
+      if (devToolsOpen.current) return; // Evita múltiplas execuções
+      
+      devToolsOpen.current = true;
+      logger.error(`🚨 DevTools detectado via ${method} - Aplicando contramedidas`);
+      
+      // LIMPEZA AGRESSIVA DE DADOS SENSÍVEIS
       try {
-        const keysToPreserve = ['theme', 'language']; // Manter apenas dados não sensíveis
-        const storageData: { [key: string]: string } = {};
-        
-        keysToPreserve.forEach(key => {
-          const value = localStorage.getItem(key);
-          if (value) {
-            storageData[key] = value;
-          }
-        });
-
+        // 1. Limpar TUDO do localStorage e sessionStorage
         localStorage.clear();
         sessionStorage.clear();
         
-        // Restaurar dados não sensíveis
-        Object.entries(storageData).forEach(([key, value]) => {
-          localStorage.setItem(key, value);
+        // 2. Limpar cookies (máximo possível)
+        document.cookie.split(";").forEach(function(c) { 
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
         });
-
-        // Limpar variáveis globais sensíveis
-        if ((window as any).supabaseClient) {
-          delete (window as any).supabaseClient;
-        }
-
-        // Mostrar aviso discreto
+        
+        // 3. Limpar variáveis globais sensíveis
+        if ((window as any).supabaseClient) delete (window as any).supabaseClient;
+        if ((window as any).__SUPABASE_CLIENT__) delete (window as any).__SUPABASE_CLIENT__;
+        if ((window as any).__AUTH_DATA__) delete (window as any).__AUTH_DATA__;
+        
+        // 4. Sobrescrever fetch para bloquear novas requisições
+        window.fetch = async () => {
+          throw new Error('Acesso bloqueado por motivos de segurança');
+        };
+        
+        // 5. Limpar console de forma agressiva
         console.clear();
-        console.log('%c⚠️ Ferramentas de desenvolvedor detectadas', 'color: red; font-size: 16px; font-weight: bold;');
-        console.log('%cPor segurança, dados sensíveis foram limpos.', 'color: orange; font-size: 12px;');
+        console.log('%c🛡️ SISTEMA DE SEGURANÇA ATIVADO', 'color: red; font-size: 20px; font-weight: bold;');
+        console.log('%c⚠️ DevTools detectado - Dados sensíveis foram limpos', 'color: orange; font-size: 16px;');
+        console.log('%c🔒 Acesso bloqueado por segurança', 'color: red; font-size: 14px;');
+        
+        // 6. Bloquear DevTools de forma contínua
+        setInterval(() => {
+          console.clear();
+          console.log('%c🚫 ACESSO NEGADO', 'color: red; font-size: 24px; font-weight: bold;');
+        }, 100);
+        
+        // 7. Redirecionar após delay
+        clearTimeout(redirectTimeout.current);
+        redirectTimeout.current = setTimeout(() => {
+          window.location.href = '/acesso';
+        }, 2000);
         
       } catch (error) {
         // Falha silenciosa para não expor funcionamento interno
+        logger.error('Erro ao aplicar contramedidas');
       }
     };
 
-    // Múltiplas formas de detecção
-    const interval = setInterval(detectDevTools, 1000);
+    // MÚLTIPLAS CAMADAS DE DETECÇÃO EXECUTANDO CONSTANTEMENTE
     
-    // Detecção via redimensionamento
-    window.addEventListener('resize', detectDevTools);
+    // Camada 1: Detecção por intervalo rápido
+    detectionInterval.current = setInterval(detectDevToolsMultiple, 300);
     
-    // Detecção via console
-    const devtools = {
-      open: false,
-      orientation: null
+    // Camada 2: Detecção via redimensionamento
+    window.addEventListener('resize', detectDevToolsMultiple);
+    
+    // Camada 3: Detecção via orientação de tela (mobile)
+    const orientationHandler = () => {
+      setTimeout(detectDevToolsMultiple, 500);
+    };
+    window.addEventListener('orientationchange', orientationHandler);
+    
+    // Camada 4: Detecção via visibilidade da página
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        setTimeout(detectDevToolsMultiple, 100);
+      }
+    });
+    
+    // Camada 5: Detecção avançada via console
+    const advancedConsoleDetection = () => {
+      let devtools = { open: false };
+      const threshold = 160;
+      
+      setInterval(() => {
+        if (window.outerHeight - window.innerHeight > threshold || 
+            window.outerWidth - window.innerWidth > threshold) {
+          if (!devtools.open) {
+            devtools.open = true;
+            handleDevToolsDetected('advanced_console');
+          }
+        } else {
+          devtools.open = false;
+        }
+      }, 250);
+    };
+    advancedConsoleDetection();
+    
+    // Camada 6: Proteção contra teclas de atalho
+    const blockDevToolsKeys = (e: KeyboardEvent) => {
+      // F12
+      if (e.keyCode === 123) {
+        e.preventDefault();
+        handleDevToolsDetected('f12_key');
+        return false;
+      }
+      // Ctrl+Shift+I (DevTools)
+      if (e.ctrlKey && e.shiftKey && e.keyCode === 73) {
+        e.preventDefault();
+        handleDevToolsDetected('ctrl_shift_i');
+        return false;
+      }
+      // Ctrl+Shift+C (Inspect Element)
+      if (e.ctrlKey && e.shiftKey && e.keyCode === 67) {
+        e.preventDefault();
+        handleDevToolsDetected('ctrl_shift_c');
+        return false;
+      }
+      // Ctrl+U (View Source)
+      if (e.ctrlKey && e.keyCode === 85) {
+        e.preventDefault();
+        handleDevToolsDetected('ctrl_u');
+        return false;
+      }
     };
     
-    const setOpen = (val: boolean, orientation: string | null) => {
-      devtools.open = val;
-      devtools.orientation = orientation;
-      if (val && !devToolsOpen.current) {
-        handleDevToolsOpen();
-      }
+    document.addEventListener('keydown', blockDevToolsKeys);
+    
+    // Camada 7: Bloquear menu de contexto (botão direito)
+    const blockContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      handleDevToolsDetected('right_click');
+      return false;
     };
+    document.addEventListener('contextmenu', blockContextMenu);
 
-    setInterval(() => {
-      if (window.outerHeight - window.innerHeight > 200) {
-        setOpen(true, 'horizontal');
-      } else if (window.outerWidth - window.innerWidth > 200) {
-        setOpen(true, 'vertical');
-      } else {
-        setOpen(false, null);
-      }
-    }, 500);
-
-    // Proteção contra debug
-    const debugProtection = () => {
-      try {
-        (function() {}).constructor('debugger')();
-      } catch (e) {
-        handleDevToolsOpen();
-      }
-    };
-
-    const debugInterval = setInterval(debugProtection, 1000);
-
+    // CLEANUP FUNCTION - Remove todos os listeners
     return () => {
-      clearInterval(interval);
-      clearInterval(debugInterval);
-      window.removeEventListener('resize', detectDevTools);
+      if (detectionInterval.current) {
+        clearInterval(detectionInterval.current);
+      }
+      if (redirectTimeout.current) {
+        clearTimeout(redirectTimeout.current);
+      }
+      window.removeEventListener('resize', detectDevToolsMultiple);
+      window.removeEventListener('orientationchange', orientationHandler);
+      document.removeEventListener('keydown', blockDevToolsKeys);
+      document.removeEventListener('contextmenu', blockContextMenu);
     };
   }, []);
 

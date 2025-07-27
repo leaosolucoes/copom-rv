@@ -5,10 +5,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useSystemColors } from "@/hooks/useSystemColors";
-// import { useDevToolsProtection } from "@/hooks/useDevToolsProtection";
+import { useDevToolsProtection } from "@/hooks/useDevToolsProtection";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-// import { SecurityProvider } from "@/components/security/SecurityProvider";
-// import { validateDomain, checkIntegrity, initAntiTamper } from "@/utils/codeProtection";
+import { SecurityProvider } from "@/components/security/SecurityProvider";
+import { validateDomain, checkIntegrity, initAntiTamper } from "@/utils/codeProtection";
 import { logger } from "@/lib/secureLogger";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -25,35 +25,46 @@ const App = () => {
   // Carregar e aplicar cores do sistema
   useSystemColors();
   
-  // Proteções temporariamente desativadas para debug
-  // useDevToolsProtection();
+  // Proteções ativadas para produção
+  useDevToolsProtection();
   
   useEffect(() => {
-    // Proteções de segurança temporariamente desativadas para debug
-    /*
-    if (process.env.NODE_ENV === 'production') {
+    // Inicializar proteções de segurança em produção
+    const initSecurity = async () => {
       try {
         if (!validateDomain()) {
-          throw new Error('Domínio não autorizado');
+          logger.error("Domínio não autorizado");
+          window.location.href = '/';
+          return;
         }
+        
         if (!checkIntegrity()) {
-          throw new Error('Integridade comprometida');
+          logger.error("Integridade comprometida");
+          window.location.href = '/';
+          return;
         }
+        
+        // Inicializar proteções anti-tamper
         const cleanup = initAntiTamper();
+        
+        // Cleanup function
         return cleanup;
       } catch (error) {
-        logger.error('Falha na verificação de segurança');
-        window.location.href = '/';
+        logger.error("Falha na verificação de segurança");
+        if (process.env.NODE_ENV === 'production') {
+          window.location.href = '/';
+        }
       }
-    }
-    */
+    };
     
-    logger.info('Sistema iniciado');
+    initSecurity();
+    logger.info("Sistema iniciado com proteções ativas");
   }, []);
 
   return (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+    <SecurityProvider>
+      <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -95,7 +106,8 @@ const App = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-    </TooltipProvider>
+      </TooltipProvider>
+    </SecurityProvider>
   </QueryClientProvider>
 );
 };

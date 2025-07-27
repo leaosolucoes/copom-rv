@@ -7,18 +7,20 @@ interface SecurityProviderProps {
 
 export const SecurityProvider = ({ children }: SecurityProviderProps) => {
   useEffect(() => {
-    // Implementar headers de segurança via meta tags
-    const addSecurityHeaders = () => {
-      // Content Security Policy
+    // PROTEÇÃO MÁXIMA CONTRA EXPOSIÇÃO DE CÓDIGO
+    
+    // 1. Headers de segurança ULTRA restritivos
+    const addMaxSecurityHeaders = () => {
+      // Content Security Policy MÁXIMO
       const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
       if (!cspMeta) {
         const meta = document.createElement('meta');
         meta.httpEquiv = 'Content-Security-Policy';
-        meta.content = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://posturas.conectarioverde.com.br https://*.supabase.co https://*.lovableproject.com https://*.lovable.app; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https://*.supabase.co https://*.lovableproject.com https://*.lovable.app wss://*.supabase.co;";
+        meta.content = "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';";
         document.head.appendChild(meta);
       }
 
-      // X-Frame-Options
+      // X-Frame-Options ULTRA restritivo
       const frameMeta = document.querySelector('meta[http-equiv="X-Frame-Options"]');
       if (!frameMeta) {
         const meta = document.createElement('meta');
@@ -27,87 +29,155 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
         document.head.appendChild(meta);
       }
 
-      // X-Content-Type-Options
-      const typeMeta = document.querySelector('meta[http-equiv="X-Content-Type-Options"]');
-      if (!typeMeta) {
-        const meta = document.createElement('meta');
-        meta.httpEquiv = 'X-Content-Type-Options';
-        meta.content = 'nosniff';
-        document.head.appendChild(meta);
-      }
+      // Outros headers de segurança
+      const headers = [
+        ['X-Content-Type-Options', 'nosniff'],
+        ['X-XSS-Protection', '1; mode=block'],
+        ['Referrer-Policy', 'no-referrer'],
+        ['Permissions-Policy', 'geolocation=(), microphone=(), camera=()'],
+      ];
 
-      // Referrer Policy
-      const referrerMeta = document.querySelector('meta[name="referrer"]');
-      if (!referrerMeta) {
-        const meta = document.createElement('meta');
-        meta.name = 'referrer';
-        meta.content = 'strict-origin-when-cross-origin';
-        document.head.appendChild(meta);
-      }
+      headers.forEach(([name, content]) => {
+        if (!document.querySelector(`meta[http-equiv="${name}"]`)) {
+          const meta = document.createElement('meta');
+          meta.httpEquiv = name;
+          meta.content = content;
+          document.head.appendChild(meta);
+        }
+      });
     };
 
-    // Forçar HTTPS em produção
+    // 2. HTTPS obrigatório e agressivo
     const enforceHTTPS = () => {
-      if (process.env.NODE_ENV === 'production' && 
-          location.protocol !== 'https:' && 
+      if (location.protocol !== 'https:' && 
           !location.hostname.includes('localhost') &&
           !location.hostname.includes('127.0.0.1') &&
           !location.hostname.includes('lovableproject.com') &&
           !location.hostname.includes('lovable.app')) {
-        logger.warn('Redirecionando para HTTPS');
+        logger.warn('Forçando HTTPS por segurança');
         location.replace(`https:${location.href.substring(location.protocol.length)}`);
       }
     };
 
-    // Rate limiting básico para requisições
-    const setupRateLimit = () => {
+    // 3. PROTEÇÃO ULTRA AGRESSIVA CONTRA DEVTOOLS
+    const setupUltraDevToolsProtection = () => {
+      // Disable todas as ferramentas de debug
+      (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
+      (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
+      
+      // Sobrescrever console methods COMPLETAMENTE
+      const originalConsole = { ...console };
+      const blockConsole = () => {
+        ['log', 'debug', 'info', 'warn', 'error', 'trace', 'dir', 'dirxml', 'table', 'group', 'groupEnd', 'clear'].forEach(method => {
+          (console as any)[method] = () => {};
+        });
+      };
+      
+      // Bloquear console em produção
+      if (process.env.NODE_ENV === 'production') {
+        blockConsole();
+      }
+      
+      // Anti-debug infinito
+      setInterval(() => {
+        try {
+          debugger;
+        } catch (e) {}
+      }, 100);
+      
+      // Bloquear toString em objetos críticos
+      Object.defineProperty(window, 'console', {
+        get: () => {
+          logger.error('Tentativa de acesso ao console detectada');
+          return {};
+        },
+        set: () => {},
+        configurable: false
+      });
+    };
+
+    // 4. Rate limiting ULTRA restritivo
+    const setupUltraRateLimit = () => {
       const requests = new Map();
+      const GLOBAL_LIMIT = 100; // Máximo 100 requests por minuto
       
       window.addEventListener('beforeunload', () => {
         requests.clear();
       });
 
-      // Monitorar requests de login
       const originalFetch = window.fetch;
       window.fetch = async (...args) => {
-        const url = args[0] as string;
+        const now = Date.now();
+        const globalKey = 'global_requests';
+        const recentRequests = requests.get(globalKey) || [];
         
-        if (url.includes('authenticate_user') || url.includes('auth/signin')) {
-          const now = Date.now();
-          const key = `login_${url}`;
-          const recentRequests = requests.get(key) || [];
-          
-          // Remover requests antigas (mais de 1 minuto)
-          const filteredRequests = recentRequests.filter((time: number) => now - time < 60000);
-          
-          if (filteredRequests.length >= 5) {
-            logger.warn('Rate limit excedido para tentativas de login');
-            throw new Error('Muitas tentativas de login. Aguarde um momento.');
-          }
-          
-          filteredRequests.push(now);
-          requests.set(key, filteredRequests);
+        // Filtrar requests dos últimos 60 segundos
+        const filteredRequests = recentRequests.filter((time: number) => now - time < 60000);
+        
+        if (filteredRequests.length >= GLOBAL_LIMIT) {
+          logger.error('Rate limit global excedido');
+          throw new Error('Muitas requisições. Acesso temporariamente bloqueado.');
         }
+        
+        filteredRequests.push(now);
+        requests.set(globalKey, filteredRequests);
         
         return originalFetch(...args);
       };
     };
 
-    // Prevenir ataques de clickjacking
-    const preventClickjacking = () => {
-      if (window.top !== window.self) {
-        logger.error('Tentativa de carregamento em iframe detectada');
-        window.top!.location = window.self.location;
-      }
+    // 5. PROTEÇÃO CONTRA IFRAME/CLICKJACKING ULTRA
+    const setupUltraClickjackingProtection = () => {
+      // Verificação contínua
+      const checkFraming = () => {
+        if (window.top !== window.self) {
+          logger.error('Carregamento em iframe detectado - Bloqueando');
+          // Forçar saída do iframe
+          window.top!.location = window.self.location;
+          // Bloquear completamente se não conseguir sair
+          document.body.innerHTML = '<h1>🚫 ACESSO NEGADO</h1><p>Esta aplicação não pode ser carregada em iframe.</p>';
+        }
+      };
+      
+      checkFraming();
+      setInterval(checkFraming, 1000);
     };
 
-    // Aplicar todas as proteções
-    addSecurityHeaders();
-    enforceHTTPS();
-    setupRateLimit();
-    preventClickjacking();
+    // 6. PROTEÇÃO CONTRA VIEW SOURCE
+    const setupSourceProtection = () => {
+      // Bloquear Ctrl+U (View Source)
+      document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && (e.keyCode === 85 || e.key === 'u')) {
+          e.preventDefault();
+          e.stopPropagation();
+          logger.error('Tentativa de visualizar código fonte bloqueada');
+          return false;
+        }
+      });
+      
+      // Adicionar texto falso para confundir
+      const script = document.createElement('script');
+      script.textContent = `
+        // Sistema de proteção ativo
+        // Código fonte protegido
+        // Tentativas de acesso são monitoradas
+      `;
+      document.head.appendChild(script);
+    };
 
-    logger.debug('Proteções de segurança aplicadas');
+    // EXECUTAR TODAS AS PROTEÇÕES
+    try {
+      addMaxSecurityHeaders();
+      enforceHTTPS();
+      setupUltraDevToolsProtection();
+      setupUltraRateLimit();
+      setupUltraClickjackingProtection();
+      setupSourceProtection();
+      
+      logger.debug('🛡️ PROTEÇÃO MÁXIMA ATIVADA - Código fonte protegido');
+    } catch (error) {
+      logger.error('Erro ao ativar proteções:', error);
+    }
   }, []);
 
   return <>{children}</>;
