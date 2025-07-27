@@ -8,10 +8,35 @@ import { Search, Loader2, User, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { logConsultation } from '@/lib/auditLogger';
 import { supabase } from "@/integrations/supabase/client";
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 interface CPFData {
   [key: string]: any; // Aceita qualquer estrutura JSON
 }
+
+// Componente de marca d'água diagonal
+const WatermarkOverlay = ({ userName }: { userName: string }) => {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
+      <div className="absolute inset-0 grid grid-cols-3 gap-8 opacity-10">
+        {Array.from({ length: 15 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex items-center justify-center h-full"
+            style={{
+              transform: 'rotate(-45deg)',
+              transformOrigin: 'center',
+            }}
+          >
+            <span className="text-foreground text-2xl font-bold whitespace-nowrap">
+              {userName}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export const CPFLookup = () => {
   const [cpf, setCpf] = useState('');
@@ -20,6 +45,7 @@ export const CPFLookup = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { profile } = useSupabaseAuth();
 
   // Log dos dados quando mudarem
   useEffect(() => {
@@ -270,8 +296,13 @@ export const CPFLookup = () => {
       </Card>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto relative">
+          {/* Marca d'água diagonal */}
+          {profile?.full_name && (
+            <WatermarkOverlay userName={profile.full_name} />
+          )}
+          
+          <DialogHeader className="relative z-20">
             <DialogTitle>Dados do CPF</DialogTitle>
             <DialogDescription>
               Informações cadastrais encontradas para o CPF {cpf}
@@ -280,7 +311,7 @@ export const CPFLookup = () => {
           
           
           {data && (
-            <div className="space-y-6">
+            <div className="space-y-6 relative z-20">
               {/* Dados Pessoais */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Dados Pessoais</h3>
