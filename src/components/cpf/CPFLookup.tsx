@@ -265,32 +265,32 @@ export const CPFLookup = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Nome Completo</label>
-                    <p className="text-lg font-semibold">{data.nomeCompleto || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data?.nomeCompleto || "Não informado"}</p>
                   </div>
                   
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Documento (CPF)</label>
-                    <p className="text-lg font-semibold">{data.documento || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data?.documento || data?.codigoPessoa || "Não informado"}</p>
                   </div>
                   
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Gênero</label>
-                    <p className="text-lg font-semibold">{data.genero || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data?.genero || "Não informado"}</p>
                   </div>
                   
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Data de Nascimento</label>
-                    <p className="text-lg font-semibold">{data.dataDeNascimento || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data?.dataDeNascimento || "Não informado"}</p>
                   </div>
                   
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Idade</label>
-                    <p className="text-lg font-semibold">{data.anos ? `${data.anos} anos` : "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data?.anos ? `${data.anos} anos` : "Não informado"}</p>
                   </div>
                   
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Nome da Mãe</label>
-                    <p className="text-lg font-semibold">{data.nomeDaMae || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data?.nomeDaMae || "Não informado"}</p>
                   </div>
                 </div>
               </div>
