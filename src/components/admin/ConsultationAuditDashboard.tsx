@@ -110,14 +110,14 @@ export function ConsultationAuditDashboard() {
       const { data } = await supabase
         .from('system_settings')
         .select('value')
-        .eq('key', 'company_logo_url')
+        .eq('key', 'public_logo_url')
         .maybeSingle();
       
-      if (data?.value) {
-        const logoPath = Array.isArray(data.value) ? data.value[0] : data.value;
-        if (typeof logoPath === 'string') {
-          setLogoUrl(`https://smytdnkylauxocqrkchn.supabase.co/storage/v1/object/public/system-assets/${logoPath}`);
-        }
+      if (data?.value && typeof data.value === 'string') {
+        setLogoUrl(data.value);
+        console.log('🖼️ Logo encontrada:', data.value);
+      } else {
+        console.log('❌ Logo não encontrada');
       }
     } catch (error) {
       console.error('Erro ao buscar logo:', error);
