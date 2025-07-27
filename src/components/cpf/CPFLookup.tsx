@@ -114,15 +114,18 @@ export const CPFLookup = () => {
       console.log('cpfData:', cpfData);
       console.log('cpfData stringified:', JSON.stringify(cpfData, null, 2));
       
-      // Log de cada campo específico
-      console.log('nomeCompleto:', cpfData.nomeCompleto);
-      console.log('nome:', cpfData.nome);
-      console.log('documento:', cpfData.documento);
-      console.log('cpf:', cpfData.cpf);
+      // Verificar se há pelo menos algum dado essencial válido na resposta
+      const hasValidData = cpfData && (
+        cpfData.nomeCompleto || 
+        cpfData.documento || 
+        cpfData.codigoPessoa ||
+        cpfData.listaTelefones ||
+        cpfData.listaEmails ||
+        cpfData.listaEnderecos
+      );
       
-      // Verificar se há dados válidos na resposta
-      if (!cpfData || Object.keys(cpfData).length === 0) {
-        throw new Error('Nenhum dado encontrado para este CPF');
+      if (!hasValidData) {
+        throw new Error('Nenhum dado válido encontrado para este CPF');
       }
 
       setData(cpfData);
