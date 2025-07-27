@@ -13,6 +13,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { logger } from "@/lib/secureLogger";
 
 interface AuditLog {
   id: string;
@@ -29,7 +30,7 @@ interface AuditLog {
 }
 
 export function ConsultationAuditDashboard() {
-  console.log('🚀 ConsultationAuditDashboard: Componente iniciado');
+  logger.debug('ConsultationAuditDashboard: Componente iniciado');
   
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,8 +56,7 @@ export function ConsultationAuditDashboard() {
       // Verificar contexto de autenticação
       const { data: { session } } = await supabase.auth.getSession();
       const customSession = localStorage.getItem('custom_session');
-      console.log('🔐 Sessão Supabase:', session?.user?.id || 'Nenhuma');
-      console.log('🔐 Sessão Customizada:', customSession ? 'Sim' : 'Não');
+      logger.debug('Verificando sessões de autenticação');
       
       let query = supabase
         .from('consultation_audit_logs')
@@ -82,15 +82,15 @@ export function ConsultationAuditDashboard() {
 
       const { data, error } = await query;
 
-      console.log('🔍 ConsultationAuditDashboard: Resposta da consulta:', { data, error });
+      logger.debug('Consulta de logs executada');
 
       if (error) {
-        console.error('❌ ConsultationAuditDashboard: Erro na consulta:', error);
+        logger.error('Erro na consulta de logs');
         toast.error(`Erro ao carregar logs: ${error.message}`);
         return;
       }
       
-      console.log('✅ ConsultationAuditDashboard: Logs encontrados:', data?.length || 0);
+      logger.debug('Logs carregados com sucesso');
       setLogs(data || []);
       
       if (data && data.length > 0) {

@@ -70,7 +70,7 @@ const VideoPreview = ({ video, index, onOpenModal }: VideoPreviewProps) => {
   };
 
   const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
-    console.error('Erro ao carregar vídeo:', video, e);
+    logger.error('Erro ao carregar vídeo');
     setVideoError(true);
   };
 
@@ -332,7 +332,7 @@ export const ComplaintsList = () => {
           if (status === 'SUBSCRIBED') {
             logger.info('✅ Conectado ao realtime com sucesso!');
           } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Erro na conexão realtime');
+            logger.error('Erro na conexão realtime');
           }
         }
       );
@@ -431,7 +431,7 @@ export const ComplaintsList = () => {
         filteredData = data?.filter(complaint => 
           complaint.status !== 'finalizada' && complaint.status !== 'a_verificar'
         ) || [];
-        console.log(`🔍 Filtered for atendente: ${filteredData?.length || 0}`);
+        logger.log('Filtered for atendente');
       }
       
       // REMOVIDO: Log de final complaints set por segurança
@@ -1245,17 +1245,7 @@ export const ComplaintsList = () => {
     complaint.classification.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  console.log('🔍 RENDER DEBUG:');
-  console.log('- Total complaints:', complaints.length);
-  console.log('- Filtered complaints:', filteredComplaints.length);
-  console.log('- User role:', userRole);
-  console.log('- Profile role:', profile?.role);
-  console.log('- Loading:', loading);
-  console.log('- Search term:', searchTerm);
-  
-  if (complaints.length > 0) {
-    console.log('- First complaint:', complaints[0]);
-  }
+  logger.debug('RENDER DEBUG: Component status updated');
 
   if (loading) {
     return <div>Carregando denúncias...</div>;
