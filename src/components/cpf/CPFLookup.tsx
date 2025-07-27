@@ -90,8 +90,8 @@ export const CPFLookup = () => {
         return;
       }
 
-      // Verificar a estrutura dos dados - eles podem estar em result.result ou result.data
-      let cpfData = result.result || result.data || result;
+      // Os dados estão dentro de result.result conforme visto no console
+      let cpfData = result.result;
       console.log('=== DADOS FINAIS PARA EXIBIR ===');
       console.log('cpfData:', cpfData);
       console.log('cpfData stringified:', JSON.stringify(cpfData, null, 2));
