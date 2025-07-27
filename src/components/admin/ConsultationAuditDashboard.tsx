@@ -45,6 +45,7 @@ export function ConsultationAuditDashboard() {
   const [dateToFilter, setDateToFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [systemInfo, setSystemInfo] = useState<any>(null);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -103,6 +104,7 @@ export function ConsultationAuditDashboard() {
   useEffect(() => {
     fetchLogs();
     fetchLogo();
+    fetchSystemInfo();
   }, [typeFilter, statusFilter, dateFromFilter, dateToFilter]);
 
   const fetchLogo = async () => {
@@ -121,6 +123,69 @@ export function ConsultationAuditDashboard() {
       }
     } catch (error) {
       console.error('Erro ao buscar logo:', error);
+    }
+  };
+
+  const fetchSystemInfo = async () => {
+    try {
+      const { data } = await supabase
+        .from('system_settings')
+        .select('*')
+        .in('key', ['company_name', 'company_address', 'company_phone', 'company_email', 'system_name']);
+      
+      if (data) {
+        const info: any = {};
+        data.forEach(item => {
+          info[item.key] = item.value;
+        });
+        setSystemInfo(info);
+        console.log('🏢 Informações do sistema:', info);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar informações do sistema:', error);
+    }
+  };
+
+  const generateDocumentHash = (content: string): string => {
+    // Gerar hash simples do conteúdo para verificação de integridade
+    let hash = 0;
+    for (let i = 0; i < content.length; i++) {
+      const char = content.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(16).toUpperCase();
+  };
+
+  const addFooterToPDF = (pdf: any, documentContent: string) => {
+    const pageCount = pdf.internal.getNumberOfPages();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    
+    // Gerar hash do documento
+    const docHash = generateDocumentHash(documentContent);
+    
+    for (let i = 1; i <= pageCount; i++) {
+      pdf.setPage(i);
+      
+      // Linha separadora
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(20, pageHeight - 35, pageWidth - 20, pageHeight - 35);
+      
+      // Informações do sistema no rodapé
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 100, 100);
+      
+      const systemName = systemInfo?.system_name || 'Sistema de Posturas';
+      const companyName = systemInfo?.company_name || 'Prefeitura Municipal';
+      
+      pdf.text(`${systemName} - ${companyName}`, 20, pageHeight - 25);
+      pdf.text(`Documento gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss')}`, 20, pageHeight - 18);
+      pdf.text(`Hash de Integridade: ${docHash}`, 20, pageHeight - 11);
+      
+      // Página no canto direito
+      pdf.text(`Página ${i} de ${pageCount}`, pageWidth - 40, pageHeight - 25);
     }
   };
 
@@ -236,6 +301,9 @@ export function ConsultationAuditDashboard() {
       pdf.text('LOGS DE AUDITORIA', 20, yPosition);
       yPosition += 15;
 
+      // Criar conteúdo para hash
+      const documentContent = `RELATÓRIO-AUDITORIA-LGPD-${format(today, 'yyyy-MM-dd')}-${filteredLogs.length}-logs-${filteredLogs.filter(log => log.success).length}-sucessos-${filteredLogs.filter(log => !log.success).length}-erros-${filteredLogs.map(log => log.id).join('')}`;
+      
       // Tabela com os dados usando autoTable
       const tableData = filteredLogs.map(log => [
         format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
@@ -267,8 +335,11 @@ export function ConsultationAuditDashboard() {
           4: { cellWidth: 20 },
           5: { cellWidth: 50 }
         },
-        margin: { left: 20, right: 20 },
+        margin: { left: 20, right: 20, bottom: 50 }, // Espaço para rodapé
       });
+      
+      // Adicionar rodapé com informações do sistema e hash
+      addFooterToPDF(pdf, documentContent);
       
       // Salvar PDF
       const fileName = `relatorio-auditoria-lgpd-${format(today, 'yyyy-MM-dd')}.pdf`;
@@ -349,6 +420,9 @@ export function ConsultationAuditDashboard() {
       pdf.text('DADOS DA CONSULTA', 20, yPosition);
       yPosition += 15;
 
+      // Criar conteúdo para hash
+      const documentContent = `CONSULTA-AUDITORIA-${log.consultation_type}-${log.searched_data}-${log.user_name}-${format(new Date(log.created_at), 'yyyy-MM-dd-HH-mm')}-${log.id}`;
+      
       // Informações básicas usando autoTable
       const basicData = [
         ['Data/Hora', format(new Date(log.created_at), 'dd/MM/yyyy HH:mm:ss')],
@@ -375,7 +449,7 @@ export function ConsultationAuditDashboard() {
           0: { cellWidth: 40, fontStyle: 'bold' },
           1: { cellWidth: 130 },
         },
-        margin: { left: 20, right: 20 },
+        margin: { left: 20, right: 20, bottom: 50 }, // Espaço para rodapé
       });
 
       // User Agent
@@ -397,7 +471,7 @@ export function ConsultationAuditDashboard() {
             0: { cellWidth: 25, fontStyle: 'bold' },
             1: { cellWidth: 145 },
           },
-          margin: { left: 20, right: 20 },
+          margin: { left: 20, right: 20, bottom: 50 }, // Espaço para rodapé
         });
       }
 
@@ -420,9 +494,12 @@ export function ConsultationAuditDashboard() {
             0: { cellWidth: 25, fontStyle: 'bold' },
             1: { cellWidth: 145 },
           },
-          margin: { left: 20, right: 20 },
+          margin: { left: 20, right: 20, bottom: 50 }, // Espaço para rodapé
         });
       }
+      
+      // Adicionar rodapé com informações do sistema e hash
+      addFooterToPDF(pdf, documentContent);
       
       // Salvar PDF
       const fileName = `consulta-auditoria-${log.consultation_type}-${log.searched_data}-${format(today, 'yyyy-MM-dd')}.pdf`;
