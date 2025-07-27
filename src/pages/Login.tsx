@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 const Login = () => {
   const navigate = useNavigate();
   const { signIn, isAuthenticated, profile, isLoading: authLoading } = useSupabaseAuth();
+  const isMobile = useIsMobile();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -49,8 +51,7 @@ const Login = () => {
       };
 
       // Mobile-specific delay for state synchronization
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const delay = isMobile ? 500 : 100;
+      const delay = isMobile ? 1000 : 100;
       
       setTimeout(redirectToRole, delay);
     }
