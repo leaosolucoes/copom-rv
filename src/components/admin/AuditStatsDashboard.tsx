@@ -31,17 +31,27 @@ export function AuditStatsDashboard() {
   const fetchStats = async () => {
     setLoading(true);
     try {
+      console.log('🔍 AuditStatsDashboard: Iniciando busca de estatísticas...');
+      
       // Buscar estatísticas principais
       const { data: logs, error } = await supabase
         .from('consultation_audit_logs')
         .select('*');
 
-      if (error) throw error;
+      console.log('🔍 AuditStatsDashboard: Resposta da consulta:', { logs, error });
+
+      if (error) {
+        console.error('❌ AuditStatsDashboard: Erro na consulta:', error);
+        throw error;
+      }
 
       if (!logs) {
+        console.log('⚠️ AuditStatsDashboard: Nenhum log encontrado');
         setStats(null);
         return;
       }
+
+      console.log('✅ AuditStatsDashboard: Logs encontrados:', logs.length);
 
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -91,6 +101,18 @@ export function AuditStatsDashboard() {
         return { date, count };
       });
 
+      console.log('📊 AuditStatsDashboard: Estatísticas calculadas:', {
+        totalConsultations,
+        totalUsers: uniqueUsers,
+        consultationsToday,
+        consultationsThisMonth,
+        cpfConsultations,
+        cnpjConsultations,
+        cepConsultations,
+        successRate,
+        topUsersCount: topUsers.length
+      });
+
       setStats({
         totalConsultations,
         totalUsers: uniqueUsers,
@@ -105,7 +127,7 @@ export function AuditStatsDashboard() {
       });
 
     } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
+      console.error('❌ AuditStatsDashboard: Erro ao buscar estatísticas:', error);
     } finally {
       setLoading(false);
     }

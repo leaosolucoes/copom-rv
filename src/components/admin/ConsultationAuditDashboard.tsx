@@ -45,6 +45,8 @@ export function ConsultationAuditDashboard() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
+      console.log('🔍 ConsultationAuditDashboard: Iniciando busca de logs...');
+      
       let query = supabase
         .from('consultation_audit_logs')
         .select('*')
@@ -75,10 +77,17 @@ export function ConsultationAuditDashboard() {
 
       const { data, error } = await query.limit(1000);
 
-      if (error) throw error;
+      console.log('🔍 ConsultationAuditDashboard: Resposta da consulta:', { data, error });
+
+      if (error) {
+        console.error('❌ ConsultationAuditDashboard: Erro na consulta:', error);
+        throw error;
+      }
+      
+      console.log('✅ ConsultationAuditDashboard: Logs encontrados:', data?.length || 0);
       setLogs(data || []);
     } catch (error) {
-      console.error('Erro ao buscar logs:', error);
+      console.error('❌ ConsultationAuditDashboard: Erro ao buscar logs:', error);
       toast.error('Erro ao carregar logs de auditoria');
     } finally {
       setLoading(false);
