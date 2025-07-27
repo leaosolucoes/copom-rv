@@ -70,7 +70,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
       
       // Filter users based on role permissions
       const filteredUsers = userRole === 'admin' 
-        ? allUsers.filter((user: any) => user.role === 'atendente')
+        ? allUsers.filter((user: any) => user.role === 'atendente' || user.role === 'fiscal')
         : allUsers;
         
       console.log('Usuários filtrados:', filteredUsers);
@@ -242,7 +242,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold">
-          {userRole === 'admin' ? 'Atendentes' : 'Usuários'}
+          {userRole === 'admin' ? 'Atendentes e Fiscais' : 'Usuários'}
         </h2>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -298,7 +298,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                   required={!editingUser}
                 />
               </div>
-              {userRole === 'super_admin' && (
+              {(userRole === 'super_admin' || userRole === 'admin') && (
                 <div>
                   <Label htmlFor="role">Perfil</Label>
                   <Select 
@@ -311,7 +311,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      {userRole === 'super_admin' && <SelectItem value="admin">Admin</SelectItem>}
                       <SelectItem value="atendente">Atendente</SelectItem>
                       <SelectItem value="fiscal">Fiscal</SelectItem>
                     </SelectContent>
@@ -359,7 +359,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     Nenhum usuário encontrado. 
-                    {userRole === 'admin' ? ' Crie o primeiro atendente clicando em "Novo Usuário".' : ' Clique em "Novo Usuário" para começar.'}
+                    {userRole === 'admin' ? ' Crie o primeiro atendente ou fiscal clicando em "Novo Usuário".' : ' Clique em "Novo Usuário" para começar.'}
                   </TableCell>
                 </TableRow>
               ) : (

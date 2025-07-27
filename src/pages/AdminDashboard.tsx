@@ -106,7 +106,7 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2 text-xs md:text-sm">
               <Users className="h-3 w-3 md:h-4 md:w-4" />
-              <span className="hidden sm:inline">Atendentes</span>
+              <span className="hidden sm:inline">Atendentes/Fiscais</span>
               <span className="sm:hidden">Users</span>
             </TabsTrigger>
             <TabsTrigger value="consultas" className="flex items-center gap-2 text-xs md:text-sm">
@@ -140,9 +140,9 @@ const AdminDashboard = () => {
           <TabsContent value="users" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Gerenciar Atendentes</CardTitle>
+                <CardTitle>Gerenciar Atendentes e Fiscais</CardTitle>
                 <CardDescription>
-                  Cadastre e desative usuários atendentes
+                  Cadastre e desative usuários atendentes e fiscais
                 </CardDescription>
               </CardHeader>
               <CardContent>
