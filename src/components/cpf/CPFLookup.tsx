@@ -108,24 +108,16 @@ export const CPFLookup = () => {
       console.log('result.data existe?', !!result.data);
       console.log('result.data:', result.data);
 
-      // Os dados podem estar em result.result ou result.data
-      let cpfData = result.result || result.data;
+      // CORREÇÃO: Os dados estão SEMPRE em result.result conforme a estrutura da API
+      let cpfData = result.result;
       
       console.log('=== DADOS SELECIONADOS ===');
-      console.log('cpfData:', cpfData);
+      console.log('cpfData (result.result):', cpfData);
       console.log('cpfData existe?', !!cpfData);
       
       if (!cpfData) {
-        console.log('TENTANDO: Acessar dados diretamente do result');
-        // Se não encontrar em result.result nem result.data, verifica se os dados estão diretamente no result
-        if (result.nomeCompleto || result.documento || result.codigoPessoa) {
-          cpfData = result;
-          console.log('SUCESSO: Dados encontrados diretamente no result');
-        } else {
-          console.log('ERRO: Nenhum dado encontrado em lugar algum');
-          console.log('Campos verificados - nomeCompleto:', result.nomeCompleto, 'documento:', result.documento, 'codigoPessoa:', result.codigoPessoa);
-          throw new Error('Dados do CPF não encontrados na resposta da API');
-        }
+        console.log('ERRO: result.result é null/undefined');
+        throw new Error('Dados do CPF não encontrados na resposta da API');
       }
       
       console.log('=== DADOS FINAIS PARA EXIBIR ===');
