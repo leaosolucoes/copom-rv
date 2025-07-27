@@ -12,21 +12,38 @@ export async function logConsultation(data: ConsultationAuditData): Promise<void
   console.log('🔍 Iniciando logConsultation com dados:', data);
   
   try {
-    // Verificar se há sessão ativa primeiro
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log('🔐 Sessão ativa:', session ? 'Sim' : 'Não');
+    // Primeiro tentar obter do sistema customizado (localStorage)
+    let user = null;
+    let userProfile = null;
     
-    // Obter dados do usuário atual
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    console.log('👤 Usuário obtido:', user?.id ? `Autenticado: ${user.id}` : 'Não autenticado');
-    console.log('🔑 Auth error:', authError);
+    try {
+      const customSession = localStorage.getItem('custom_session');
+      const customProfile = localStorage.getItem('custom_profile');
+      
+      if (customSession && customProfile) {
+        const session = JSON.parse(customSession);
+        userProfile = JSON.parse(customProfile);
+        user = session.user;
+        console.log('👤 Usuário obtido do sistema customizado:', userProfile.full_name, 'ID:', user.id);
+      }
+    } catch (error) {
+      console.log('❌ Erro ao ler sessão customizada:', error);
+    }
+    
+    // Fallback para Supabase auth se não encontrou sessão customizada
+    if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔐 Sessão Supabase:', session ? 'Sim' : 'Não');
+      
+      const { data: { user: supabaseUser }, error: authError } = await supabase.auth.getUser();
+      console.log('👤 Usuário Supabase:', supabaseUser?.id ? `Autenticado: ${supabaseUser.id}` : 'Não autenticado');
+      console.log('🔑 Auth error:', authError);
+      
+      user = supabaseUser;
+    }
     
     if (!user) {
-      // Tentar pegar do localStorage como fallback
-      const storedUser = localStorage.getItem('supabase.auth.token');
-      console.log('💾 Token no localStorage:', storedUser ? 'Existe' : 'Não existe');
-      
-      console.warn('❌ Usuário não autenticado para auditoria');
+      console.warn('❌ Usuário não autenticado - registrando sem user_id');
       
       // Registrar sem user_id para análise
       const insertData = {
@@ -52,14 +69,18 @@ export async function logConsultation(data: ConsultationAuditData): Promise<void
       return;
     }
 
-    // Buscar nome completo do usuário
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('full_name')
-      .eq('id', user.id)
-      .maybeSingle();
-      
-    console.log('📋 Dados do usuário:', userData, userError ? 'Erro:' + userError.message : '');
+    // Se temos perfil customizado, usar ele, senão buscar no banco
+    let userData = userProfile;
+    if (!userData) {
+      const { data: dbUserData, error: userError } = await supabase
+        .from('users')
+        .select('full_name')
+        .eq('id', user.id)
+        .maybeSingle();
+        
+      console.log('📋 Dados do usuário do banco:', dbUserData, userError ? 'Erro:' + userError.message : '');
+      userData = dbUserData;
+    }
 
     // Obter informações do navegador
     const userAgent = navigator.userAgent;
