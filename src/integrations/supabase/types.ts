@@ -623,6 +623,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_authenticated_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_current_user_admin_custom: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_current_user_admin_or_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -639,6 +647,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_current_user_super_admin_custom: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_current_user_super_admin_safe: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -650,6 +662,15 @@ export type Database = {
       is_super_admin_by_id: {
         Args: { user_id_param: string }
         Returns: boolean
+      }
+      log_rls_issue: {
+        Args: {
+          table_name: string
+          operation: string
+          error_message: string
+          user_context?: Json
+        }
+        Returns: undefined
       }
       update_user_secure: {
         Args: {
