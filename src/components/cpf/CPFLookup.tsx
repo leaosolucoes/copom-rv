@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,16 @@ export const CPFLookup = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Log dos dados quando mudarem
+  useEffect(() => {
+    if (data) {
+      console.log('=== RENDERIZANDO MODAL COM DATA ===', data);
+      console.log('data.nomeCompleto no modal:', data.nomeCompleto);
+      console.log('data.documento no modal:', data.documento);
+      console.log('JSON do data no modal:', JSON.stringify(data, null, 2));
+    }
+  }, [data]);
 
   const formatCPF = (value: string) => {
     // Remove tudo que não é número
@@ -148,6 +158,15 @@ export const CPFLookup = () => {
       }
       
       console.log('SUCESSO: Dados considerados válidos, abrindo modal');
+      console.log('=== DADOS QUE SERÃO PASSADOS PARA O MODAL ===');
+      console.log('cpfData final antes de setData:', cpfData);
+      console.log('cpfData.nomeCompleto:', cpfData.nomeCompleto);
+      console.log('cpfData.documento:', cpfData.documento);
+      console.log('cpfData.genero:', cpfData.genero);
+      console.log('cpfData.dataDeNascimento:', cpfData.dataDeNascimento);
+      console.log('cpfData.nomeDaMae:', cpfData.nomeDaMae);
+      console.log('cpfData.anos:', cpfData.anos);
+      
       setData(cpfData);
       setIsModalOpen(true);
       
