@@ -58,7 +58,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
           created_at,
           last_login
         `)
-        .eq('is_active', true)
+        .in('is_active', userRole === 'super_admin' ? [true, false] : [true]) // Super Admin vê ativos e inativos
         .order('created_at', { ascending: false });
 
       console.log('Resposta da consulta:', { allUsers, error });
@@ -71,7 +71,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
       // Filter users based on role permissions
       const filteredUsers = userRole === 'admin' 
         ? allUsers.filter((user: any) => user.role === 'atendente' || user.role === 'fiscal')
-        : allUsers;
+        : allUsers; // Super Admin vê todos os usuários
         
       console.log('Usuários filtrados:', filteredUsers);
       setUsers(filteredUsers);
@@ -242,7 +242,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold">
-          {userRole === 'admin' ? 'Atendentes e Fiscais' : 'Usuários'}
+          {userRole === 'admin' ? 'Atendentes e Fiscais' : 'Todos os Usuários'}
         </h2>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -359,7 +359,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     Nenhum usuário encontrado. 
-                    {userRole === 'admin' ? ' Crie o primeiro atendente ou fiscal clicando em "Novo Usuário".' : ' Clique em "Novo Usuário" para começar.'}
+                    {userRole === 'admin' ? ' Crie o primeiro atendente ou fiscal clicando em "Novo Usuário".' : ' Todos os usuários do sistema aparecerão aqui.'}
                   </TableCell>
                 </TableRow>
               ) : (
