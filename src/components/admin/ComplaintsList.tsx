@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, UserCheck } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, UserCheck, RefreshCw } from 'lucide-react';
 import { MediaModal } from "@/components/ui/media-modal";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -373,7 +373,21 @@ export const ComplaintsList = () => {
       setComplaints(filteredData as Complaint[]);
     } catch (error) {
       console.error('❌ Erro ao recarregar denúncias:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar lista de denúncias",
+        variant: "destructive",
+      });
     }
+  };
+
+  // Função para atualização manual
+  const handleManualRefresh = async () => {
+    toast({
+      title: "Atualizando",
+      description: "Atualizando lista de denúncias...",
+    });
+    await fetchComplaints();
   };
 
   const fetchComplaints = async () => {
@@ -1250,7 +1264,7 @@ export const ComplaintsList = () => {
     <div className="space-y-6">
       {/* Search and filter controls */}
       <div className="flex flex-col gap-4 mb-6">
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
           <div className="flex-1">
             <Input
               placeholder="Buscar por nome, endereço ou classificação..."
@@ -1258,6 +1272,15 @@ export const ComplaintsList = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          <Button 
+            onClick={handleManualRefresh}
+            disabled={loading}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
         </div>
         
         {/* Campo de pesquisa de CNPJ - para todos os perfis */}
