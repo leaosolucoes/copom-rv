@@ -316,11 +316,11 @@ export const CPFLookup = () => {
               </div>
 
               {/* Lista de Telefones */}
-              {data.listaTelefones && Array.isArray(data.listaTelefones) && data.listaTelefones.length > 0 && (
+              {(data?.listaTelefones || data?.result?.listaTelefones) && Array.isArray(data?.listaTelefones || data?.result?.listaTelefones) && (data?.listaTelefones || data?.result?.listaTelefones).length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold border-b pb-2">Telefones</h3>
                   <div className="grid gap-3">
-                    {data.listaTelefones.map((telefone: any, index: number) => (
+                    {(data?.listaTelefones || data?.result?.listaTelefones).map((telefone: any, index: number) => (
                       <div key={index} className="p-3 bg-muted rounded-lg">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                           <div>
@@ -347,11 +347,11 @@ export const CPFLookup = () => {
               )}
 
               {/* Lista de Endereços */}
-              {data.listaEnderecos && Array.isArray(data.listaEnderecos) && data.listaEnderecos.length > 0 && (
+              {(data?.listaEnderecos || data?.result?.listaEnderecos) && Array.isArray(data?.listaEnderecos || data?.result?.listaEnderecos) && (data?.listaEnderecos || data?.result?.listaEnderecos).length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold border-b pb-2">Endereços</h3>
                   <div className="grid gap-3">
-                    {data.listaEnderecos.map((endereco: any, index: number) => (
+                    {(data?.listaEnderecos || data?.result?.listaEnderecos).map((endereco: any, index: number) => (
                       <div key={index} className="p-3 bg-muted rounded-lg">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
                           <div>
@@ -390,11 +390,11 @@ export const CPFLookup = () => {
               )}
 
               {/* Lista de E-mails */}
-              {data.listaEmails && Array.isArray(data.listaEmails) && data.listaEmails.length > 0 && (
+              {(data?.listaEmails || data?.result?.listaEmails) && Array.isArray(data?.listaEmails || data?.result?.listaEmails) && (data?.listaEmails || data?.result?.listaEmails).length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold border-b pb-2">E-mails</h3>
                   <div className="grid gap-2">
-                    {data.listaEmails.map((emailItem: any, index: number) => (
+                    {(data?.listaEmails || data?.result?.listaEmails).map((emailItem: any, index: number) => (
                       <div key={index} className="p-3 bg-muted rounded-lg">
                         <div className="text-sm">
                           <span className="text-muted-foreground">Endereço de Email:</span>
@@ -407,12 +407,12 @@ export const CPFLookup = () => {
               )}
 
               {/* Última Atualização */}
-              {data.lastUpdate && (
+              {(data?.lastUpdate || data?.result?.lastUpdate) && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold border-b pb-2">Informações do Sistema</h3>
                   <div className="p-3 bg-muted rounded-lg">
                     <span className="text-sm text-muted-foreground">Última Atualização:</span>
-                    <p className="font-semibold">{data.lastUpdate}</p>
+                    <p className="font-semibold">{data?.lastUpdate || data?.result?.lastUpdate}</p>
                   </div>
                 </div>
               )}
