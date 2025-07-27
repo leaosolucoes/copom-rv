@@ -296,7 +296,7 @@ export const CPFLookup = () => {
       </Card>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto relative my-8 mx-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto relative">{" "}
           {/* Marca d'água diagonal */}
           {profile?.full_name && (
             <WatermarkOverlay userName={profile.full_name} />
