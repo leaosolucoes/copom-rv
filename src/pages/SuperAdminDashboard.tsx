@@ -18,6 +18,7 @@ import { ApiManagement } from '@/components/admin/ApiManagement';
 import { ConsultationAuditDashboard } from '@/components/admin/ConsultationAuditDashboard';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
+import { CEPLookup } from '@/components/cep/CEPLookup';
 import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -270,6 +271,7 @@ const SuperAdminDashboard = () => {
             <div className="space-y-6">
               <CNPJLookup />
               <CPFLookup />
+              <CEPLookup />
             </div>
           </TabsContent>
 

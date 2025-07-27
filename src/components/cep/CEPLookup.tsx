@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MapPin, Loader2, Search } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { logConsultation } from "@/lib/auditLogger";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,111 +22,93 @@ export function CEPLookup() {
   const [cepData, setCepData] = useState<CEPData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [error, setError] = useState("");
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
 
   const formatCEP = (value: string): string => {
-    const cleaned = value.replace(/\D/g, "");
-    if (cleaned.length <= 5) {
-      return cleaned;
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 5) {
+      return numbers;
     }
-    return cleaned.replace(/(\d{5})(\d{3})/, "$1-$2");
+    return numbers.replace(/(\d{5})(\d{0,3})/, '$1-$2');
   };
 
   const validateCEP = (cep: string): boolean => {
-    const cleaned = cep.replace(/\D/g, "");
-    return cleaned.length === 8;
+    const cleanCep = cep.replace(/\D/g, '');
+    return cleanCep.length === 8;
   };
 
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedCep = formatCEP(e.target.value);
-    setCep(formattedCep);
-    setError("");
+    const formatted = formatCEP(e.target.value);
+    setCep(formatted);
+    if (error) setError(null);
   };
 
   const handleSearch = async () => {
+    const cleanCep = cep.replace(/\D/g, '');
+    
     if (!validateCEP(cep)) {
-      setError("CEP deve ter 8 dígitos");
+      setError('CEP deve ter 8 dígitos');
+      toast.error('CEP deve ter 8 dígitos');
       return;
     }
 
     setIsLoading(true);
-    setError("");
+    setError(null);
 
     try {
-      const cleanCep = cep.replace(/\D/g, "");
-      console.log('CEP limpo para consulta:', cleanCep);
+      console.log('Buscando CEP:', cleanCep);
       
-      // Usar a edge function do Supabase
-      const response = await fetch('https://smytdnkylauxocqrkchn.supabase.co/functions/v1/search-cep', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ cep: cleanCep })
+      const { data, error } = await supabase.functions.invoke('search-cep', {
+        body: { cep: cleanCep }
       });
-      
-      console.log('Status da resposta:', response.status);
-      
-      const result = await response.json();
-      console.log('Resultado recebido:', result);
-      
-      if (!response.ok) {
-        throw new Error(result.error || `Erro HTTP: ${response.status}`);
+
+      if (error) {
+        console.error('Erro na função:', error);
+        throw new Error(error.message || 'Erro ao consultar CEP');
       }
 
-      if (result.error) {
-        setError(result.error);
-        toast({
-          title: "CEP não encontrado",
-          description: result.error,
-          variant: "destructive",
-        });
+      console.log('Resposta da função CEP:', data);
+
+      if (data.error) {
+        setError(data.error);
+        toast.error(data.error);
         
         // Registrar auditoria de erro
         await logConsultation({
           consultationType: 'CEP',
           searchedData: cleanCep,
           success: false,
-          errorMessage: result.error
+          errorMessage: data.error
         });
         return;
       }
 
-      console.log('Dados finais para exibir:', result.data);
-      console.log('Estrutura completa:', JSON.stringify(result.data, null, 2));
+      console.log('Dados finais para exibir:', data);
       
-      setCepData(result.data);
+      setCepData(data);
       setIsModalOpen(true);
-      
-      toast({
-        title: "CEP encontrado!",
-        description: "Dados do endereço carregados com sucesso.",
-      });
+      toast.success('CEP consultado com sucesso!');
       
       // Registrar auditoria
       await logConsultation({
         consultationType: 'CEP',
         searchedData: cleanCep,
-        searchResult: result.data,
+        searchResult: data,
         success: true
       });
 
     } catch (err) {
       console.error("Erro detalhado ao buscar CEP:", err);
-      setError(`Erro ao consultar CEP: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
-      toast({
-        title: "Erro na consulta",
-        description: `Não foi possível consultar o CEP: ${err instanceof Error ? err.message : 'Erro desconhecido'}`,
-        variant: "destructive",
-      });
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(`Erro ao consultar CEP: ${errorMessage}`);
+      toast.error(`Não foi possível consultar o CEP: ${errorMessage}`);
       
       // Registrar auditoria de erro
       await logConsultation({
         consultationType: 'CEP',
-        searchedData: cep.replace(/\D/g, ''),
+        searchedData: cleanCep,
         success: false,
-        errorMessage: err instanceof Error ? err.message : 'Erro desconhecido'
+        errorMessage: errorMessage
       });
     } finally {
       setIsLoading(false);
@@ -141,100 +123,92 @@ export function CEPLookup() {
 
   return (
     <>
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Consulta de CEP
-          </CardTitle>
+      <Card>
+        <CardHeader className="text-center">
+          <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <MapPin className="h-6 w-6 text-primary" />
+          </div>
+          <CardTitle>Consulta de CEP</CardTitle>
           <CardDescription>
-            Digite o CEP para consultar informações do endereço
+            Digite o CEP para consultar informações de endereço
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
+          <div className="space-y-2">
             <Input
-              placeholder="Ex: 75901-060"
+              type="text"
+              placeholder="00000-000"
               value={cep}
               onChange={handleCepChange}
               onKeyPress={handleKeyPress}
               maxLength={9}
-              className="flex-1"
+              className={error ? "border-red-500" : ""}
             />
-            <Button 
-              onClick={handleSearch} 
-              disabled={isLoading || !cep}
-              className="px-6"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="h-4 w-4" />
-              )}
-            </Button>
+            {error && (
+              <p className="text-sm text-red-500">{error}</p>
+            )}
           </div>
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+          
+          <Button 
+            onClick={handleSearch} 
+            disabled={isLoading || !cep.trim()}
+            className="w-full"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Consultando...
+              </>
+            ) : (
+              <>
+                <Search className="mr-2 h-4 w-4" />
+                Consultar CEP
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
 
+      {/* Modal com dados do CEP */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              Dados do CEP {cepData?.cep}
+              Informações do CEP
             </DialogTitle>
           </DialogHeader>
           
           {cepData && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">CEP</label>
-                    <p className="text-lg font-semibold">{cepData.cep}</p>
-                  </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">CEP:</label>
+                  <p className="font-semibold">{cepData.cep}</p>
                 </div>
-                
-                <div className="space-y-2">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">UF</label>
-                    <p className="text-lg font-semibold">{cepData.uf}</p>
-                  </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">UF:</label>
+                  <p className="font-semibold">{cepData.uf}</p>
                 </div>
-                
-                <div className="space-y-2">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">Cidade</label>
-                    <p className="text-lg font-semibold">{cepData.localidade}</p>
-                  </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Cidade:</label>
+                  <p className="font-semibold">{cepData.localidade}</p>
                 </div>
-                
-                <div className="space-y-2">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">Bairro</label>
-                    <p className="text-lg font-semibold">{cepData.bairro || "Não informado"}</p>
-                  </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Bairro:</label>
+                  <p className="font-semibold">{cepData.bairro}</p>
                 </div>
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-muted-foreground">Logradouro:</label>
+                  <p className="font-semibold">{cepData.logradouro}</p>
+                </div>
+                {cepData.complemento && (
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium text-muted-foreground">Complemento:</label>
+                    <p className="font-semibold">{cepData.complemento}</p>
+                  </div>
+                )}
               </div>
-              
-              <div className="space-y-2">
-                <div className="p-3 bg-muted rounded-lg">
-                  <label className="text-sm font-medium text-muted-foreground">Logradouro</label>
-                  <p className="text-lg font-semibold">{cepData.logradouro}</p>
-                </div>
-              </div>
-              
-              {cepData.complemento && (
-                <div className="space-y-2">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">Complemento</label>
-                    <p className="text-lg font-semibold">{cepData.complemento}</p>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </DialogContent>

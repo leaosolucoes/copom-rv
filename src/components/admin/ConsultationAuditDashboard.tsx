@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { AuditStatsDashboard } from "./AuditStatsDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -169,6 +170,10 @@ export function ConsultationAuditDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Dashboard de Estatísticas */}
+      <AuditStatsDashboard />
+      
+      {/* Dashboard de Logs */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
