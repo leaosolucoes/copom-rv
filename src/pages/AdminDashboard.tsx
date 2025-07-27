@@ -10,6 +10,7 @@ import { UserManagement } from '@/components/admin/UserManagement';
 import { ComplaintsListLazy } from '@/components/admin/ComplaintsListLazy';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
+import { CEPLookup } from '@/components/cep/CEPLookup';
 import { Users, FileText, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -161,6 +162,7 @@ const AdminDashboard = () => {
             <div className="space-y-6">
               <CNPJLookup />
               <CPFLookup />
+              <CEPLookup />
             </div>
           </TabsContent>
         </Tabs>

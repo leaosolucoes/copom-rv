@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ComplaintsListLazy } from "@/components/admin/ComplaintsListLazy";
 import { CNPJLookup } from "@/components/cnpj/CNPJLookup";
 import { CPFLookup } from "@/components/cpf/CPFLookup";
+import { CEPLookup } from "@/components/cep/CEPLookup";
 import { AttendantComplaintForm } from "@/components/complaints/AttendantComplaintForm";
 import { LogOut, FileText, Search, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -124,6 +125,7 @@ export default function AtendenteDashboard() {
             <div className="space-y-6">
               <CNPJLookup />
               <CPFLookup />
+              <CEPLookup />
             </div>
           </TabsContent>
         </Tabs>
