@@ -70,7 +70,11 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
       
       // Filter users based on role permissions
       const filteredUsers = userRole === 'admin' 
-        ? allUsers.filter((user: any) => user.role === 'atendente' || user.role === 'fiscal')
+        ? allUsers.filter((user: any) => 
+            (user.role === 'atendente' || user.role === 'fiscal') &&
+            user.email !== 'fiscal@conectarioverde.com.br' &&
+            user.email !== 'atendente@conectarioverde.com.br'
+          )
         : allUsers; // Super Admin vê todos os usuários
         
       console.log('Usuários filtrados:', filteredUsers);
