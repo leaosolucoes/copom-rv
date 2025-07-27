@@ -95,12 +95,11 @@ export const CPFLookup = () => {
         return;
       }
 
-      // Os dados estão dentro de result.data conforme visto no console
-      let cpfData = result.data || result.result;
+      // Os dados estão dentro de result.result conforme estrutura da API
+      let cpfData = result.result;
       
       if (!cpfData) {
-        console.log('Tentando acessar diretamente result:', result);
-        cpfData = result; // Se não encontrar em data ou result, usa o próprio result
+        throw new Error('Dados do CPF não encontrados na resposta');
       }
       
       console.log('=== DADOS FINAIS PARA EXIBIR ===');
@@ -211,109 +210,141 @@ export const CPFLookup = () => {
           
           
           {data && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
+            <div className="space-y-6">
+              {/* Dados Pessoais */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Dados Pessoais</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Nome Completo</label>
-                    <p className="text-lg font-semibold">{data.nomeCompleto || data.nome || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data.nomeCompleto || "Não informado"}</p>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
+                  
                   <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">CPF</label>
-                    <p className="text-lg font-semibold">{data.documento || data.cpf || "Não informado"}</p>
+                    <label className="text-sm font-medium text-muted-foreground">Documento (CPF)</label>
+                    <p className="text-lg font-semibold">{data.documento || "Não informado"}</p>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
+                  
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Gênero</label>
-                    <p className="text-lg font-semibold">{data.genero || data.sexo || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data.genero || "Não informado"}</p>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
+                  
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Data de Nascimento</label>
-                    <p className="text-lg font-semibold">{data.dataDeNascimento || data.nascimento || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data.dataDeNascimento || "Não informado"}</p>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
+                  
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Idade</label>
-                    <p className="text-lg font-semibold">{data.anos ? `${data.anos} anos` : data.idade ? `${data.idade} anos` : "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data.anos ? `${data.anos} anos` : "Não informado"}</p>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
+                  
                   <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">Signo</label>
-                    <p className="text-lg font-semibold">{data.zodiaco || data.signo || "Não informado"}</p>
+                    <label className="text-sm font-medium text-muted-foreground">Nome da Mãe</label>
+                    <p className="text-lg font-semibold">{data.nomeDaMae || "Não informado"}</p>
                   </div>
                 </div>
               </div>
-              
-              {(data.salarioEstimado || data.salario) && (
-                <div className="space-y-2">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">Salário Estimado</label>
-                    <p className="text-lg font-semibold">R$ {data.salarioEstimado || data.salario}</p>
-                  </div>
-                </div>
-              )}
-              
+
+              {/* Lista de Telefones */}
               {data.listaTelefones && Array.isArray(data.listaTelefones) && data.listaTelefones.length > 0 && (
-                <div className="space-y-2">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">Telefones</label>
-                    <div className="mt-2 space-y-1">
-                      {data.listaTelefones.map((telefone: any, index: number) => (
-                        <p key={index} className="text-lg font-semibold">
-                          {telefone.telefoneComDDD || telefone.numero} 
-                          {telefone.operadora && ` (${telefone.operadora})`} 
-                          {telefone.tipoTelefone && ` - ${telefone.tipoTelefone}`}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {data.listaEmails && Array.isArray(data.listaEmails) && data.listaEmails.length > 0 && (
-                <div className="space-y-2">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">E-mails</label>
-                    <div className="mt-2 space-y-1">
-                      {data.listaEmails.map((emailItem: any, index: number) => (
-                        <p key={index} className="text-lg font-semibold">
-                          {emailItem.enderecoEmail || emailItem.email || emailItem}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {data.listaEnderecos && Array.isArray(data.listaEnderecos) && data.listaEnderecos.length > 0 && (
-                <div className="space-y-2">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <label className="text-sm font-medium text-muted-foreground">Endereços</label>
-                    <div className="mt-2 space-y-2">
-                      {data.listaEnderecos.map((endereco: any, index: number) => (
-                        <div key={index} className="border-l-4 border-primary pl-3">
-                          <p className="text-lg font-semibold">
-                            {endereco.logradouro} {endereco.numero && `, ${endereco.numero}`}
-                            {endereco.complemento && `, ${endereco.complemento}`}
-                            <br />
-                            {endereco.bairro} - {endereco.cidade}
-                            {endereco.cep && ` - CEP: ${endereco.cep}`}
-                          </p>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Telefones</h3>
+                  <div className="grid gap-3">
+                    {data.listaTelefones.map((telefone: any, index: number) => (
+                      <div key={index} className="p-3 bg-muted rounded-lg">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Telefone:</span>
+                            <p className="font-semibold">{telefone.telefoneComDDD || "Não informado"}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Operadora:</span>
+                            <p className="font-semibold">{telefone.operadora || "Não informado"}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Tipo:</span>
+                            <p className="font-semibold">{telefone.tipoTelefone || "Não informado"}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">WhatsApp:</span>
+                            <p className="font-semibold">{telefone.whatsApp ? "Sim" : "Não"}</p>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de Endereços */}
+              {data.listaEnderecos && Array.isArray(data.listaEnderecos) && data.listaEnderecos.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Endereços</h3>
+                  <div className="grid gap-3">
+                    {data.listaEnderecos.map((endereco: any, index: number) => (
+                      <div key={index} className="p-3 bg-muted rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Logradouro:</span>
+                            <p className="font-semibold">{endereco.logradouro || "Não informado"}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Número:</span>
+                            <p className="font-semibold">{endereco.numero || "Não informado"}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Complemento:</span>
+                            <p className="font-semibold">{endereco.complemento || "Não informado"}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Bairro:</span>
+                            <p className="font-semibold">{endereco.bairro || "Não informado"}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Cidade:</span>
+                            <p className="font-semibold">{endereco.cidade || "Não informado"}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">UF:</span>
+                            <p className="font-semibold">{endereco.uf || "Não informado"}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">CEP:</span>
+                            <p className="font-semibold">{endereco.cep || "Não informado"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de E-mails */}
+              {data.listaEmails && Array.isArray(data.listaEmails) && data.listaEmails.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">E-mails</h3>
+                  <div className="grid gap-2">
+                    {data.listaEmails.map((emailItem: any, index: number) => (
+                      <div key={index} className="p-3 bg-muted rounded-lg">
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Endereço de Email:</span>
+                          <p className="font-semibold">{emailItem.enderecoEmail || "Não informado"}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Última Atualização */}
+              {data.lastUpdate && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Informações do Sistema</h3>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <span className="text-sm text-muted-foreground">Última Atualização:</span>
+                    <p className="font-semibold">{data.lastUpdate}</p>
                   </div>
                 </div>
               )}
