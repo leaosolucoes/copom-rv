@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Eye, RefreshCw, Download, FileText, Filter, Search, Calendar } from "lucide-react";
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -44,6 +44,7 @@ export function ConsultationAuditDashboard() {
   const [dateFromFilter, setDateFromFilter] = useState('');
   const [dateToFilter, setDateToFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -101,7 +102,27 @@ export function ConsultationAuditDashboard() {
 
   useEffect(() => {
     fetchLogs();
+    fetchLogo();
   }, [typeFilter, statusFilter, dateFromFilter, dateToFilter]);
+
+  const fetchLogo = async () => {
+    try {
+      const { data } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'company_logo_url')
+        .maybeSingle();
+      
+      if (data?.value) {
+        const logoPath = Array.isArray(data.value) ? data.value[0] : data.value;
+        if (typeof logoPath === 'string') {
+          setLogoUrl(`https://smytdnkylauxocqrkchn.supabase.co/storage/v1/object/public/system-assets/${logoPath}`);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar logo:', error);
+    }
+  };
 
   // Filtrar logs localmente por termo de busca e usuário
   const filteredLogs = logs.filter(log => {
@@ -152,22 +173,70 @@ export function ConsultationAuditDashboard() {
     );
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     try {
-      const doc = new jsPDF();
+      // Criar PDF usando jsPDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
       
-      // Título do relatório
-      doc.setFontSize(20);
-      doc.text('Relatório de Auditoria LGPD', 20, 20);
+      // Configurar fontes
+      pdf.setFont('helvetica', 'bold');
       
-      // Informações do relatório
-      doc.setFontSize(12);
-      doc.text(`Data de geração: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, 35);
-      doc.text(`Total de logs: ${logs.length}`, 20, 45);
-      doc.text(`Consultas com sucesso: ${logs.filter(log => log.success).length}`, 20, 55);
-      doc.text(`Consultas com erro: ${logs.filter(log => !log.success).length}`, 20, 65);
+      let yPosition = 30;
       
-      // Tabela com os dados
+      // Adicionar logo se disponível
+      if (logoUrl) {
+        try {
+          const logoResponse = await fetch(logoUrl);
+          if (logoResponse.ok) {
+            const logoBlob = await logoResponse.blob();
+            const logoBase64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(logoBlob);
+            });
+            
+            const imageFormat = logoBlob.type.includes('png') ? 'PNG' : 
+                               logoBlob.type.includes('jpeg') || logoBlob.type.includes('jpg') ? 'JPEG' : 'PNG';
+            
+            pdf.addImage(logoBase64, imageFormat, 20, 10, 30, 30);
+          }
+          
+          pdf.setFontSize(18);
+          pdf.text('RELATÓRIO DE AUDITORIA LGPD', 60, 20);
+          yPosition = 50;
+        } catch (logoError) {
+          console.error('Erro ao carregar logo:', logoError);
+          pdf.setFontSize(18);
+          pdf.text('RELATÓRIO DE AUDITORIA LGPD', 20, 20);
+          yPosition = 30;
+        }
+      } else {
+        pdf.setFontSize(18);
+        pdf.text('RELATÓRIO DE AUDITORIA LGPD', 20, 20);
+        yPosition = 30;
+      }
+      
+      // Adicionar informações do relatório
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      
+      const today = new Date();
+      pdf.text(`Data de geração: ${format(today, 'dd/MM/yyyy HH:mm')}`, 20, yPosition + 5);
+      pdf.text(`Total de logs: ${filteredLogs.length}`, 20, yPosition + 15);
+      pdf.text(`Consultas com sucesso: ${filteredLogs.filter(log => log.success).length}`, 20, yPosition + 25);
+      pdf.text(`Consultas com erro: ${filteredLogs.filter(log => !log.success).length}`, 20, yPosition + 35);
+      
+      yPosition += 60;
+
+      // Dados do relatório
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14);
+      pdf.text('LOGS DE AUDITORIA', 20, yPosition);
+      yPosition += 15;
+
+      // Tabela com os dados usando autoTable
       const tableData = filteredLogs.map(log => [
         format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
         log.user_name,
@@ -177,12 +246,19 @@ export function ConsultationAuditDashboard() {
         log.error_message || 'N/A'
       ]);
       
-      (doc as any).autoTable({
-        startY: 80,
+      autoTable(pdf, {
         head: [['Data/Hora', 'Usuário', 'Tipo', 'Dados', 'Status', 'Erro']],
         body: tableData,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [59, 130, 246] },
+        startY: yPosition,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+        },
+        headStyles: {
+          fillColor: [59, 130, 246],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
         columnStyles: {
           0: { cellWidth: 25 },
           1: { cellWidth: 30 },
@@ -190,11 +266,14 @@ export function ConsultationAuditDashboard() {
           3: { cellWidth: 30 },
           4: { cellWidth: 20 },
           5: { cellWidth: 50 }
-        }
+        },
+        margin: { left: 20, right: 20 },
       });
       
-      // Salvar o PDF
-      doc.save(`relatorio-auditoria-lgpd-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      // Salvar PDF
+      const fileName = `relatorio-auditoria-lgpd-${format(today, 'yyyy-MM-dd')}.pdf`;
+      pdf.save(fileName);
+      
       toast.success('Relatório PDF gerado com sucesso!');
       
     } catch (error) {
