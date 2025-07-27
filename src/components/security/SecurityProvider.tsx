@@ -59,41 +59,43 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
       }
     };
 
-    // 3. PROTEÇÃO ULTRA AGRESSIVA CONTRA DEVTOOLS
-    const setupUltraDevToolsProtection = () => {
+    // 3. PROTEÇÃO CONTRA DEVTOOLS (apenas em produção)
+    const setupDevToolsProtection = () => {
+      if (process.env.NODE_ENV !== 'production') {
+        return; // Não bloquear em desenvolvimento
+      }
+      
       // Disable todas as ferramentas de debug
       (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
       (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
       
-      // Sobrescrever console methods COMPLETAMENTE
-      const originalConsole = { ...console };
+      // Sobrescrever console methods apenas em produção
       const blockConsole = () => {
         ['log', 'debug', 'info', 'warn', 'error', 'trace', 'dir', 'dirxml', 'table', 'group', 'groupEnd', 'clear'].forEach(method => {
           (console as any)[method] = () => {};
         });
       };
       
-      // Bloquear console em produção
-      if (process.env.NODE_ENV === 'production') {
-        blockConsole();
-      }
+      blockConsole();
       
-      // Anti-debug infinito
+      // Anti-debug apenas em produção
       setInterval(() => {
         try {
           debugger;
         } catch (e) {}
-      }, 100);
+      }, 500); // Menos agressivo
       
-      // Bloquear toString em objetos críticos
-      Object.defineProperty(window, 'console', {
-        get: () => {
-          logger.error('Tentativa de acesso ao console detectada');
-          return {};
-        },
-        set: () => {},
-        configurable: false
-      });
+      // Bloquear acesso ao console apenas em produção
+      if (process.env.NODE_ENV === 'production') {
+        Object.defineProperty(window, 'console', {
+          get: () => {
+            logger.error('Tentativa de acesso ao console detectada');
+            return {};
+          },
+          set: () => {},
+          configurable: false
+        });
+      }
     };
 
     // 4. Rate limiting ULTRA restritivo
@@ -165,16 +167,16 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
       document.head.appendChild(script);
     };
 
-    // EXECUTAR TODAS AS PROTEÇÕES
+    // EXECUTAR PROTEÇÕES BASEADAS NO AMBIENTE
     try {
       addMaxSecurityHeaders();
       enforceHTTPS();
-      setupUltraDevToolsProtection();
+      setupDevToolsProtection(); // Renomeado e ajustado
       setupUltraRateLimit();
       setupUltraClickjackingProtection();
       setupSourceProtection();
       
-      logger.debug('🛡️ PROTEÇÃO MÁXIMA ATIVADA - Código fonte protegido');
+      logger.debug('🛡️ Proteções de segurança ativadas');
     } catch (error) {
       logger.error('Erro ao ativar proteções:', error);
     }

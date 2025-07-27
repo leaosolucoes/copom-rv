@@ -10,10 +10,10 @@ export const useDevToolsProtection = () => {
   const threshold = 160; // Diferença de tamanho que indica DevTools aberto
   const detectionInterval = useRef<NodeJS.Timeout>();
   const redirectTimeout = useRef<NodeJS.Timeout>();
+  const isProduction = process.env.NODE_ENV === 'production';
 
   useEffect(() => {
-    // PROTEÇÃO ATIVA EM TODOS OS AMBIENTES (desenvolvimento e produção)
-    // Remover esta verificação significa PROTEÇÃO TOTAL
+    // PROTEÇÃO ATIVA baseada no ambiente
 
     // DETECÇÃO MÚLTIPLA E AGRESSIVA DE DEVTOOLS
     const detectDevToolsMultiple = () => {
@@ -30,23 +30,27 @@ export const useDevToolsProtection = () => {
         devToolsOpen.current = false;
       }
       
-      // Método 2: Console timing attack
-      let start = performance.now();
-      debugger; // Essa linha vai pausar se DevTools estiver aberto
-      let end = performance.now();
-      if (end - start > 100) { // Se demorou mais que 100ms, DevTools está aberto
-        handleDevToolsDetected('debugger_timing');
+      // Método 2: Console timing attack (apenas em produção)
+      if (isProduction) {
+        let start = performance.now();
+        debugger; // Essa linha vai pausar se DevTools estiver aberto
+        let end = performance.now();
+        if (end - start > 100) { // Se demorou mais que 100ms, DevTools está aberto
+          handleDevToolsDetected('debugger_timing');
+        }
       }
       
-      // Método 3: Detecção via console.clear
-      try {
-        const devtools = /./;
-        devtools.toString = function() {
-          handleDevToolsDetected('console_access');
-          return 'DevTools detectado';
-        };
-        console.log('%c', devtools);
-      } catch (e) {}
+      // Método 3: Detecção via console.clear (apenas em produção)
+      if (isProduction) {
+        try {
+          const devtools = /./;
+          devtools.toString = function() {
+            handleDevToolsDetected('console_access');
+            return 'DevTools detectado';
+          };
+          console.log('%c', devtools);
+        } catch (e) {}
+      }
     };
 
     // AÇÃO IMEDIATA E AGRESSIVA QUANDO DEVTOOLS É DETECTADO
@@ -56,44 +60,69 @@ export const useDevToolsProtection = () => {
       devToolsOpen.current = true;
       logger.error(`🚨 DevTools detectado via ${method} - Aplicando contramedidas`);
       
-      // LIMPEZA AGRESSIVA DE DADOS SENSÍVEIS
+      // LIMPEZA DE DADOS SENSÍVEIS (sempre executar)
       try {
         // 1. Limpar TUDO do localStorage e sessionStorage
+        const keysToPreserve = isProduction ? [] : ['theme', 'language']; // Preservar alguns dados em dev
+        const storageData: { [key: string]: string } = {};
+        
+        keysToPreserve.forEach(key => {
+          const value = localStorage.getItem(key);
+          if (value) {
+            storageData[key] = value;
+          }
+        });
+        
         localStorage.clear();
         sessionStorage.clear();
         
-        // 2. Limpar cookies (máximo possível)
-        document.cookie.split(";").forEach(function(c) { 
-          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        // Restaurar dados preservados
+        Object.entries(storageData).forEach(([key, value]) => {
+          localStorage.setItem(key, value);
         });
+        
+        // 2. Limpar cookies apenas em produção
+        if (isProduction) {
+          document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+          });
+        }
         
         // 3. Limpar variáveis globais sensíveis
         if ((window as any).supabaseClient) delete (window as any).supabaseClient;
         if ((window as any).__SUPABASE_CLIENT__) delete (window as any).__SUPABASE_CLIENT__;
         if ((window as any).__AUTH_DATA__) delete (window as any).__AUTH_DATA__;
         
-        // 4. Sobrescrever fetch para bloquear novas requisições
-        window.fetch = async () => {
-          throw new Error('Acesso bloqueado por motivos de segurança');
-        };
+        // 4. Bloquear fetch apenas em produção
+        if (isProduction) {
+          window.fetch = async () => {
+            throw new Error('Acesso bloqueado por motivos de segurança');
+          };
+        }
         
-        // 5. Limpar console de forma agressiva
+        // 5. Mensagens no console
         console.clear();
-        console.log('%c🛡️ SISTEMA DE SEGURANÇA ATIVADO', 'color: red; font-size: 20px; font-weight: bold;');
-        console.log('%c⚠️ DevTools detectado - Dados sensíveis foram limpos', 'color: orange; font-size: 16px;');
-        console.log('%c🔒 Acesso bloqueado por segurança', 'color: red; font-size: 14px;');
+        if (isProduction) {
+          console.log('%c🛡️ SISTEMA DE SEGURANÇA ATIVADO', 'color: red; font-size: 20px; font-weight: bold;');
+          console.log('%c⚠️ DevTools detectado - Dados sensíveis foram limpos', 'color: orange; font-size: 16px;');
+          console.log('%c🔒 Acesso bloqueado por segurança', 'color: red; font-size: 14px;');
+        } else {
+          console.warn('🔧 DevTools detectado em desenvolvimento');
+        }
         
-        // 6. Bloquear DevTools de forma contínua
-        setInterval(() => {
-          console.clear();
-          console.log('%c🚫 ACESSO NEGADO', 'color: red; font-size: 24px; font-weight: bold;');
-        }, 100);
+        // 6. Bloquear DevTools apenas em produção
+        if (isProduction) {
+          setInterval(() => {
+            console.clear();
+            console.log('%c🚫 ACESSO NEGADO', 'color: red; font-size: 24px; font-weight: bold;');
+          }, 500); // Menos agressivo
+        }
         
         // 7. Redirecionar após delay
         clearTimeout(redirectTimeout.current);
         redirectTimeout.current = setTimeout(() => {
           window.location.href = '/acesso';
-        }, 2000);
+        }, isProduction ? 2000 : 5000); // Mais tempo em dev
         
       } catch (error) {
         // Falha silenciosa para não expor funcionamento interno

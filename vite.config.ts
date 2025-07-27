@@ -21,13 +21,13 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     // MÁXIMA PROTEÇÃO ANTI-EXPOSIÇÃO DE CÓDIGO
-    sourcemap: false, // NUNCA gerar source maps em build
-    minify: 'terser', // Usa Terser para minificação máxima
+    sourcemap: mode === 'development', // Source maps apenas em dev
+    minify: mode === 'production' ? 'terser' : false, // Minify apenas em produção
     terserOptions: {
       compress: {
-        drop_console: true, // Remove TODOS os console.logs
+        drop_console: mode === 'production', // Remove console.logs apenas em produção
         drop_debugger: true, // Remove debugger statements
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn', 'console.error'], // Remove todos os logs
+        pure_funcs: mode === 'production' ? ['console.log', 'console.info', 'console.debug', 'console.warn', 'console.error'] : [], // Remove todos os logs em produção
         dead_code: true, // Remove código morto
         conditionals: true, // Otimiza condicionais
         evaluate: true, // Avalia expressões constantes
@@ -68,19 +68,25 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
-        // OBFUSCAÇÃO MÁXIMA DE NOMES DE ARQUIVO
-        chunkFileNames: () => {
-          const randomHash = Math.random().toString(36).substring(2, 15);
-          return `js/${randomHash}.[hash].js`;
-        },
-        entryFileNames: () => {
-          const randomHash = Math.random().toString(36).substring(2, 15);
-          return `js/${randomHash}.[hash].js`;
-        },
-        assetFileNames: () => {
-          const randomHash = Math.random().toString(36).substring(2, 15);
-          return `assets/${randomHash}.[hash].[ext]`;
-        },
+        // OBFUSCAÇÃO DE NOMES DE ARQUIVO EM PRODUÇÃO
+        chunkFileNames: mode === 'production' ? 
+          () => {
+            const randomHash = Math.random().toString(36).substring(2, 15);
+            return `js/${randomHash}.[hash].js`;
+          } : 
+          '[name]-[hash].js',
+        entryFileNames: mode === 'production' ? 
+          () => {
+            const randomHash = Math.random().toString(36).substring(2, 15);
+            return `js/${randomHash}.[hash].js`;
+          } : 
+          '[name]-[hash].js',
+        assetFileNames: mode === 'production' ? 
+          () => {
+            const randomHash = Math.random().toString(36).substring(2, 15);
+            return `assets/${randomHash}.[hash].[ext]`;
+          } : 
+          '[name]-[hash].[ext]',
         manualChunks: {
           // Divisão complexa para dificultar análise
           'vendor-core': ['react', 'react-dom'],
@@ -101,11 +107,10 @@ export default defineConfig(({ mode }) => ({
     assetsInlineLimit: 0, // Não inline assets para dificultar análise
   },
   define: {
-    // MÁXIMA PROTEÇÃO - Remove informações sensíveis
-    __DEV__: false, // SEMPRE false em produção
-    'process.env.NODE_ENV': JSON.stringify('production'),
-    'process.env.DEBUG': JSON.stringify(false),
-    'globalThis.__DEV__': false,
-    'window.__REACT_DEVTOOLS_GLOBAL_HOOK__': '({ isDisabled: true })',
+    // Proteção - Remove informações sensíveis em produção
+    __DEV__: mode === 'development',
+    'process.env.NODE_ENV': JSON.stringify(mode),
+    'process.env.DEBUG': JSON.stringify(mode === 'development'),
+    'globalThis.__DEV__': mode === 'development',
   },
 }));
