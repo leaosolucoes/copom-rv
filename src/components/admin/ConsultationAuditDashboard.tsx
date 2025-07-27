@@ -4,7 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, RefreshCw } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Eye, RefreshCw, Download, FileText } from "lucide-react";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -27,6 +30,8 @@ export function ConsultationAuditDashboard() {
   
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -94,6 +99,62 @@ export function ConsultationAuditDashboard() {
     );
   };
 
+  const exportToPDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Título do relatório
+      doc.setFontSize(20);
+      doc.text('Relatório de Auditoria LGPD', 20, 20);
+      
+      // Informações do relatório
+      doc.setFontSize(12);
+      doc.text(`Data de geração: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, 35);
+      doc.text(`Total de logs: ${logs.length}`, 20, 45);
+      doc.text(`Consultas com sucesso: ${logs.filter(log => log.success).length}`, 20, 55);
+      doc.text(`Consultas com erro: ${logs.filter(log => !log.success).length}`, 20, 65);
+      
+      // Tabela com os dados
+      const tableData = logs.map(log => [
+        format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
+        log.user_name,
+        log.consultation_type,
+        log.searched_data,
+        log.success ? 'Sucesso' : 'Erro',
+        log.error_message || 'N/A'
+      ]);
+      
+      (doc as any).autoTable({
+        startY: 80,
+        head: [['Data/Hora', 'Usuário', 'Tipo', 'Dados', 'Status', 'Erro']],
+        body: tableData,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [59, 130, 246] },
+        columnStyles: {
+          0: { cellWidth: 25 },
+          1: { cellWidth: 30 },
+          2: { cellWidth: 15 },
+          3: { cellWidth: 30 },
+          4: { cellWidth: 20 },
+          5: { cellWidth: 50 }
+        }
+      });
+      
+      // Salvar o PDF
+      doc.save(`relatorio-auditoria-lgpd-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      toast.success('Relatório PDF gerado com sucesso!');
+      
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast.error('Erro ao gerar relatório PDF');
+    }
+  };
+
+  const openDetailModal = (log: AuditLog) => {
+    setSelectedLog(log);
+    setIsDetailModalOpen(true);
+  };
+
   console.log('🎯 ConsultationAuditDashboard: Renderizando componente, logs:', logs.length);
 
   return (
@@ -133,10 +194,16 @@ export function ConsultationAuditDashboard() {
               <Eye className="h-5 w-5" />
               Logs de Auditoria LGPD
             </CardTitle>
-            <Button onClick={fetchLogs} variant="outline" size="sm" disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Atualizar
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={exportToPDF} variant="outline" size="sm" disabled={logs.length === 0}>
+                <Download className="h-4 w-4 mr-2" />
+                Exportar PDF
+              </Button>
+              <Button onClick={fetchLogs} variant="outline" size="sm" disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -150,12 +217,13 @@ export function ConsultationAuditDashboard() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Dados</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
+                    <TableCell colSpan={6} className="text-center py-8">
                       <div className="flex items-center justify-center gap-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                         Carregando logs de auditoria...
@@ -164,7 +232,7 @@ export function ConsultationAuditDashboard() {
                   </TableRow>
                 ) : logs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
+                    <TableCell colSpan={6} className="text-center py-8">
                       <div className="text-muted-foreground">
                         <p className="font-medium">Nenhum log encontrado</p>
                         <p className="text-sm">Realize algumas consultas (CPF, CNPJ, CEP) para gerar dados de auditoria.</p>
@@ -181,6 +249,15 @@ export function ConsultationAuditDashboard() {
                       <TableCell>{getTypeBadge(log.consultation_type)}</TableCell>
                       <TableCell className="font-mono text-xs">{log.searched_data}</TableCell>
                       <TableCell>{getStatusBadge(log.success)}</TableCell>
+                      <TableCell>
+                        <Button
+                          onClick={() => openDetailModal(log)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -189,6 +266,91 @@ export function ConsultationAuditDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de Detalhes */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Detalhes da Consulta de Auditoria
+            </DialogTitle>
+            <DialogDescription>
+              Informações completas do log de auditoria LGPD
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedLog && (
+            <div className="space-y-6">
+              {/* Informações Básicas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm text-muted-foreground">DATA E HORA</h3>
+                  <p className="font-mono">{format(new Date(selectedLog.created_at), 'dd/MM/yyyy HH:mm:ss')}</p>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm text-muted-foreground">USUÁRIO</h3>
+                  <p>{selectedLog.user_name}</p>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm text-muted-foreground">TIPO DE CONSULTA</h3>
+                  <div>{getTypeBadge(selectedLog.consultation_type)}</div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm text-muted-foreground">STATUS</h3>
+                  <div>{getStatusBadge(selectedLog.success)}</div>
+                </div>
+              </div>
+              
+              {/* Dados Consultados */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm text-muted-foreground">DADOS CONSULTADOS</h3>
+                <p className="font-mono bg-muted p-3 rounded">{selectedLog.searched_data}</p>
+              </div>
+              
+              {/* Informações Técnicas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm text-muted-foreground">ENDEREÇO IP</h3>
+                  <p className="font-mono">{selectedLog.ip_address ? String(selectedLog.ip_address) : 'Não disponível'}</p>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm text-muted-foreground">ID DO USUÁRIO</h3>
+                  <p className="font-mono text-xs">{selectedLog.user_id || 'Não disponível'}</p>
+                </div>
+              </div>
+              
+              {/* User Agent */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm text-muted-foreground">USER AGENT</h3>
+                <p className="font-mono text-xs bg-muted p-3 rounded break-all">
+                  {selectedLog.user_agent || 'Não disponível'}
+                </p>
+              </div>
+              
+              {/* Mensagem de Erro */}
+              {selectedLog.error_message && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm text-muted-foreground">MENSAGEM DE ERRO</h3>
+                  <p className="bg-red-50 border border-red-200 p-3 rounded text-red-800">
+                    {selectedLog.error_message}
+                  </p>
+                </div>
+              )}
+              
+              {/* Resultado da Consulta */}
+              {selectedLog.search_result && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm text-muted-foreground">RESULTADO DA CONSULTA</h3>
+                  <pre className="bg-muted p-3 rounded text-xs overflow-x-auto">
+                    {JSON.stringify(selectedLog.search_result, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
