@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Search, Users, Calendar, CheckCircle, TrendingUp, Crown } from "lucide-react";
 import { format, subDays } from "date-fns";
+import { logger } from '@/lib/secureLogger';
 
 interface AuditStats {
   totalConsultations: number;
@@ -20,7 +21,7 @@ interface AuditStats {
 }
 
 export function AuditStatsDashboard() {
-  console.log('🚀 AuditStatsDashboard: Componente iniciado');
+  logger.debug('🚀 AuditStatsDashboard: Componente iniciado');
   
   const [stats, setStats] = useState<AuditStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,27 +29,27 @@ export function AuditStatsDashboard() {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      console.log('🔍 AuditStatsDashboard: Iniciando busca de estatísticas...');
+      logger.debug('🔍 AuditStatsDashboard: Iniciando busca de estatísticas...');
       
       // Buscar estatísticas principais
       const { data: logs, error } = await supabase
         .from('consultation_audit_logs')
         .select('*');
 
-      console.log('🔍 AuditStatsDashboard: Resposta da consulta:', { logs, error });
+      // REMOVIDO: Log de resposta da consulta por segurança
 
       if (error) {
-        console.error('❌ AuditStatsDashboard: Erro na consulta:', error);
+        logger.error('❌ AuditStatsDashboard: Erro na consulta:', error);
         throw error;
       }
 
       if (!logs) {
-        console.log('⚠️ AuditStatsDashboard: Nenhum log encontrado');
+        logger.warn('⚠️ AuditStatsDashboard: Nenhum log encontrado');
         setStats(null);
         return;
       }
 
-      console.log('✅ AuditStatsDashboard: Logs encontrados:', logs.length);
+      logger.info('✅ AuditStatsDashboard: Logs encontrados:', logs.length);
 
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -94,17 +95,7 @@ export function AuditStatsDashboard() {
         return { date, count };
       });
 
-      console.log('📊 AuditStatsDashboard: Estatísticas calculadas:', {
-        totalConsultations,
-        totalUsers: uniqueUsers,
-        consultationsToday,
-        consultationsThisMonth,
-        cpfConsultations,
-        cnpjConsultations,
-        cepConsultations,
-        successRate,
-        topUsersCount: topUsers.length
-      });
+      // REMOVIDO: Log de estatísticas calculadas por segurança
 
       setStats({
         totalConsultations,
@@ -120,7 +111,7 @@ export function AuditStatsDashboard() {
       });
 
     } catch (error) {
-      console.error('❌ AuditStatsDashboard: Erro ao buscar estatísticas:', error);
+      logger.error('❌ AuditStatsDashboard: Erro ao buscar estatísticas:', error);
     } finally {
       setLoading(false);
     }

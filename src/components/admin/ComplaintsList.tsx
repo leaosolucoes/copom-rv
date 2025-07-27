@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, UserCheck, RefreshCw } from 'lucide-react';
 import { MediaModal } from "@/components/ui/media-modal";
+import { logger } from '@/lib/secureLogger';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -38,7 +39,7 @@ const VideoPreview = ({ video, index, onOpenModal }: VideoPreviewProps) => {
   const [videoError, setVideoError] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
-  console.log('VideoPreview renderizando:', video);
+  // REMOVIDO: Log de vídeo por segurança
 
   // Função para detectar o formato do vídeo
   const getVideoFormat = (url: string) => {
@@ -74,7 +75,7 @@ const VideoPreview = ({ video, index, onOpenModal }: VideoPreviewProps) => {
   };
 
   const handleVideoLoaded = () => {
-    console.log('Vídeo carregado com sucesso:', video);
+    logger.debug('Vídeo carregado com sucesso');
     setVideoLoaded(true);
   };
 
@@ -232,7 +233,7 @@ export const ComplaintsList = () => {
   // Novo useEffect para atualização automática da lista a cada 30 segundos
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log('🔄 Atualizando lista automaticamente...');
+      logger.debug('🔄 Atualizando lista automaticamente...');
       fetchComplaints();
     }, 30000); // 30 segundos
 
@@ -240,7 +241,7 @@ export const ComplaintsList = () => {
   }, [userRole]);
 
   const setupRealtimeUpdates = () => {
-    console.log(`🔗 Configurando realtime para: ${userRole}`);
+    logger.debug(`🔗 Configurando realtime para: ${userRole}`);
     
     const channel = supabase
       .channel(`complaints-realtime-${Math.random()}`)
@@ -252,7 +253,7 @@ export const ComplaintsList = () => {
           table: 'complaints'
         },
         (payload) => {
-          console.log(`📢 NOVA DENÚNCIA RECEBIDA (${userRole}):`, payload);
+          // REMOVIDO: Log de nova denúncia por segurança
           
           const newComplaint = payload.new as any;
           
@@ -260,10 +261,10 @@ export const ComplaintsList = () => {
           const shouldShow = userRole === 'super_admin' || userRole === 'admin' || 
                            (userRole === 'atendente' && newComplaint.status !== 'a_verificar' && newComplaint.status !== 'finalizada');
           
-          console.log(`🔍 Should show for ${userRole}:`, shouldShow, 'Status:', newComplaint.status);
+          // REMOVIDO: Log de should show por segurança
           
           if (shouldShow) {
-            console.log(`✅ Adicionando nova denúncia à lista...`);
+            logger.debug(`✅ Adicionando nova denúncia à lista...`);
             
             // Adicionar imediatamente à lista em tempo real
             setComplaints(prevComplaints => {
@@ -277,7 +278,7 @@ export const ComplaintsList = () => {
             
             // Tocar som se for uma denúncia nova
             if (newComplaint.status === 'nova' && soundEnabled) {
-              console.log(`🔊 Tocando som para nova denúncia...`);
+              logger.debug(`🔊 Tocando som para nova denúncia...`);
               playNotificationSound();
             }
             
@@ -298,7 +299,7 @@ export const ComplaintsList = () => {
           table: 'complaints'
         },
         (payload) => {
-          console.log(`📢 DENÚNCIA ATUALIZADA (${userRole}):`, payload);
+          // REMOVIDO: Log de denúncia atualizada por segurança
           
           const updatedComplaint = payload.new as Complaint;
           
@@ -327,9 +328,9 @@ export const ComplaintsList = () => {
       )
       .subscribe(
         (status) => {
-          console.log(`📡 Status da conexão realtime: ${status}`);
+          logger.debug(`📡 Status da conexão realtime: ${status}`);
           if (status === 'SUBSCRIBED') {
-            console.log('✅ Conectado ao realtime com sucesso!');
+            logger.info('✅ Conectado ao realtime com sucesso!');
           } else if (status === 'CHANNEL_ERROR') {
             console.error('❌ Erro na conexão realtime');
           }
@@ -341,7 +342,7 @@ export const ComplaintsList = () => {
 
   const refetch = async () => {
     try {
-      console.log('🔄 Recarregando denúncias...');
+      logger.debug('🔄 Recarregando denúncias...');
       const { data, error } = await supabase
         .from('complaints')
         .select(`
@@ -356,9 +357,9 @@ export const ComplaintsList = () => {
         throw error;
       }
       
-      console.log(`🔍 Refetch - Raw data count: ${data?.length || 0}`);
-      console.log(`🔍 Refetch - userRole: ${userRole}`);
-      console.log(`🔍 Refetch - profile role: ${profile?.role}`);
+      // REMOVIDO: Log de refetch data por segurança
+      // REMOVIDO: Log de userRole por segurança
+      // REMOVIDO: Log de profile role por segurança
       
       // Apply the same filtering logic as fetchComplaints
       let filteredData = data || [];
@@ -367,7 +368,7 @@ export const ComplaintsList = () => {
         filteredData = data?.filter(complaint => 
           complaint.status !== 'finalizada' && complaint.status !== 'a_verificar'
         ) || [];
-        console.log(`🔍 Refetch - Filtered data for atendente: ${filteredData?.length || 0}`);
+        // REMOVIDO: Log de filtered data por segurança
       }
       
       setComplaints(filteredData as Complaint[]);
@@ -393,10 +394,10 @@ export const ComplaintsList = () => {
   const fetchComplaints = async () => {
     try {
       setLoading(true);
-      console.log('🔍 FETCH COMPLAINTS - Iniciando...');
-      console.log('- Auth user:', user?.id);
-      console.log('- Profile:', profile);
-      console.log('- User role:', userRole);
+      logger.debug('🔍 FETCH COMPLAINTS - Iniciando...');
+      // REMOVIDO: Log de dados de usuário por segurança  
+      // REMOVIDO: Log de perfil por segurança
+      // REMOVIDO: Log de user role por segurança
       
       // Clear any cached data and force fresh query
       const { data, error } = await supabase
@@ -408,9 +409,9 @@ export const ComplaintsList = () => {
         `)
         .order('created_at', { ascending: false });
 
-      console.log('🔍 QUERY RESULT:');
-      console.log('- Error:', error);
-      console.log('- Data length:', data?.length || 0);
+      // REMOVIDO: Log de query result por segurança
+      // REMOVIDO: Log de error por segurança  
+      // REMOVIDO: Log de data length por segurança
 
       if (error) {
         console.error('❌ Erro na query:', error);
@@ -433,7 +434,7 @@ export const ComplaintsList = () => {
         console.log(`🔍 Filtered for atendente: ${filteredData?.length || 0}`);
       }
       
-      console.log(`🔍 Final complaints set: ${filteredData?.length || 0}`);
+      // REMOVIDO: Log de final complaints set por segurança
       setComplaints(filteredData as Complaint[]);
     } catch (error) {
       console.error('❌ Erro ao carregar denúncias:', error);
@@ -751,10 +752,10 @@ export const ComplaintsList = () => {
   };
 
   const playNotificationSound = () => {
-    console.log('🔊 Tentando tocar som - soundEnabled:', soundEnabled);
+    logger.debug('🔊 Tentando tocar som - soundEnabled:', soundEnabled);
     
     if (!soundEnabled) {
-      console.log('🔇 Som desabilitado nas configurações');
+      logger.debug('🔇 Som desabilitado nas configurações');
       return;
     }
 
@@ -770,7 +771,7 @@ export const ComplaintsList = () => {
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            console.log('✅ Som tocado com sucesso!');
+            logger.debug('✅ Som tocado com sucesso!');
           })
           .catch((error) => {
             console.log('❌ Erro ao tocar som principal, tentando fallback:', error);

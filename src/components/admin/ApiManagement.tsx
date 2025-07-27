@@ -114,14 +114,14 @@ export function ApiManagement() {
   ];
 
   useEffect(() => {
-    console.log('🎯 Componente ApiManagement montado');
+    logger.debug('🎯 Componente ApiManagement montado');
     setIsLoading(false); // Parar o loading imediatamente
     loadData(); // Carregar todos os dados
   }, []);
 
   const loadTokensDirectly = async () => {
     try {
-      console.log('🔄 Carregando tokens diretamente...');
+      logger.debug('🔄 Carregando tokens...');
       
       // Primeiro tentar carregar direto da API usando service role
       const response = await supabase.functions.invoke('api-auth', {
@@ -130,25 +130,25 @@ export function ApiManagement() {
         }
       });
       
-      console.log('📋 Resposta da edge function:', response);
+      // REMOVIDO: Log de resposta da edge function por segurança
       
       if (response.data?.success && response.data?.tokens) {
         setTokens(response.data.tokens);
-        console.log('✅ Tokens carregados via edge function:', response.data.tokens.length);
+        logger.info('✅ Tokens carregados via edge function:', response.data.tokens.length);
         return;
       }
       
       // Se não funcionou, tentar carregar diretamente da tabela (fallback)
-      console.log('🔄 Tentando carregar tokens diretamente da tabela...');
+      logger.debug('🔄 Tentando carregar tokens diretamente da tabela...');
       const { data: directTokens, error: directError } = await supabase
         .from('api_tokens')
         .select('*')
         .order('created_at', { ascending: false });
       
-      console.log('📋 Tokens diretos da tabela:', { tokens: directTokens, error: directError });
+      // REMOVIDO: Log de tokens diretos por segurança
       
       if (directError) {
-        console.error('❌ Erro ao carregar tokens diretamente:', directError);
+        logger.error('❌ Erro ao carregar tokens diretamente:', directError);
         // Mostrar erro detalhado no toast
         toast({
           title: "Erro ao carregar tokens",
@@ -163,10 +163,10 @@ export function ApiManagement() {
         ...token,
         token_type: token.token_type as 'sandbox' | 'production'
       })) as ApiToken[]);
-      console.log('✅ Tokens carregados diretamente:', directTokens?.length || 0);
+      logger.info('✅ Tokens carregados diretamente:', directTokens?.length || 0);
       
     } catch (error) {
-      console.error('💥 Erro geral ao carregar tokens:', error);
+      logger.error('💥 Erro geral ao carregar tokens:', error);
       toast({
         title: "Erro",
         description: `Erro inesperado: ${error.message}`,
@@ -177,7 +177,7 @@ export function ApiManagement() {
   };
 
   const loadData = async () => {
-    console.log('🔄 Função loadData chamada');
+    logger.debug('🔄 Função loadData chamada');
     setIsLoading(false); // Garantir que pare o loading
     await Promise.all([
       loadTokensDirectly(),
@@ -188,7 +188,7 @@ export function ApiManagement() {
 
   const loadTokensWithServiceRole = async () => {
     try {
-      console.log('🔧 Carregando tokens usando service role...');
+      logger.debug('🔧 Carregando tokens usando service role...');
       
       // Usar edge function para carregar tokens
       const response = await supabase.functions.invoke('api-auth', {
@@ -197,45 +197,45 @@ export function ApiManagement() {
         }
       });
       
-      console.log('📋 Resposta do service role:', response);
+      // REMOVIDO: Log de resposta do service role por segurança
       
       if (response.data?.tokens) {
         setTokens(response.data.tokens);
-        console.log('✅ Tokens carregados via service role');
+        logger.info('✅ Tokens carregados via service role');
       }
     } catch (error) {
-      console.error('💥 Erro ao carregar via service role:', error);
+      logger.error('💥 Erro ao carregar via service role:', error);
     }
   };
 
   const loadTokens = async () => {
     try {
-      console.log('🔄 Carregando tokens...');
+      logger.debug('🔄 Carregando tokens...');
       
       // Primeiro verificar se o usuário pode acessar
       const { data: authCheck, error: authError } = await supabase
         .rpc('is_current_user_super_admin_safe');
       
-      console.log('👑 Verificação de super admin:', { result: authCheck, error: authError });
+      // REMOVIDO: Log de verificação de super admin por segurança
       
       const { data, error } = await supabase
         .from('api_tokens')
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('📋 Resultado do carregamento:', { data, error, count: data?.length });
+      // REMOVIDO: Log de resultado do carregamento por segurança
 
       if (error) {
-        console.error('❌ Erro ao carregar tokens:', error);
-        console.log('🔧 Tentando carregar via service role...');
+        logger.error('❌ Erro ao carregar tokens:', error);
+        logger.debug('🔧 Tentando carregar via service role...');
         await loadTokensWithServiceRole();
         return;
       }
       
-      console.log('✅ Tokens carregados:', data);
+      logger.info('✅ Tokens carregados:', data?.length || 0);
       setTokens((data || []) as ApiToken[]);
     } catch (error: any) {
-      console.error('💥 Erro na função loadTokens:', error);
+      logger.error('💥 Erro na função loadTokens:', error);
       toast({
         title: "Erro",
         description: `Erro inesperado: ${error.message}`,
@@ -246,13 +246,13 @@ export function ApiManagement() {
 
   const loadLogs = async () => {
     try {
-      console.log('🔄 Carregando logs da API...');
+      logger.debug('🔄 Carregando logs da API...');
       
       // Primeiro verificar se o usuário pode acessar
       const { data: authCheck, error: authError } = await supabase
         .rpc('is_current_user_super_admin_safe');
       
-      console.log('👑 Verificação de super admin para logs:', { result: authCheck, error: authError });
+      // REMOVIDO: Log de verificação de super admin para logs por segurança
       
       const { data, error } = await supabase
         .from('api_logs')
@@ -260,20 +260,20 @@ export function ApiManagement() {
         .order('created_at', { ascending: false })
         .limit(100);
 
-      console.log('📋 Resultado do carregamento de logs:', { data, error, count: data?.length });
+      // REMOVIDO: Log de resultado do carregamento de logs por segurança
 
       if (error) {
-        console.error('❌ Erro ao carregar logs:', error);
+        logger.error('❌ Erro ao carregar logs:', error);
         throw error;
       }
       
-      console.log('✅ Logs carregados:', data?.length || 0);
+      logger.info('✅ Logs carregados:', data?.length || 0);
       setLogs((data || []).map(log => ({
         ...log,
         ip_address: String(log.ip_address || 'unknown')
       })) as ApiLog[]);
     } catch (error: any) {
-      console.error('💥 Erro na função loadLogs:', error);
+      logger.error('💥 Erro na função loadLogs:', error);
       setLogs([]);
       toast({
         title: "Erro",
@@ -285,29 +285,29 @@ export function ApiManagement() {
 
   const loadEndpoints = async () => {
     try {
-      console.log('🔄 Carregando endpoints...');
+      logger.debug('🔄 Carregando endpoints...');
       const { data, error } = await supabase
         .from('api_endpoints')
         .select('*')
         .order('path');
 
       if (error) {
-        console.error('❌ Erro ao carregar endpoints:', error);
+        logger.error('❌ Erro ao carregar endpoints:', error);
         throw error;
       }
       
-      console.log('✅ Endpoints carregados:', data?.length || 0);
+      logger.info('✅ Endpoints carregados:', data?.length || 0);
       setEndpoints(data || []);
     } catch (error) {
-      console.error('💥 Erro na função loadEndpoints:', error);
+      logger.error('💥 Erro na função loadEndpoints:', error);
       setEndpoints([]);
     }
   };
 
   const generateToken = async () => {
     try {
-      console.log('🔄 Iniciando geração de token...');
-      console.log('📋 Dados do token:', newTokenData);
+      logger.debug('🔄 Iniciando geração de token...');
+      // REMOVIDO: Log de dados sensíveis do token
 
       // Abordagem mais simples - usar invoke diretamente sem headers customizados
       const response = await supabase.functions.invoke('api-auth', {
@@ -317,15 +317,15 @@ export function ApiManagement() {
         }
       });
 
-      console.log('📡 Resposta completa da função:', JSON.stringify(response, null, 2));
+      // REMOVIDO: Log de resposta completa por segurança
 
       if (response.error) {
-        console.error('❌ Erro na função:', response.error);
+        logger.error('❌ Erro na função:', response.error);
         throw new Error(`Erro na API: ${response.error.message || response.error}`);
       }
 
       if (response.data?.success) {
-        console.log('✅ Token gerado com sucesso!');
+        logger.info('✅ Token gerado com sucesso!');
         setGeneratedToken(response.data.token);
         setShowGeneratedToken(true);
         setShowTokenDialog(false);
@@ -343,11 +343,11 @@ export function ApiManagement() {
           description: "Token gerado com sucesso!",
         });
       } else {
-        console.error('❌ Resposta sem sucesso:', response.data);
+        logger.error('❌ Resposta sem sucesso:', response.data);
         throw new Error(response.data?.error || 'Falha na geração do token');
       }
     } catch (error: any) {
-      console.error('💥 Erro completo ao gerar token:', error);
+      logger.error('💥 Erro completo ao gerar token:', error);
       toast({
         title: "Erro",
         description: `Erro: ${error.message}`,
