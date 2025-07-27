@@ -52,6 +52,12 @@ export function ConsultationAuditDashboard() {
     try {
       console.log('🔍 ConsultationAuditDashboard: Iniciando busca de logs...');
       
+      // Verificar contexto de autenticação
+      const { data: { session } } = await supabase.auth.getSession();
+      const customSession = localStorage.getItem('custom_session');
+      console.log('🔐 Sessão Supabase:', session?.user?.id || 'Nenhuma');
+      console.log('🔐 Sessão Customizada:', customSession ? 'Sim' : 'Não');
+      
       let query = supabase
         .from('consultation_audit_logs')
         .select('*')
