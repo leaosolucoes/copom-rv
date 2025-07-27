@@ -17,18 +17,20 @@ interface CPFData {
 // Componente de marca d'água diagonal
 const WatermarkOverlay = ({ userName }: { userName: string }) => {
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
-      <div className="absolute inset-0 grid grid-cols-3 gap-8 opacity-10">
-        {Array.from({ length: 15 }).map((_, index) => (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-50">
+      <div className="absolute inset-0 flex flex-wrap justify-center items-center opacity-15">
+        {Array.from({ length: 25 }).map((_, index) => (
           <div
             key={index}
-            className="flex items-center justify-center h-full"
+            className="absolute"
             style={{
               transform: 'rotate(-45deg)',
               transformOrigin: 'center',
+              left: `${(index % 5) * 20}%`,
+              top: `${Math.floor(index / 5) * 20}%`,
             }}
           >
-            <span className="text-foreground text-2xl font-bold whitespace-nowrap">
+            <span className="text-foreground text-xl font-bold whitespace-nowrap">
               {userName}
             </span>
           </div>
@@ -302,7 +304,7 @@ export const CPFLookup = () => {
             <WatermarkOverlay userName={profile.full_name} />
           )}
           
-          <DialogHeader className="relative z-20">
+          <DialogHeader className="relative z-10">
             <DialogTitle>Dados do CPF</DialogTitle>
             <DialogDescription>
               Informações cadastrais encontradas para o CPF {cpf}
@@ -311,7 +313,7 @@ export const CPFLookup = () => {
           
           
           {data && (
-            <div className="space-y-6 relative z-20">
+            <div className="space-y-6 relative z-10">
               {/* Dados Pessoais */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Dados Pessoais</h3>
