@@ -5,10 +5,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useSystemColors } from "@/hooks/useSystemColors";
-import { useDevToolsProtection } from "@/hooks/useDevToolsProtection";
+// import { useDevToolsProtection } from "@/hooks/useDevToolsProtection";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { SecurityProvider } from "@/components/security/SecurityProvider";
-import { validateDomain, checkIntegrity, initAntiTamper } from "@/utils/codeProtection";
+// import { SecurityProvider } from "@/components/security/SecurityProvider";
+// import { validateDomain, checkIntegrity, initAntiTamper } from "@/utils/codeProtection";
 import { logger } from "@/lib/secureLogger";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -25,11 +25,12 @@ const App = () => {
   // Carregar e aplicar cores do sistema
   useSystemColors();
   
-  // Proteções ativadas para produção
-  useDevToolsProtection();
+  // Proteções temporariamente desativadas para debug
+  // useDevToolsProtection();
   
   useEffect(() => {
-    // Inicializar proteções de segurança
+    // Proteções de segurança temporariamente desativadas para debug
+    /*
     if (process.env.NODE_ENV === 'production') {
       try {
         if (!validateDomain()) {
@@ -45,14 +46,14 @@ const App = () => {
         window.location.href = '/';
       }
     }
+    */
     
-    logger.info('Sistema iniciado com proteções ativas');
+    logger.info('Sistema iniciado');
   }, []);
 
   return (
   <QueryClientProvider client={queryClient}>
-    <SecurityProvider>
-      <TooltipProvider>
+    <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -94,8 +95,7 @@ const App = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-      </TooltipProvider>
-    </SecurityProvider>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 };
