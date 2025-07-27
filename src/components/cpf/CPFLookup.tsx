@@ -192,52 +192,54 @@ export const CPFLookup = () => {
                 <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Nome Completo</label>
-                    <p className="text-lg font-semibold">{data.nomeCompleto || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data.nomeCompleto || data.nome || "Não informado"}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">CPF</label>
-                    <p className="text-lg font-semibold">{data.documento || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data.documento || data.cpf || "Não informado"}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Gênero</label>
-                    <p className="text-lg font-semibold">{data.genero || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data.genero || data.sexo || "Não informado"}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Data de Nascimento</label>
-                    <p className="text-lg font-semibold">{data.dataDeNascimento || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data.dataDeNascimento || data.nascimento || "Não informado"}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Idade</label>
-                    <p className="text-lg font-semibold">{data.anos ? `${data.anos} anos` : "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data.anos ? `${data.anos} anos` : data.idade ? `${data.idade} anos` : "Não informado"}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
                   <div className="p-3 bg-muted rounded-lg">
                     <label className="text-sm font-medium text-muted-foreground">Signo</label>
-                    <p className="text-lg font-semibold">{data.zodiaco || "Não informado"}</p>
+                    <p className="text-lg font-semibold">{data.zodiaco || data.signo || "Não informado"}</p>
                   </div>
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <div className="p-3 bg-muted rounded-lg">
-                  <label className="text-sm font-medium text-muted-foreground">Salário Estimado</label>
-                  <p className="text-lg font-semibold">{data.salarioEstimado ? `R$ ${data.salarioEstimado}` : "Não informado"}</p>
+              {(data.salarioEstimado || data.salario) && (
+                <div className="space-y-2">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <label className="text-sm font-medium text-muted-foreground">Salário Estimado</label>
+                    <p className="text-lg font-semibold">R$ {data.salarioEstimado || data.salario}</p>
+                  </div>
                 </div>
-              </div>
+              )}
               
               {data.listaTelefones && Array.isArray(data.listaTelefones) && data.listaTelefones.length > 0 && (
                 <div className="space-y-2">
@@ -246,7 +248,9 @@ export const CPFLookup = () => {
                     <div className="mt-2 space-y-1">
                       {data.listaTelefones.map((telefone: any, index: number) => (
                         <p key={index} className="text-lg font-semibold">
-                          {telefone.telefoneComDDD} {telefone.operadora && `(${telefone.operadora})`} {telefone.tipoTelefone && `- ${telefone.tipoTelefone}`}
+                          {telefone.telefoneComDDD || telefone.numero} 
+                          {telefone.operadora && ` (${telefone.operadora})`} 
+                          {telefone.tipoTelefone && ` - ${telefone.tipoTelefone}`}
                         </p>
                       ))}
                     </div>
