@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste API CPF</title>
+</head>
+<body>
+    <h1>Teste API CPF</h1>
+    <button onclick="testarAPI()">Testar API</button>
+    <div id="resultado"></div>
+
+    <script>
+        async function testarAPI() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = 'Testando...';
+            
+            try {
+                const response = await fetch('https://smytdnkylauxocqrkchn.supabase.co/functions/v1/test-cpf-api', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                resultado.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                
+                // Também mostrar no console
+                console.log('=== RESULTADO DO TESTE ===');
+                console.log(data);
+                
+            } catch (error) {
+                resultado.innerHTML = 'Erro: ' + error.message;
+                console.error('Erro:', error);
+            }
+        }
+    </script>
+</body>
+</html>
