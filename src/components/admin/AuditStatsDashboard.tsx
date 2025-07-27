@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { BarChart3, Eye, Users, Calendar, TrendingUp, Shield } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Search, Users, Calendar, CheckCircle, TrendingUp, Crown } from "lucide-react";
+import { format, subDays } from "date-fns";
 
 interface AuditStats {
   totalConsultations: number;
@@ -14,14 +15,8 @@ interface AuditStats {
   cnpjConsultations: number;
   cepConsultations: number;
   successRate: number;
-  topUsers: Array<{
-    user_name: string;
-    consultation_count: number;
-  }>;
-  dailyConsultations: Array<{
-    date: string;
-    count: number;
-  }>;
+  topUsers: Array<{ name: string; consultations: number }>;
+  dailyConsultations: Array<{ date: string; count: number }>;
 }
 
 export function AuditStatsDashboard() {
@@ -62,11 +57,9 @@ export function AuditStatsDashboard() {
       // Calcular estatísticas
       const totalConsultations = logs.length;
       const uniqueUsers = new Set(logs.map(log => log.user_id)).size;
-      
       const consultationsToday = logs.filter(log => 
         new Date(log.created_at) >= today
       ).length;
-      
       const consultationsThisMonth = logs.filter(log => 
         new Date(log.created_at) >= thisMonth
       ).length;
@@ -75,28 +68,26 @@ export function AuditStatsDashboard() {
       const cnpjConsultations = logs.filter(log => log.consultation_type === 'CNPJ').length;
       const cepConsultations = logs.filter(log => log.consultation_type === 'CEP').length;
 
-      const successfulConsultations = logs.filter(log => log.success).length;
-      const successRate = totalConsultations > 0 ? (successfulConsultations / totalConsultations) * 100 : 0;
+      const successfulLogs = logs.filter(log => log.success);
+      const successRate = totalConsultations > 0 
+        ? Math.round((successfulLogs.length / totalConsultations) * 100)
+        : 0;
 
       // Top usuários
-      const userConsultations = logs.reduce((acc, log) => {
-        acc[log.user_name] = (acc[log.user_name] || 0) + 1;
+      const userCounts = logs.reduce((acc, log) => {
+        const userName = log.user_name || 'Usuário Desconhecido';
+        acc[userName] = (acc[userName] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      const topUsers = Object.entries(userConsultations)
-        .map(([user_name, consultation_count]) => ({ user_name, consultation_count }))
-        .sort((a, b) => b.consultation_count - a.consultation_count)
+      const topUsers = Object.entries(userCounts)
+        .map(([name, consultations]) => ({ name, consultations }))
+        .sort((a, b) => b.consultations - a.consultations)
         .slice(0, 5);
 
-      // Consultas diárias dos últimos 7 dias
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        return date.toISOString().split('T')[0];
-      }).reverse();
-
-      const dailyConsultations = last7Days.map(date => {
+      // Consultas por dia (últimos 7 dias)
+      const dailyConsultations = Array.from({ length: 7 }, (_, i) => {
+        const date = format(subDays(now, 6 - i), 'yyyy-MM-dd');
         const count = logs.filter(log => 
           log.created_at.split('T')[0] === date
         ).length;
@@ -141,13 +132,13 @@ export function AuditStatsDashboard() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {Array.from({ length: 8 }).map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        {[...Array(4)].map((_, i) => (
           <Card key={i}>
             <CardContent className="p-6">
-              <div className="animate-pulse">
-                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                <div className="h-8 bg-muted rounded w-1/2"></div>
+              <div className="animate-pulse space-y-2">
+                <div className="h-4 bg-muted rounded w-1/2"></div>
+                <div className="h-8 bg-muted rounded w-3/4"></div>
               </div>
             </CardContent>
           </Card>
@@ -158,27 +149,26 @@ export function AuditStatsDashboard() {
 
   if (!stats) {
     return (
-      <Card>
+      <Card className="mb-6">
         <CardContent className="p-6 text-center">
-          <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-muted-foreground">Nenhum dado de auditoria encontrado</p>
+          <p className="text-muted-foreground">Nenhuma estatística disponível</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Cards de estatísticas principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-6 mb-6">
+      {/* Cards de Estatísticas Principais */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total de Consultas</p>
-                <p className="text-2xl font-bold">{stats.totalConsultations}</p>
+                <p className="text-2xl font-bold text-primary">{stats.totalConsultations}</p>
               </div>
-              <Eye className="h-8 w-8 text-blue-600" />
+              <Search className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -187,10 +177,10 @@ export function AuditStatsDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Usuários Ativos</p>
-                <p className="text-2xl font-bold">{stats.totalUsers}</p>
+                <p className="text-sm font-medium text-muted-foreground">Usuários Únicos</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.totalUsers}</p>
               </div>
-              <Users className="h-8 w-8 text-green-600" />
+              <Users className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -199,10 +189,10 @@ export function AuditStatsDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Consultas Hoje</p>
-                <p className="text-2xl font-bold">{stats.consultationsToday}</p>
+                <p className="text-sm font-medium text-muted-foreground">Hoje</p>
+                <p className="text-2xl font-bold text-green-600">{stats.consultationsToday}</p>
               </div>
-              <Calendar className="h-8 w-8 text-orange-600" />
+              <Calendar className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -212,27 +202,24 @@ export function AuditStatsDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Taxa de Sucesso</p>
-                <p className="text-2xl font-bold">{stats.successRate.toFixed(1)}%</p>
+                <p className="text-2xl font-bold text-emerald-600">{stats.successRate}%</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-purple-600" />
+              <CheckCircle className="h-8 w-8 text-muted-foreground" />
             </div>
-            <Progress value={stats.successRate} className="mt-2" />
           </CardContent>
         </Card>
       </div>
 
-      {/* Cards de consultas por tipo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Cards de Tipos de Consulta */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Consultas CPF</p>
-                <p className="text-xl font-bold">{stats.cpfConsultations}</p>
+                <p className="text-xl font-bold text-blue-600">{stats.cpfConsultations}</p>
               </div>
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                CPF
-              </Badge>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">CPF</Badge>
             </div>
           </CardContent>
         </Card>
@@ -242,11 +229,9 @@ export function AuditStatsDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Consultas CNPJ</p>
-                <p className="text-xl font-bold">{stats.cnpjConsultations}</p>
+                <p className="text-xl font-bold text-purple-600">{stats.cnpjConsultations}</p>
               </div>
-              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                CNPJ
-              </Badge>
+              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">CNPJ</Badge>
             </div>
           </CardContent>
         </Card>
@@ -256,104 +241,75 @@ export function AuditStatsDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Consultas CEP</p>
-                <p className="text-xl font-bold">{stats.cepConsultations}</p>
+                <p className="text-xl font-bold text-orange-600">{stats.cepConsultations}</p>
               </div>
-              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                CEP
-              </Badge>
+              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">CEP</Badge>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Top usuários e consultas diárias */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Top 5 Usuários
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {stats.topUsers.map((user, index) => (
-                <div key={user.user_name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
-                      {index + 1}
-                    </div>
-                    <span className="font-medium">{user.user_name}</span>
-                  </div>
-                  <Badge variant="secondary">
-                    {user.consultation_count} consultas
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Consultas dos Últimos 7 Dias
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {stats.dailyConsultations.map((day) => (
-                <div key={day.date} className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
-                    {new Date(day.date).toLocaleDateString('pt-BR', { 
-                      day: '2-digit', 
-                      month: '2-digit' 
-                    })}
-                  </span>
-                  <div className="flex items-center gap-2 flex-1 mx-4">
-                    <Progress 
-                      value={stats.dailyConsultations.length > 0 ? (day.count / Math.max(...stats.dailyConsultations.map(d => d.count))) * 100 : 0} 
-                      className="flex-1" 
-                    />
-                    <span className="text-sm font-medium w-8 text-right">{day.count}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Resumo mensal */}
+      {/* Gráfico de Consultas por Dia */}
       <Card>
         <CardHeader>
-          <CardTitle>Resumo do Mês Atual</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Consultas nos Últimos 7 Dias
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{stats.consultationsThisMonth}</p>
-              <p className="text-sm text-muted-foreground">Consultas no mês</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">
-                {stats.consultationsThisMonth > 0 ? Math.round(stats.consultationsThisMonth / new Date().getDate()) : 0}
-              </p>
-              <p className="text-sm text-muted-foreground">Média diária</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-orange-600">
-                {stats.totalConsultations > 0 ? Math.round((stats.consultationsThisMonth / stats.totalConsultations) * 100) : 0}%
-              </p>
-              <p className="text-sm text-muted-foreground">Do total</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">
-                {stats.consultationsToday}
-              </p>
-              <p className="text-sm text-muted-foreground">Hoje</p>
-            </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats.dailyConsultations}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(value) => format(new Date(value), 'dd/MM')}
+                />
+                <YAxis />
+                <Tooltip 
+                  labelFormatter={(value) => format(new Date(value), 'dd/MM/yyyy')}
+                  formatter={(value) => [value, 'Consultas']}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="count" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Top Usuários */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Crown className="h-5 w-5" />
+            Top 5 Usuários
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {stats.topUsers.map((user, index) => (
+              <div key={user.name} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-bold">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {user.consultations} consulta{user.consultations !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="outline">{user.consultations}</Badge>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
