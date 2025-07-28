@@ -1975,15 +1975,22 @@ export const ComplaintsList = () => {
                  </TableRow>
                </TableHeader>
                <TableBody>
-                  {filteredComplaints
-                     .filter(complaint => {
-                       // Incluir denúncias "cadastrada", "fiscal_solicitado" e "finalizada" no histórico
-                       if (complaint.status === 'cadastrada' || complaint.status === 'fiscal_solicitado' || complaint.status === 'finalizada') return true;
-                       // Para admin e super_admin, incluir "a_verificar" no histórico se processada
-                       if ((userRole === 'admin' || userRole === 'super_admin') && complaint.status === 'a_verificar' && complaint.processed_at) return true;
-                       // Excluir "nova" e "verificado" da aba histórico
-                       return false;
-                    })
+                   {filteredComplaints
+                      .filter(complaint => {
+                        // Para atendentes: apenas "cadastrada" e "fiscal_solicitado"
+                        if (userRole === 'atendente') {
+                          return complaint.status === 'cadastrada' || complaint.status === 'fiscal_solicitado';
+                        }
+                        
+                        // Para admin e super_admin: incluir também "finalizada" e "a_verificar" processadas
+                        if (userRole === 'admin' || userRole === 'super_admin') {
+                          if (complaint.status === 'cadastrada' || complaint.status === 'fiscal_solicitado' || complaint.status === 'finalizada') return true;
+                          if (complaint.status === 'a_verificar' && complaint.processed_at) return true;
+                        }
+                        
+                        // Excluir "nova" e "verificado" da aba histórico
+                        return false;
+                     })
                     .map((complaint) => {
                       const duplicateInfo = getDuplicateInfo(complaint, complaints);
                       
