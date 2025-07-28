@@ -117,9 +117,16 @@ export const FormFieldsConfig = () => {
   };
 
   const loadAllFields = async () => {
-    if (!confirm('Isso irá substituir a configuração atual por todos os campos disponíveis. Continuar?')) return;
+    console.log('loadAllFields chamada');
+    
+    if (!confirm('Isso irá substituir a configuração atual por todos os campos disponíveis. Continuar?')) {
+      console.log('Usuário cancelou a operação');
+      return;
+    }
 
     try {
+      console.log('Iniciando carregamento de todos os campos...');
+      
       // Define todos os campos disponíveis
       const allFields: FormField[] = [
         // DADOS DO DENUNCIANTE
@@ -214,18 +221,29 @@ export const FormFieldsConfig = () => {
         }
       ];
 
+      console.log('Campos definidos:', allFields.length);
+      console.log('Tentando salvar configuração...');
+      
       await saveFieldsConfig(allFields);
+      console.log('Configuração salva, atualizando estado...');
+      
       setFields(allFields);
+      console.log('Estado atualizado com sucesso');
 
       toast({
         title: "Sucesso",
         description: `Todos os ${allFields.length} campos foram carregados com sucesso!`,
       });
+      
+      console.log('Toast exibido, operação concluída');
+      
     } catch (error: any) {
-      console.error('Erro ao carregar todos os campos:', error);
+      console.error('Erro detalhado ao carregar todos os campos:', error);
+      console.error('Stack trace:', error.stack);
+      
       toast({
         title: "Erro",
-        description: "Erro ao carregar todos os campos",
+        description: `Erro ao carregar todos os campos: ${error.message || 'Erro desconhecido'}`,
         variant: "destructive",
       });
     }
