@@ -379,7 +379,11 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                     </TableCell>
                     <TableCell>
                       {user.last_login 
-                        ? new Date(user.last_login).toLocaleDateString('pt-BR')
+                        ? new Date(user.last_login).toLocaleDateString('pt-BR') + ' ' + 
+                          new Date(user.last_login).toLocaleTimeString('pt-BR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })
                         : 'Nunca'
                       }
                     </TableCell>
