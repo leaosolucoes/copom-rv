@@ -166,16 +166,36 @@ export const useSupabaseAuth = () => {
         is_active: userData.is_active
       };
       
-      // Store FIRST for mobile reliability
+      // Store FIRST for mobile reliability - use multiple storage methods
       localStorage.setItem('custom_session', JSON.stringify(mockSession));
       localStorage.setItem('custom_profile', JSON.stringify(profileData));
       
-    // Set auth state for both mobile and desktop
-    setUser(mockUser);
-    setSession(mockSession);
-    setProfile(profileData);
-    
-    logger.debug('✅ Auth state set successfully for', userData.full_name, 'role:', userData.role);
+      // Additional mobile-specific storage
+      sessionStorage.setItem('mobile_auth_backup', JSON.stringify({
+        session: mockSession,
+        profile: profileData,
+        timestamp: Date.now()
+      }));
+      
+      // Set auth state immediately for mobile
+      setUser(mockUser);
+      setSession(mockSession);
+      setProfile(profileData);
+      
+      // Force state update for mobile
+      if (typeof window !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent)) {
+        logger.debug('📱 MOBILE: Forcing state synchronization...');
+        
+        // Dispatch custom event for mobile sync
+        window.dispatchEvent(new CustomEvent('mobileAuthSuccess', {
+          detail: { profile: profileData, session: mockSession }
+        }));
+        
+        // Additional mobile delay for state sync
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      logger.debug('✅ Auth state set successfully for', userData.full_name, 'role:', userData.role);
 
       // Update last login
       await supabase

@@ -88,25 +88,71 @@ const Login = () => {
     setError('');
 
     try {
-      console.log('🔐 Starting mobile-optimized login process...');
-      const { error } = await signIn(email.toLowerCase().trim(), password);
+      console.log('📱 MOBILE LOGIN: Iniciando processo de autenticação...', { isMobile });
       
-      if (error) {
+      const result = await signIn(email.toLowerCase().trim(), password);
+      
+      if (result?.error) {
+        console.log('❌ MOBILE LOGIN: Erro na autenticação:', result.error);
         setError('Email ou senha incorretos');
         setLoading(false);
-      } else {
-        console.log('✅ Login successful, waiting for state sync...');
-        // Keep loading state until redirection happens
-        // useEffect will handle the redirection and clear loading
-        setTimeout(() => {
-          if (loading) {
-            console.log('📱 MOBILE: Redirection timeout, clearing loading');
-            setLoading(false);
-          }
-        }, 3000);
+        return;
       }
+
+      console.log('✅ MOBILE LOGIN: SignIn successful, iniciando verificação...');
+      
+      // Para mobile, forçar verificação manual do localStorage
+      if (isMobile) {
+        console.log('📱 MOBILE LOGIN: Aguardando sincronização mobile...');
+        
+        // Aguardar mais tempo para mobile
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Verificar localStorage diretamente
+        const storedProfile = localStorage.getItem('custom_profile');
+        const storedSession = localStorage.getItem('custom_session');
+        
+        if (storedProfile && storedSession) {
+          const profileData = JSON.parse(storedProfile);
+          console.log('📱 MOBILE LOGIN: Profile encontrado no localStorage:', profileData);
+          
+          // Navegar diretamente baseado no localStorage
+          const routes = {
+            'super_admin': '/super-admin',
+            'admin': '/admin', 
+            'atendente': '/atendente',
+            'fiscal': '/fiscal'
+          };
+          
+          const targetRoute = routes[profileData.role as keyof typeof routes] || '/';
+          console.log('📱 MOBILE LOGIN: Redirecionando para:', targetRoute);
+          
+          try {
+            navigate(targetRoute, { replace: true });
+            console.log('✅ MOBILE LOGIN: Navegação React Router executada');
+          } catch (navError) {
+            console.error('❌ MOBILE LOGIN: React Router falhou, usando window.location');
+            window.location.href = targetRoute;
+          }
+          
+          setLoading(false);
+          return;
+        } else {
+          console.log('⚠️ MOBILE LOGIN: Dados não encontrados no localStorage');
+        }
+      }
+      
+      // Fallback para desktop ou se mobile falhar
+      console.log('💻 DESKTOP LOGIN: Aguardando useEffect redirection...');
+      setTimeout(() => {
+        if (loading) {
+          console.log('⚠️ LOGIN: Timeout atingido, limpando loading');
+          setLoading(false);
+        }
+      }, 4000);
+      
     } catch (error: any) {
-      console.error('❌ Login error:', error);
+      console.error('💥 LOGIN: Erro inesperado:', error);
       setError('Erro ao fazer login');
       setLoading(false);
     }
