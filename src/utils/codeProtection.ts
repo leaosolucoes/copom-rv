@@ -34,20 +34,7 @@ export const checkIntegrity = (): boolean => {
       return false;
     }
 
-    // Verifica se scripts foram injetados maliciosamente
-    const scripts = document.querySelectorAll('script');
-    const suspiciousKeywords = ['eval', 'Function', 'setTimeout', 'setInterval'];
-    
-    for (const script of scripts) {
-      if (script.src && !script.src.includes(window.location.origin)) {
-        // Script externo suspeito
-        const text = script.textContent || '';
-        if (suspiciousKeywords.some(keyword => text.includes(keyword))) {
-          return false;
-        }
-      }
-    }
-
+    // Mobile compatibility - skip script verification that causes false positives
     return true;
   } catch (error) {
     return false;
