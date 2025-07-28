@@ -85,17 +85,8 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
         return;
       }
       
-      // Bloquear acesso ao console apenas em produção
-      if (process.env.NODE_ENV === 'production') {
-        Object.defineProperty(window, 'console', {
-          get: () => {
-            logger.error('Tentativa de acesso ao console detectada');
-            return {};
-          },
-          set: () => {},
-          configurable: false
-        });
-      }
+      // Console blocking disabled to prevent production issues
+      // This was causing JavaScript errors and breaking functionality
     };
 
     // 4. Rate limiting ULTRA restritivo
