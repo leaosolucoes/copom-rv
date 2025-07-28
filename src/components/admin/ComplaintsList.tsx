@@ -846,7 +846,7 @@ export const ComplaintsList = () => {
     try {
       const updateData: any = {
         status,
-        attendant_id: user?.id,
+        attendant_id: profile?.id || user?.id,
         processed_at: new Date().toISOString(),
         classification: raiData.classification || ''
       };
@@ -860,7 +860,10 @@ export const ComplaintsList = () => {
         .update(updateData)
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro detalhado ao atualizar denúncia:', error);
+        throw error;
+      }
       
       toast({
         title: "Sucesso",
