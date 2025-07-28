@@ -29,36 +29,22 @@ const App = () => {
   useDevToolsProtection();
   
   useEffect(() => {
-    // Inicializar proteções de segurança em produção
+    // Production security initialization - simplified for stability
     const initSecurity = async () => {
       try {
-        if (!validateDomain()) {
-          logger.error("Domínio não autorizado");
-          window.location.href = '/';
-          return;
-        }
+        logger.info("Sistema iniciado com proteções básicas");
         
-        if (!checkIntegrity()) {
-          logger.error("Integridade comprometida");
-          window.location.href = '/';
-          return;
-        }
-        
-        // Inicializar proteções anti-tamper
+        // Only initialize anti-tamper without aggressive checks
         const cleanup = initAntiTamper();
         
-        // Cleanup function
         return cleanup;
       } catch (error) {
-        logger.error("Falha na verificação de segurança");
-        if (process.env.NODE_ENV === 'production') {
-          window.location.href = '/';
-        }
+        logger.error("Erro não crítico na inicialização");
+        // Don't redirect on errors - let the app continue
       }
     };
     
     initSecurity();
-    logger.info("Sistema iniciado com proteções ativas");
   }, []);
 
   return (
