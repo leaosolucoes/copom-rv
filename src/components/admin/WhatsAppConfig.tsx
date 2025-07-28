@@ -27,7 +27,8 @@ export const WhatsAppConfig = () => {
   const fetchConfig = async () => {
     try {
       setLoading(true);
-      console.log('Carregando configurações do WhatsApp...');
+      console.log('=== INÍCIO DO DEBUG WHATSAPP CONFIG ===');
+      console.log('User logado:', !!supabase.auth.getUser());
       
       const { data, error } = await supabase
         .from('system_settings')
@@ -42,12 +43,25 @@ export const WhatsAppConfig = () => {
           'whatsapp_auto_send_enabled'
         ]);
 
-      console.log('Dados retornados do banco:', data);
-      console.log('Erro (se houver):', error);
+      console.log('Query executada com sucesso');
+      console.log('Dados brutos retornados:', data);
+      console.log('Erro na query:', error);
+      console.log('Quantidade de registros:', data?.length || 0);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar configurações:', error);
+        throw error;
+      }
 
+      if (!data || data.length === 0) {
+        console.warn('Nenhuma configuração encontrada!');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Processando cada registro:');
       const settings = data?.reduce((acc, setting) => {
+        console.log(`Processando: ${setting.key} = `, setting.value);
         const key = setting.key.replace('whatsapp_', '');
         // O valor pode estar como string direta ou como array JSON
         let value = setting.value;
@@ -57,13 +71,13 @@ export const WhatsAppConfig = () => {
           value = JSON.stringify(value);
         }
         acc[key] = value;
-        console.log(`Configuração encontrada: ${key} = ${value}`);
+        console.log(`Configuração final: ${key} = ${value}`);
         return acc;
       }, {} as any) || {};
 
-      console.log('Settings processados:', settings);
+      console.log('Settings finais processados:', settings);
 
-      setConfig({
+      const newConfig = {
         api_key: settings.api_key || '',
         api_url: settings.api_url || '',
         instance_name: settings.instance_name || '',
@@ -108,8 +122,13 @@ export const WhatsAppConfig = () => {
 _Acesse o sistema para mais detalhes e acompanhamento._`,
         send_full_complaint: settings.send_full_complaint || false,
         auto_send_enabled: settings.auto_send_enabled !== false
-      });
+      };
+
+      console.log('Configuração final que será aplicada:', newConfig);
+      setConfig(newConfig);
+      
     } catch (error) {
+      console.error('Erro completo:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar configurações do WhatsApp",
