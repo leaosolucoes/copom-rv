@@ -49,8 +49,15 @@ export const WhatsAppConfig = () => {
 
       const settings = data?.reduce((acc, setting) => {
         const key = setting.key.replace('whatsapp_', '');
-        acc[key] = setting.value;
-        console.log(`Configuração encontrada: ${key} = ${setting.value}`);
+        // O valor pode estar como string direta ou como array JSON
+        let value = setting.value;
+        if (typeof value === 'object' && Array.isArray(value) && value.length === 1) {
+          value = value[0];
+        } else if (typeof value === 'object' && value !== null) {
+          value = JSON.stringify(value);
+        }
+        acc[key] = value;
+        console.log(`Configuração encontrada: ${key} = ${value}`);
         return acc;
       }, {} as any) || {};
 
