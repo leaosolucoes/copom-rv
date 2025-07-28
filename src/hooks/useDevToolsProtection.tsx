@@ -110,65 +110,28 @@ export const useDevToolsProtection = () => {
           console.warn('🔧 DevTools detectado em desenvolvimento');
         }
         
-        // 6. Bloquear DevTools apenas em produção
-        if (isProduction) {
-          setInterval(() => {
-            console.clear();
-            console.log('%c🚫 ACESSO NEGADO', 'color: red; font-size: 24px; font-weight: bold;');
-          }, 500); // Menos agressivo
+        // Mobile compatibility - disable aggressive DevTools detection
+        // The multiple layers were causing false positives on mobile devices
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+          logger.debug('📱 Mobile detected - skipping DevTools protection to prevent auto-logout');
+          return;
         }
         
-        // 7. Redirecionar após delay
-        clearTimeout(redirectTimeout.current);
-        redirectTimeout.current = setTimeout(() => {
-          window.location.href = '/acesso';
-        }, isProduction ? 2000 : 5000); // Mais tempo em dev
+        // Desktop only - reduced aggressiveness
+        if (isProduction) {
+          setTimeout(() => {
+            window.location.href = '/acesso';
+          }, 5000);
+        }
         
       } catch (error) {
-        // Falha silenciosa para não expor funcionamento interno
         logger.error('Erro ao aplicar contramedidas');
       }
     };
 
-    // MÚLTIPLAS CAMADAS DE DETECÇÃO EXECUTANDO CONSTANTEMENTE
-    
-    // Camada 1: Detecção por intervalo rápido
-    detectionInterval.current = setInterval(detectDevToolsMultiple, 300);
-    
-    // Camada 2: Detecção via redimensionamento
-    window.addEventListener('resize', detectDevToolsMultiple);
-    
-    // Camada 3: Detecção via orientação de tela (mobile)
-    const orientationHandler = () => {
-      setTimeout(detectDevToolsMultiple, 500);
-    };
-    window.addEventListener('orientationchange', orientationHandler);
-    
-    // Camada 4: Detecção via visibilidade da página
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        setTimeout(detectDevToolsMultiple, 100);
-      }
-    });
-    
-    // Camada 5: Detecção avançada via console
-    const advancedConsoleDetection = () => {
-      let devtools = { open: false };
-      const threshold = 160;
-      
-      setInterval(() => {
-        if (window.outerHeight - window.innerHeight > threshold || 
-            window.outerWidth - window.innerWidth > threshold) {
-          if (!devtools.open) {
-            devtools.open = true;
-            handleDevToolsDetected('advanced_console');
-          }
-        } else {
-          devtools.open = false;
-        }
-      }, 250);
-    };
-    advancedConsoleDetection();
+    // Simplified detection for mobile compatibility
     
     // Camada 6: Proteção contra teclas de atalho
     const blockDevToolsKeys = (e: KeyboardEvent) => {
@@ -217,7 +180,6 @@ export const useDevToolsProtection = () => {
         clearTimeout(redirectTimeout.current);
       }
       window.removeEventListener('resize', detectDevToolsMultiple);
-      window.removeEventListener('orientationchange', orientationHandler);
       document.removeEventListener('keydown', blockDevToolsKeys);
       document.removeEventListener('contextmenu', blockContextMenu);
     };

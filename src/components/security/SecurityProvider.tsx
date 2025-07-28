@@ -78,12 +78,12 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
       
       blockConsole();
       
-      // Anti-debug apenas em produção
-      setInterval(() => {
-        try {
-          debugger;
-        } catch (e) {}
-      }, 500); // Menos agressivo
+      // Mobile compatibility - disable aggressive anti-debug
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        console.log('📱 Mobile detected - skipping aggressive security measures');
+        return;
+      }
       
       // Bloquear acesso ao console apenas em produção
       if (process.env.NODE_ENV === 'production') {
@@ -142,7 +142,7 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
       };
       
       checkFraming();
-      setInterval(checkFraming, 1000);
+      // Removed interval that was causing mobile issues
     };
 
     // 6. PROTEÇÃO CONTRA VIEW SOURCE
