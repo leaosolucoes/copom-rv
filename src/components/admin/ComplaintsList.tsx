@@ -844,6 +844,8 @@ export const ComplaintsList = () => {
 
   const updateComplaintStatus = async (id: string, status: ComplaintStatus, systemIdentifier?: string) => {
     try {
+      console.log('updateComplaintStatus called with:', { id, status, systemIdentifier, user: user?.id, profile: profile?.id });
+      
       const updateData: any = {
         status,
         attendant_id: profile?.id || user?.id,
@@ -855,6 +857,8 @@ export const ComplaintsList = () => {
         updateData.system_identifier = systemIdentifier;
       }
 
+      console.log('Update data:', updateData);
+
       const { error } = await supabase
         .from('complaints')
         .update(updateData)
@@ -864,6 +868,8 @@ export const ComplaintsList = () => {
         console.error('Erro detalhado ao atualizar denúncia:', error);
         throw error;
       }
+
+      console.log('Denúncia atualizada com sucesso');
       
       toast({
         title: "Sucesso",
