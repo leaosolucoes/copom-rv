@@ -91,18 +91,27 @@ export const FormFieldsConfig = () => {
 
   const saveFieldsConfig = async (fieldsToSave: FormField[]) => {
     try {
-      const { error } = await supabase
+      console.log('Salvando configuração dos campos:', fieldsToSave);
+      
+      const { data, error } = await supabase
         .from('system_settings')
         .upsert({
           key: 'form_fields_config',
-          value: fieldsToSave as unknown as any,
+          value: JSON.parse(JSON.stringify(fieldsToSave)),
           description: 'Configuração dos campos do formulário público'
         }, {
           onConflict: 'key'
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro no Supabase:', error);
+        throw error;
+      }
+      
+      console.log('Configuração salva com sucesso:', data);
     } catch (error) {
+      console.error('Erro ao salvar configuração:', error);
       throw error;
     }
   };
