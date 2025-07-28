@@ -142,14 +142,29 @@ const Login = () => {
         }
       }
       
-      // Fallback para desktop ou se mobile falhar
-      console.log('💻 DESKTOP LOGIN: Aguardando useEffect redirection...');
+      // Força redirecionamento imediato após login bem-sucedido 
+      console.log('💻 DESKTOP LOGIN: Login bem-sucedido, redirecionando...');
+      
+      // Aguardar um pouco menos e forçar redirecionamento
       setTimeout(() => {
-        if (loading) {
-          console.log('⚠️ LOGIN: Timeout atingido, limpando loading');
-          setLoading(false);
+        const storedProfile = localStorage.getItem('custom_profile');
+        if (storedProfile) {
+          const profileData = JSON.parse(storedProfile);
+          const routes = {
+            'super_admin': '/super-admin',
+            'admin': '/admin', 
+            'atendente': '/atendente',
+            'fiscal': '/fiscal'
+          };
+          
+          const targetRoute = routes[profileData.role as keyof typeof routes] || '/';
+          console.log('💻 DESKTOP: Forçando redirecionamento para:', targetRoute);
+          
+          window.location.href = targetRoute; // Força navegação direta
         }
-      }, 4000);
+        
+        setLoading(false);
+      }, 1000); // Reduzido para 1 segundo
       
     } catch (error: any) {
       console.error('💥 LOGIN: Erro inesperado:', error);
