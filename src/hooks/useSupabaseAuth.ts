@@ -60,17 +60,8 @@ export const useSupabaseAuth = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let loadingTimeout: NodeJS.Timeout;
 
     logger.debug('🔄 Starting custom auth initialization...');
-
-    // Set loading timeout
-    loadingTimeout = setTimeout(() => {
-      logger.warn('⚠️ Auth timeout reached, completing load');
-      if (isMounted) {
-        setIsLoading(false);
-      }
-    }, 3000);
 
     // Check for existing custom session
     try {
@@ -99,7 +90,6 @@ export const useSupabaseAuth = () => {
 
     return () => {
       isMounted = false;
-      if (loadingTimeout) clearTimeout(loadingTimeout);
     };
   }, []);
 
