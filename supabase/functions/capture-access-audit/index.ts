@@ -30,10 +30,15 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
     // Get client IP and user agent
-    const clientIP = req.headers.get('x-forwarded-for') || 
-                     req.headers.get('x-real-ip') || 
-                     req.headers.get('cf-connecting-ip') || 
-                     'unknown'
+    let clientIP = req.headers.get('x-forwarded-for') || 
+                   req.headers.get('x-real-ip') || 
+                   req.headers.get('cf-connecting-ip') || 
+                   'unknown'
+    
+    // Handle multiple IPs in x-forwarded-for header (take the first one)
+    if (clientIP.includes(',')) {
+      clientIP = clientIP.split(',')[0].trim()
+    }
     
     const userAgent = req.headers.get('user-agent') || 'unknown'
     
