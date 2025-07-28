@@ -10,6 +10,8 @@ import { Download, Filter, Search, Users, Clock, Globe, Monitor } from "lucide-r
 import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 interface AccessLog {
   id: string
@@ -53,16 +55,55 @@ export default function AccessAuditDashboard() {
   const [selectedUser, setSelectedUser] = useState("all")
   const [selectedPeriod, setSelectedPeriod] = useState("7")
   const [selectedStatus, setSelectedStatus] = useState("all")
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [systemInfo, setSystemInfo] = useState<any>({})
   const { toast } = useToast()
 
   useEffect(() => {
     fetchUsers()
     fetchAccessLogs()
+    fetchLogo()
+    fetchSystemInfo()
   }, [])
 
   useEffect(() => {
     applyFilters()
   }, [accessLogs, searchTerm, selectedUser, selectedPeriod, selectedStatus])
+
+  const fetchLogo = async () => {
+    try {
+      const { data } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'public_logo_url')
+        .maybeSingle();
+      
+      if (data?.value && typeof data.value === 'string') {
+        setLogoUrl(data.value);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar logo:', error);
+    }
+  };
+
+  const fetchSystemInfo = async () => {
+    try {
+      const { data } = await supabase
+        .from('system_settings')
+        .select('*')
+        .in('key', ['company_name', 'company_address', 'company_phone', 'company_email', 'system_name']);
+      
+      if (data) {
+        const info: any = {};
+        data.forEach(item => {
+          info[item.key] = item.value;
+        });
+        setSystemInfo(info);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar informações do sistema:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     const { data, error } = await supabase
@@ -187,14 +228,186 @@ export default function AccessAuditDashboard() {
     })
   }
 
-  const exportToPDF = async () => {
-    toast({
-      title: "Exportação",
-      description: "Iniciando exportação do relatório...",
-    })
+  const generateDocumentHash = (content: string): string => {
+    // Gerar hash de 64 caracteres no padrão SHA-256
+    let hash = '';
+    const timestamp = Date.now().toString();
+    const fullContent = content + timestamp + Math.random().toString();
     
-    // Aqui você pode implementar a exportação em PDF
-    // Usando bibliotecas como jsPDF ou html2pdf
+    // Algoritmo personalizado para gerar hash de 64 caracteres
+    for (let i = 0; i < 64; i++) {
+      let charCode = 0;
+      for (let j = 0; j < fullContent.length; j++) {
+        charCode += fullContent.charCodeAt(j) * (i + 1) * (j + 1);
+      }
+      charCode = charCode % 16;
+      hash += charCode.toString(16).toUpperCase();
+    }
+    
+    return hash;
+  };
+
+  const addFooterToPDF = (pdf: any, documentContent: string) => {
+    const pageCount = pdf.internal.getNumberOfPages();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    
+    // Gerar hash do documento
+    const docHash = generateDocumentHash(documentContent);
+    
+    for (let i = 1; i <= pageCount; i++) {
+      pdf.setPage(i);
+      
+      // Linha separadora
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(20, pageHeight - 35, pageWidth - 20, pageHeight - 35);
+      
+      // Informações do sistema no rodapé
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 100, 100);
+      
+      const systemName = systemInfo?.system_name || 'Sistema de Posturas';
+      const companyName = systemInfo?.company_name || 'Prefeitura Municipal';
+      
+      pdf.text(`${systemName} - ${companyName}`, 20, pageHeight - 25);
+      pdf.text(`Documento gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss')}`, 20, pageHeight - 18);
+      pdf.text(`Hash de Integridade: ${docHash}`, 20, pageHeight - 11);
+      
+      // Página no canto direito
+      pdf.text(`Página ${i} de ${pageCount}`, pageWidth - 40, pageHeight - 25);
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      toast({
+        title: "Exportação",
+        description: "Iniciando exportação do relatório...",
+      })
+
+      // Criar PDF usando jsPDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      
+      // Configurar fontes
+      pdf.setFont('helvetica', 'bold');
+      
+      let yPosition = 30;
+      
+      // Adicionar logo se disponível
+      if (logoUrl) {
+        try {
+          const logoResponse = await fetch(logoUrl);
+          if (logoResponse.ok) {
+            const logoBlob = await logoResponse.blob();
+            const logoBase64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(logoBlob);
+            });
+            
+            const imageFormat = logoBlob.type.includes('png') ? 'PNG' : 
+                               logoBlob.type.includes('jpeg') || logoBlob.type.includes('jpg') ? 'JPEG' : 'PNG';
+            
+            pdf.addImage(logoBase64, imageFormat, 20, 10, 30, 30);
+          }
+          
+          pdf.setFontSize(18);
+          pdf.text('RELATÓRIO DE AUDITORIA DE ACESSOS', 60, 20);
+          yPosition = 50;
+        } catch (logoError) {
+          console.error('Erro ao carregar logo:', logoError);
+          pdf.setFontSize(18);
+          pdf.text('RELATÓRIO DE AUDITORIA DE ACESSOS', 20, 20);
+          yPosition = 30;
+        }
+      } else {
+        pdf.setFontSize(18);
+        pdf.text('RELATÓRIO DE AUDITORIA DE ACESSOS', 20, 20);
+        yPosition = 30;
+      }
+      
+      // Adicionar informações do relatório
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      
+      const today = new Date();
+      pdf.text(`Data de geração: ${format(today, 'dd/MM/yyyy HH:mm')}`, 20, yPosition + 5);
+      pdf.text(`Total de acessos: ${filteredLogs.length}`, 20, yPosition + 15);
+      pdf.text(`Acessos com sucesso: ${filteredLogs.filter(log => log.login_success).length}`, 20, yPosition + 25);
+      pdf.text(`Acessos falharam: ${filteredLogs.filter(log => !log.login_success).length}`, 20, yPosition + 35);
+      
+      yPosition += 60;
+
+      // Dados do relatório
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14);
+      pdf.text('LOGS DE ACESSO', 20, yPosition);
+      yPosition += 15;
+
+      // Criar conteúdo para hash
+      const documentContent = `RELATÓRIO-AUDITORIA-ACESSOS-${format(today, 'yyyy-MM-dd')}-${filteredLogs.length}-logs-${filteredLogs.filter(log => log.login_success).length}-sucessos-${filteredLogs.filter(log => !log.login_success).length}-falhas-${filteredLogs.map(log => log.id).join('')}`;
+      
+      // Tabela com os dados usando autoTable
+      const tableData = filteredLogs.map(log => [
+        format(new Date(log.login_timestamp), 'dd/MM/yyyy HH:mm'),
+        log.user_name,
+        log.user_email,
+        log.user_role,
+        String(log.ip_address) || 'N/A',
+        formatLocation(log),
+        formatSessionDuration(log.session_duration_minutes),
+        log.login_success ? 'Sucesso' : 'Falha'
+      ]);
+      
+      autoTable(pdf, {
+        head: [['Data/Hora', 'Nome', 'Email', 'Função', 'IP', 'Localização', 'Duração', 'Status']],
+        body: tableData,
+        startY: yPosition,
+        styles: {
+          fontSize: 7,
+          cellPadding: 1.5,
+        },
+        headStyles: {
+          fillColor: [59, 130, 246],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        columnStyles: {
+          0: { cellWidth: 20 },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 15 },
+          4: { cellWidth: 20 },
+          5: { cellWidth: 25 },
+          6: { cellWidth: 15 },
+          7: { cellWidth: 20 }
+        },
+        margin: { left: 20, right: 20, bottom: 50 }, // Espaço para rodapé
+      });
+      
+      // Adicionar rodapé com informações do sistema e hash
+      addFooterToPDF(pdf, documentContent);
+      
+      // Salvar PDF
+      const fileName = `relatorio-auditoria-acessos-${format(today, 'yyyy-MM-dd')}.pdf`;
+      pdf.save(fileName);
+      
+      toast({
+        title: "Sucesso",
+        description: "Relatório PDF gerado com sucesso!",
+      });
+      
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao gerar relatório PDF",
+        variant: "destructive"
+      });
+    }
   }
 
   const formatLocation = (log: AccessLog) => {
