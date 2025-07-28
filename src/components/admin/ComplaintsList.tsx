@@ -1415,13 +1415,13 @@ export const ComplaintsList = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredComplaints
-                    .filter(complaint => {
-                      // Para admin e super_admin, mostrar "nova", "a_verificar" e "verificado" na aba Novas
-                      if (userRole === 'admin' || userRole === 'super_admin') {
-                        return complaint.status === 'nova' || complaint.status === 'a_verificar' || complaint.status === 'verificado';
-                      }
-                      // Para atendentes, mostrar "nova" e "verificado"
-                      return complaint.status === 'nova' || complaint.status === 'verificado';
+                     .filter(complaint => {
+                       // Para admin e super_admin, mostrar "nova", "a_verificar" e "verificado" na aba Novas (excluindo cadastrada)
+                       if (userRole === 'admin' || userRole === 'super_admin') {
+                         return complaint.status === 'nova' || complaint.status === 'a_verificar' || complaint.status === 'verificado';
+                       }
+                       // Para atendentes, mostrar "nova" e "verificado" (excluindo cadastrada)
+                       return complaint.status === 'nova' || complaint.status === 'verificado';
                     })
                     .map((complaint) => {
                       const duplicateInfo = getDuplicateInfo(complaint, complaints);
@@ -1937,14 +1937,13 @@ export const ComplaintsList = () => {
                </TableHeader>
                <TableBody>
                   {filteredComplaints
-                    .filter(complaint => {
-                      // Excluir "nova" e "verificado" da aba histórico
-                      if (complaint.status === 'nova' || complaint.status === 'verificado') return false;
-                      // Para admin e super_admin, excluir "a_verificar" do histórico (pois aparece em Novas)
-                      if ((userRole === 'admin' || userRole === 'super_admin') && complaint.status === 'a_verificar') return false;
-                      // Para atendentes, ocultar denúncias "A Verificar" e "finalizada", mas mostrar "fiscal_solicitado"
-                      if (userRole === 'atendente' && (complaint.status === 'a_verificar' || complaint.status === 'finalizada')) return false;
-                      return true;
+                     .filter(complaint => {
+                       // Incluir denúncias "cadastrada", "fiscal_solicitado" e "finalizada" no histórico
+                       if (complaint.status === 'cadastrada' || complaint.status === 'fiscal_solicitado' || complaint.status === 'finalizada') return true;
+                       // Para admin e super_admin, incluir "a_verificar" no histórico se processada
+                       if ((userRole === 'admin' || userRole === 'super_admin') && complaint.status === 'a_verificar' && complaint.processed_at) return true;
+                       // Excluir "nova" e "verificado" da aba histórico
+                       return false;
                     })
                     .map((complaint) => {
                       const duplicateInfo = getDuplicateInfo(complaint, complaints);
