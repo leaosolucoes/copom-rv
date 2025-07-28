@@ -105,11 +105,18 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
+      console.log('Iniciando upload de arquivo...');
       const file = event.target.files?.[0];
-      if (!file) return;
+      if (!file) {
+        console.log('Nenhum arquivo selecionado');
+        return;
+      }
+
+      console.log('Arquivo selecionado:', file.name, 'Tamanho:', file.size, 'Tipo:', file.type);
 
       // Validate file type
       if (!file.type.startsWith('image/')) {
+        console.log('Tipo de arquivo inválido:', file.type);
         toast({
           title: "Erro",
           description: "Por favor, selecione apenas arquivos de imagem",
@@ -120,6 +127,7 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
 
       // Validate file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
+        console.log('Arquivo muito grande:', file.size);
         toast({
           title: "Erro",
           description: "O arquivo deve ser menor que 2MB",
@@ -129,12 +137,15 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
       }
 
       setUploading(true);
+      console.log('Iniciando processo de upload...');
 
       // Generate unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `logo-${Date.now()}.${fileExt}`;
+      console.log('Nome do arquivo gerado:', fileName);
 
       // Upload file to Supabase Storage
+      console.log('Fazendo upload para bucket system-assets...');
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('system-assets')
         .upload(fileName, file, {
@@ -142,14 +153,23 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
           upsert: false
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Erro no upload do storage:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload realizado com sucesso:', uploadData);
 
       // Get public URL
+      console.log('Obtendo URL pública...');
       const { data: { publicUrl } } = supabase.storage
         .from('system-assets')
         .getPublicUrl(uploadData.path);
 
+      console.log('URL pública gerada:', publicUrl);
+
       // Save URL to system settings
+      console.log('Salvando URL nas configurações do sistema...');
       const { error: settingsError } = await supabase
         .from('system_settings')
         .upsert({
@@ -160,34 +180,55 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
           onConflict: 'key'
         });
 
-      if (settingsError) throw settingsError;
+      if (settingsError) {
+        console.error('Erro ao salvar nas configurações:', settingsError);
+        throw settingsError;
+      }
+
+      console.log('Configurações salvas com sucesso');
 
       // Delete old logo if exists
       if (currentLogoUrl) {
+        console.log('Removendo logo antiga...');
         const oldFileName = currentLogoUrl.split('/').pop();
         if (oldFileName && oldFileName !== fileName) {
-          await supabase.storage
+          const { error: deleteError } = await supabase.storage
             .from('system-assets')
             .remove([oldFileName]);
+          
+          if (deleteError) {
+            console.warn('Erro ao remover logo antiga:', deleteError);
+            // Não falhar o processo por causa disso
+          }
         }
       }
 
       setCurrentLogoUrl(publicUrl);
       onLogoUpdate(publicUrl);
 
+      console.log('Upload finalizado com sucesso!');
       toast({
         title: "Sucesso",
         description: "Logo atualizada com sucesso!",
       });
     } catch (error: any) {
-      console.error('Erro ao fazer upload:', error);
+      console.error('Erro completo no upload:', error);
+      console.error('Detalhes do erro:', JSON.stringify(error, null, 2));
+      
+      let errorMessage = "Erro ao fazer upload da logo";
+      
+      if (error?.message) {
+        errorMessage += `: ${error.message}`;
+      }
+      
       toast({
         title: "Erro",
-        description: "Erro ao fazer upload da logo",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setUploading(false);
+      console.log('Processo de upload finalizado');
     }
   };
 
