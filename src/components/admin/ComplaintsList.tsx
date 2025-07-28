@@ -224,20 +224,29 @@ export const ComplaintsList = () => {
   }, [userRole]);
 
   useEffect(() => {
-    const subscription = setupRealtimeUpdates();
-    return () => {
-      supabase.removeChannel(subscription);
-    };
+    // Desabilitar real-time no mobile para evitar problemas de performance
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (!isMobile) {
+      const subscription = setupRealtimeUpdates();
+      return () => {
+        supabase.removeChannel(subscription);
+      };
+    }
   }, [userRole, soundEnabled]);
 
-  // Novo useEffect para atualização automática da lista a cada 30 segundos
+  // Atualização automática desabilitada no mobile - somente manual via botão
   useEffect(() => {
-    const interval = setInterval(() => {
-      logger.debug('🔄 Atualizando lista automaticamente...');
-      fetchComplaints();
-    }, 30000); // 30 segundos
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (!isMobile) {
+      const interval = setInterval(() => {
+        logger.debug('🔄 Atualizando lista automaticamente...');
+        fetchComplaints();
+      }, 30000); // 30 segundos
 
-    return () => clearInterval(interval);
+      return () => clearInterval(interval);
+    }
   }, [userRole]);
 
   const setupRealtimeUpdates = () => {
