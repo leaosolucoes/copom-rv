@@ -855,8 +855,23 @@ export const ComplaintsList = () => {
         systemIdentifier, 
         user: user?.id, 
         profile: profile?.id,
+        userRole: profile?.role,
         raiData
       });
+      
+      // Verificar se o usuário está autenticado
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Current session:', session?.user?.id);
+      
+      if (!session?.user?.id) {
+        console.error('Usuário não autenticado');
+        toast({
+          title: "Erro",
+          description: "Usuário não autenticado. Faça login novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       if (!profile?.id && !user?.id) {
         console.error('Nenhum ID de usuário encontrado');
@@ -870,7 +885,7 @@ export const ComplaintsList = () => {
 
       const updateData: any = {
         status,
-        attendant_id: profile?.id || user?.id,
+        attendant_id: session.user.id, // Usar o ID da sessão
         processed_at: new Date().toISOString(),
         classification: raiData.classification || ''
       };
@@ -880,6 +895,7 @@ export const ComplaintsList = () => {
       }
 
       console.log('Update data:', updateData);
+      console.log('Auth user ID:', session.user.id);
 
       const { data, error } = await supabase
         .from('complaints')
@@ -889,6 +905,12 @@ export const ComplaintsList = () => {
 
       if (error) {
         console.error('Erro detalhado ao atualizar denúncia:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         throw error;
       }
 
