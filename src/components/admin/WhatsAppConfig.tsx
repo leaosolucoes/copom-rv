@@ -27,6 +27,8 @@ export const WhatsAppConfig = () => {
   const fetchConfig = async () => {
     try {
       setLoading(true);
+      console.log('Carregando configurações do WhatsApp...');
+      
       const { data, error } = await supabase
         .from('system_settings')
         .select('*')
@@ -40,13 +42,19 @@ export const WhatsAppConfig = () => {
           'whatsapp_auto_send_enabled'
         ]);
 
+      console.log('Dados retornados do banco:', data);
+      console.log('Erro (se houver):', error);
+
       if (error) throw error;
 
       const settings = data?.reduce((acc, setting) => {
         const key = setting.key.replace('whatsapp_', '');
         acc[key] = setting.value;
+        console.log(`Configuração encontrada: ${key} = ${setting.value}`);
         return acc;
       }, {} as any) || {};
+
+      console.log('Settings processados:', settings);
 
       setConfig({
         api_key: settings.api_key || '',
