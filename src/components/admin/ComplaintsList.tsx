@@ -403,10 +403,7 @@ export const ComplaintsList = () => {
   const fetchComplaints = async () => {
     try {
       setLoading(true);
-      logger.debug('🔍 FETCH COMPLAINTS - Iniciando...');
-      // REMOVIDO: Log de dados de usuário por segurança  
-      // REMOVIDO: Log de perfil por segurança
-      // REMOVIDO: Log de user role por segurança
+      console.log('🔍 FETCH COMPLAINTS - Iniciando...', { userRole: profile?.role });
       
       // Clear any cached data and force fresh query
       const { data, error } = await supabase
@@ -418,9 +415,7 @@ export const ComplaintsList = () => {
         `)
         .order('created_at', { ascending: false });
 
-      // REMOVIDO: Log de query result por segurança
-      // REMOVIDO: Log de error por segurança  
-      // REMOVIDO: Log de data length por segurança
+      console.log('📊 Query result:', { error, dataLength: data?.length });
 
       if (error) {
         console.error('❌ Erro na query:', error);
@@ -440,10 +435,20 @@ export const ComplaintsList = () => {
         filteredData = data?.filter(complaint => 
           complaint.status !== 'finalizada' && complaint.status !== 'a_verificar'
         ) || [];
-        logger.log('Filtered for atendente');
+        console.log('🔍 Filtered for atendente:', { 
+          originalLength: data?.length, 
+          filteredLength: filteredData.length 
+        });
       }
       
-      // REMOVIDO: Log de final complaints set por segurança
+      console.log('📝 Final complaints set:', {
+        total: filteredData.length,
+        byStatus: filteredData.reduce((acc: any, complaint) => {
+          acc[complaint.status] = (acc[complaint.status] || 0) + 1;
+          return acc;
+        }, {})
+      });
+      
       setComplaints(filteredData as Complaint[]);
     } catch (error) {
       console.error('❌ Erro ao carregar denúncias:', error);
@@ -844,8 +849,25 @@ export const ComplaintsList = () => {
 
   const updateComplaintStatus = async (id: string, status: ComplaintStatus, systemIdentifier?: string) => {
     try {
-      console.log('updateComplaintStatus called with:', { id, status, systemIdentifier, user: user?.id, profile: profile?.id });
+      console.log('updateComplaintStatus called with:', { 
+        id, 
+        status, 
+        systemIdentifier, 
+        user: user?.id, 
+        profile: profile?.id,
+        raiData
+      });
       
+      if (!profile?.id && !user?.id) {
+        console.error('Nenhum ID de usuário encontrado');
+        toast({
+          title: "Erro",
+          description: "Erro de autenticação. Faça login novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const updateData: any = {
         status,
         attendant_id: profile?.id || user?.id,
@@ -859,30 +881,37 @@ export const ComplaintsList = () => {
 
       console.log('Update data:', updateData);
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('complaints')
         .update(updateData)
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) {
         console.error('Erro detalhado ao atualizar denúncia:', error);
         throw error;
       }
 
-      console.log('Denúncia atualizada com sucesso');
+      console.log('Denúncia atualizada com sucesso:', data);
       
       toast({
         title: "Sucesso",
         description: `Denúncia ${status === 'cadastrada' ? 'cadastrada' : 'atualizada'} com sucesso!`,
       });
       
+      // Limpar dados do formulário
+      setRaiData({ rai: '', classification: '' });
       setSelectedComplaint(null);
-      fetchComplaints();
+      
+      // Forçar atualização da lista
+      await fetchComplaints();
+      
+      console.log('Lista de denúncias atualizada');
     } catch (error: any) {
       console.error('Erro ao atualizar status:', error);
       toast({
         title: "Erro",
-        description: "Erro ao atualizar denúncia",
+        description: `Erro ao atualizar denúncia: ${error.message || 'Erro desconhecido'}`,
         variant: "destructive",
       });
     }
