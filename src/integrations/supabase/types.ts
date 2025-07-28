@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_audit_logs: {
+        Row: {
+          browser_name: string | null
+          created_at: string
+          device_type: string | null
+          failure_reason: string | null
+          id: string
+          ip_address: unknown | null
+          location_city: string | null
+          location_country: string | null
+          location_region: string | null
+          login_method: string
+          login_success: boolean
+          login_timestamp: string
+          logout_timestamp: string | null
+          operating_system: string | null
+          session_duration_minutes: number | null
+          user_agent: string | null
+          user_email: string
+          user_id: string
+          user_name: string
+          user_role: string
+        }
+        Insert: {
+          browser_name?: string | null
+          created_at?: string
+          device_type?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: unknown | null
+          location_city?: string | null
+          location_country?: string | null
+          location_region?: string | null
+          login_method?: string
+          login_success?: boolean
+          login_timestamp?: string
+          logout_timestamp?: string | null
+          operating_system?: string | null
+          session_duration_minutes?: number | null
+          user_agent?: string | null
+          user_email: string
+          user_id: string
+          user_name: string
+          user_role: string
+        }
+        Update: {
+          browser_name?: string | null
+          created_at?: string
+          device_type?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: unknown | null
+          location_city?: string | null
+          location_country?: string | null
+          location_region?: string | null
+          login_method?: string
+          login_success?: boolean
+          login_timestamp?: string
+          logout_timestamp?: string | null
+          operating_system?: string | null
+          session_duration_minutes?: number | null
+          user_agent?: string | null
+          user_email?: string
+          user_id?: string
+          user_name?: string
+          user_role?: string
+        }
+        Relationships: []
+      }
       api_endpoints: {
         Row: {
           created_at: string

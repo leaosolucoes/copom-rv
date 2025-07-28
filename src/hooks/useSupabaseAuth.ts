@@ -24,6 +24,26 @@ export const useSupabaseAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Function to log access audit
+  const logAccessAudit = async (auditData: {
+    user_id: string;
+    user_name: string;
+    user_email: string;
+    user_role: string;
+    login_success: boolean;
+    failure_reason?: string;
+    logout_timestamp?: string;
+    session_duration_minutes?: number;
+  }) => {
+    try {
+      await supabase.functions.invoke('capture-access-audit', {
+        body: auditData
+      });
+    } catch (error) {
+      logger.error('Error logging access audit:', error);
+    }
+  };
+
   // Fetch user profile and roles
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -94,6 +114,9 @@ export const useSupabaseAuth = () => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    const loginTimestamp = new Date().toISOString();
+    localStorage.setItem('login_timestamp', loginTimestamp);
+    
     try {
       logger.debug('🔑 Authenticating with custom system...');
       
@@ -105,6 +128,17 @@ export const useSupabaseAuth = () => {
 
       if (customError) {
         logger.error('Custom auth error:', customError);
+        
+        // Log failed login attempt
+        await logAccessAudit({
+          user_id: 'unknown',
+          user_name: email,
+          user_email: email,
+          user_role: 'unknown',
+          login_success: false,
+          failure_reason: 'Erro de autenticação: ' + customError.message
+        });
+        
         toast({
           title: "Erro no login",
           description: "Erro interno do servidor",
@@ -114,6 +148,17 @@ export const useSupabaseAuth = () => {
       }
 
       if (!customData || customData.length === 0 || !customData[0].password_valid) {
+        // Log failed login attempt
+        const userData = customData?.[0];
+        await logAccessAudit({
+          user_id: userData?.user_id || 'unknown',
+          user_name: userData?.full_name || email,
+          user_email: userData?.email || email,
+          user_role: userData?.role || 'unknown',
+          login_success: false,
+          failure_reason: 'Credenciais inválidas'
+        });
+        
         toast({
           title: "Erro no login",
           description: "Email ou senha incorretos",
@@ -193,6 +238,15 @@ export const useSupabaseAuth = () => {
         .update({ last_login: new Date().toISOString() })
         .eq('id', userData.user_id);
 
+      // Log successful login
+      await logAccessAudit({
+        user_id: userData.user_id,
+        user_name: userData.full_name,
+        user_email: userData.email,
+        user_role: userData.role,
+        login_success: true
+      });
+
       toast({
         title: "Login realizado",
         description: "Bem-vindo ao sistema!",
@@ -213,6 +267,25 @@ export const useSupabaseAuth = () => {
 
   const signOut = async () => {
     try {
+      // Calculate session duration for logout log
+      const loginTimestamp = localStorage.getItem('login_timestamp');
+      let sessionDuration = 0;
+      if (loginTimestamp && profile) {
+        const duration = Date.now() - new Date(loginTimestamp).getTime();
+        sessionDuration = Math.floor(duration / (1000 * 60)); // minutes
+        
+        // Log logout with session duration
+        await logAccessAudit({
+          user_id: profile.id,
+          user_name: profile.full_name,
+          user_email: profile.email,
+          user_role: profile.role,
+          login_success: true,
+          logout_timestamp: new Date().toISOString(),
+          session_duration_minutes: sessionDuration
+        });
+      }
+      
       // Sign out from both systems
       const { error } = await supabase.auth.signOut();
       
@@ -224,6 +297,7 @@ export const useSupabaseAuth = () => {
       localStorage.removeItem('custom_session');
       localStorage.removeItem('custom_profile');
       localStorage.removeItem('user');
+      localStorage.removeItem('login_timestamp');
       
       return { error: null };
     } catch (error: any) {

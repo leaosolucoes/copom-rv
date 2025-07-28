@@ -16,6 +16,7 @@ import { OccurrenceTypesConfig } from '@/components/admin/OccurrenceTypesConfig'
 import { SoundNotificationControl } from '@/components/admin/SoundNotificationControl';
 import { ApiManagement } from '@/components/admin/ApiManagement';
 import { ConsultationAuditDashboard } from '@/components/admin/ConsultationAuditDashboard';
+import AccessAuditDashboard from '@/components/admin/AccessAuditDashboard';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
@@ -276,17 +277,31 @@ const SuperAdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="auditoria" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Auditoria de Consultas LGPD</CardTitle>
-                <CardDescription>
-                  Monitore e audite todas as consultas realizadas no sistema para compliance com LGPD
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ConsultationAuditDashboard />
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Auditoria de Acessos</CardTitle>
+                  <CardDescription>
+                    Monitore todos os acessos ao sistema com detalhes de usuário, dispositivo, IP e localização
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AccessAuditDashboard />
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Auditoria de Consultas LGPD</CardTitle>
+                  <CardDescription>
+                    Monitore e audite todas as consultas realizadas no sistema para compliance com LGPD
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ConsultationAuditDashboard />
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
