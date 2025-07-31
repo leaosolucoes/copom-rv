@@ -243,7 +243,7 @@ export const ComplaintsList = () => {
       const interval = setInterval(() => {
         logger.debug('🔄 Atualizando lista automaticamente...');
         fetchComplaints();
-      }, 60000); // 1 minuto
+      }, 300000); // 5 minutos
 
       return () => clearInterval(interval);
     }
