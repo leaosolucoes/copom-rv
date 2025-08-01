@@ -906,15 +906,22 @@ export const ComplaintsList = () => {
       
       toast({
         title: "Sucesso",
-        description: `Denúncia ${status === 'cadastrada' ? 'cadastrada' : 'atualizada'} com sucesso!`,
+        description: `Denúncia ${status === 'cadastrada' ? 'cadastrada com RAI' : 'atualizada'} com sucesso! Verifique na aba Histórico.`,
       });
       
       // Limpar dados do formulário
       setRaiData({ rai: '', classification: '' });
       setSelectedComplaint(null);
       
-      // Forçar atualização da lista
+      // Forçar atualização da lista múltiplas vezes para garantir
+      console.log('Forçando atualização da lista...');
       await fetchComplaints();
+      
+      // Aguardar um pouco e atualizar novamente para garantir
+      setTimeout(async () => {
+        console.log('Segunda atualização da lista...');
+        await fetchComplaints();
+      }, 1000);
       
       console.log('Lista de denúncias atualizada');
     } catch (error: any) {
@@ -1798,29 +1805,35 @@ export const ComplaintsList = () => {
                                             Enviar para Admin
                                           </Button>
                                           
-                                          <Button 
-                                            onClick={() => {
-                                              if (!raiData.rai.trim()) {
-                                                toast({
-                                                  title: "Erro",
-                                                  description: "Por favor, digite o número RAI",
-                                                  variant: "destructive",
-                                                });
-                                                return;
-                                              }
-                                              
-                                              if (!raiData.classification) {
-                                                toast({
-                                                  title: "Erro", 
-                                                  description: "Por favor, selecione uma classificação",
-                                                  variant: "destructive",
-                                                });
-                                                return;
-                                              }
-                                              
-                                              updateComplaintStatus(selectedComplaint.id, 'cadastrada', raiData.rai);
-                                              setRaiData({ rai: '', classification: '' });
-                                            }}
+                                           <Button 
+                                             onClick={() => {
+                                               console.log('Botão "Cadastrar com RAI" clicado!', { 
+                                                 selectedComplaint: selectedComplaint?.id, 
+                                                 raiData 
+                                               });
+                                               
+                                               if (!raiData.rai.trim()) {
+                                                 toast({
+                                                   title: "Erro",
+                                                   description: "Por favor, digite o número RAI",
+                                                   variant: "destructive",
+                                                 });
+                                                 return;
+                                               }
+                                               
+                                               if (!raiData.classification) {
+                                                 toast({
+                                                   title: "Erro", 
+                                                   description: "Por favor, selecione uma classificação",
+                                                   variant: "destructive",
+                                                 });
+                                                 return;
+                                               }
+                                               
+                                               console.log('Chamando updateComplaintStatus...');
+                                               updateComplaintStatus(selectedComplaint.id, 'cadastrada', raiData.rai);
+                                               setRaiData({ rai: '', classification: '' });
+                                             }}
                                             variant="default"
                                           >
                                             <Calendar className="h-4 w-4 mr-2" />
@@ -1831,29 +1844,35 @@ export const ComplaintsList = () => {
 
                                        {/* Botões para ATENDENTE com denúncia VERIFICADA */}
                                        {userRole === 'atendente' && selectedComplaint.status === 'verificado' && (
-                                        <Button 
-                                          onClick={() => {
-                                            if (!raiData.rai.trim()) {
-                                              toast({
-                                                title: "Erro",
-                                                description: "Por favor, digite o número RAI",
-                                                variant: "destructive",
-                                              });
-                                              return;
-                                            }
-                                            
-                                            if (!raiData.classification) {
-                                              toast({
-                                                title: "Erro", 
-                                                description: "Por favor, selecione uma classificação",
-                                                variant: "destructive",
-                                              });
-                                              return;
-                                            }
-                                            
-                                            updateComplaintStatus(selectedComplaint.id, 'cadastrada', raiData.rai);
-                                            setRaiData({ rai: '', classification: '' });
-                                          }}
+                                         <Button 
+                                           onClick={() => {
+                                             console.log('Botão "Cadastrar com RAI" (verificado) clicado!', { 
+                                               selectedComplaint: selectedComplaint?.id, 
+                                               raiData 
+                                             });
+                                             
+                                             if (!raiData.rai.trim()) {
+                                               toast({
+                                                 title: "Erro",
+                                                 description: "Por favor, digite o número RAI",
+                                                 variant: "destructive",
+                                               });
+                                               return;
+                                             }
+                                             
+                                             if (!raiData.classification) {
+                                               toast({
+                                                 title: "Erro", 
+                                                 description: "Por favor, selecione uma classificação",
+                                                 variant: "destructive",
+                                               });
+                                               return;
+                                             }
+                                             
+                                             console.log('Chamando updateComplaintStatus...');
+                                             updateComplaintStatus(selectedComplaint.id, 'cadastrada', raiData.rai);
+                                             setRaiData({ rai: '', classification: '' });
+                                           }}
                                           variant="default"
                                         >
                                           <Calendar className="h-4 w-4 mr-2" />
