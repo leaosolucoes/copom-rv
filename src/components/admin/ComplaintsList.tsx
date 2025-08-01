@@ -849,6 +849,7 @@ export const ComplaintsList = () => {
 
   const updateComplaintStatus = async (id: string, status: ComplaintStatus, systemIdentifier?: string) => {
     try {
+      console.log('=== INÍCIO DA ATUALIZAÇÃO ===');
       console.log('updateComplaintStatus called with:', { 
         id, 
         status, 
@@ -859,7 +860,11 @@ export const ComplaintsList = () => {
         raiData
       });
       
-      const userId = user?.id || profile?.id;
+      // Verificar se temos autenticação
+      const { data: authUser } = await supabase.auth.getUser();
+      console.log('Auth user:', authUser?.user?.id);
+      
+      const userId = user?.id || profile?.id || authUser?.user?.id;
       
       if (!userId) {
         console.error('Nenhum ID de usuário encontrado');
@@ -884,7 +889,23 @@ export const ComplaintsList = () => {
 
       console.log('Update data:', updateData);
       console.log('Using user ID:', userId);
+      console.log('Updating complaint ID:', id);
 
+      // Primeiro verificar se a denúncia existe
+      const { data: existingComplaint, error: selectError } = await supabase
+        .from('complaints')
+        .select('id, status, complainant_name')
+        .eq('id', id)
+        .single();
+
+      if (selectError) {
+        console.error('Erro ao buscar denúncia:', selectError);
+        throw selectError;
+      }
+
+      console.log('Denúncia encontrada:', existingComplaint);
+
+      // Fazer a atualização
       const { data, error } = await supabase
         .from('complaints')
         .update(updateData)
@@ -903,6 +924,19 @@ export const ComplaintsList = () => {
       }
 
       console.log('Denúncia atualizada com sucesso:', data);
+      
+      // Verificar se a atualização foi persistida
+      const { data: updatedComplaint, error: verifyError } = await supabase
+        .from('complaints')
+        .select('id, status, system_identifier, attendant_id')
+        .eq('id', id)
+        .single();
+
+      if (verifyError) {
+        console.error('Erro ao verificar atualização:', verifyError);
+      } else {
+        console.log('Verificação pós-atualização:', updatedComplaint);
+      }
       
       toast({
         title: "Sucesso",
@@ -923,7 +957,7 @@ export const ComplaintsList = () => {
         await fetchComplaints();
       }, 1000);
       
-      console.log('Lista de denúncias atualizada');
+      console.log('=== FIM DA ATUALIZAÇÃO ===');
     } catch (error: any) {
       console.error('Erro ao atualizar status:', error);
       toast({
