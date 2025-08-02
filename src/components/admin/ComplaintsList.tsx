@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, UserCheck, RefreshCw } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, UserCheck, RefreshCw, Smartphone } from 'lucide-react';
 import { MediaModal } from "@/components/ui/media-modal";
 import { logger } from '@/lib/secureLogger';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -188,6 +188,7 @@ export const ComplaintsList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [deviceFilter, setDeviceFilter] = useState('todos');
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [classifications, setClassifications] = useState<string[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -1338,12 +1339,40 @@ export const ComplaintsList = () => {
     }
   };
 
-  // Filter complaints based on search term
-  const filteredComplaints = complaints.filter(complaint =>
-    complaint.complainant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    complaint.occurrence_address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    complaint.classification.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter complaints based on search term and device filter
+  const filteredComplaints = complaints.filter(complaint => {
+    const matchesSearch = complaint.complainant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      complaint.occurrence_address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      complaint.classification.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesDevice = deviceFilter === 'todos' || 
+      (deviceFilter === 'não informado' && !complaint.user_device_type) ||
+      complaint.user_device_type?.toLowerCase() === deviceFilter.toLowerCase();
+    
+    return matchesSearch && matchesDevice;
+  });
+
+  // Get unique device types for filter
+  const getUniqueDevices = () => {
+    const devices = new Set<string>();
+    complaints.forEach(complaint => {
+      if (complaint.user_device_type) {
+        devices.add(complaint.user_device_type.toLowerCase());
+      }
+    });
+    return Array.from(devices).sort();
+  };
+
+  // Get device count for display
+  const getDeviceCount = (deviceType: string) => {
+    if (deviceType === 'todos') {
+      return complaints.length;
+    }
+    if (deviceType === 'não informado') {
+      return complaints.filter(c => !c.user_device_type).length;
+    }
+    return complaints.filter(c => c.user_device_type?.toLowerCase() === deviceType.toLowerCase()).length;
+  };
 
   logger.debug('RENDER DEBUG: Component status updated');
 
@@ -1467,6 +1496,35 @@ export const ComplaintsList = () => {
               <Download className="h-4 w-4 mr-2" />
               Exportar PDF
             </Button>
+          </div>
+        )}
+        
+        {/* Para super_admin: Filtro de Dispositivo */}
+        {userRole === 'super_admin' && (
+          <div className="flex gap-4 items-center flex-wrap">
+            <div className="flex gap-2 items-center">
+              <span className="text-sm font-medium">Filtro por Dispositivo:</span>
+              <Smartphone className="h-4 w-4" />
+              
+              <Select value={deviceFilter} onValueChange={setDeviceFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Selecionar dispositivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">
+                    Todos ({getDeviceCount('todos')})
+                  </SelectItem>
+                  <SelectItem value="não informado">
+                    Não informado ({getDeviceCount('não informado')})
+                  </SelectItem>
+                  {getUniqueDevices().map((device) => (
+                    <SelectItem key={device} value={device}>
+                      {device.charAt(0).toUpperCase() + device.slice(1)} ({getDeviceCount(device)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
       </div>
