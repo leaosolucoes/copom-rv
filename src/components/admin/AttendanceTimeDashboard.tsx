@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Clock, TrendingUp, Users, Timer, Calendar, Download, Eye } from "lucide-react";
+import { Clock, TrendingUp, Users, Timer, Calendar, Download, Eye, RefreshCw } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
@@ -194,10 +194,12 @@ export function AttendanceTimeDashboard() {
 
       const dailyAverages = Array.from(dailyData.entries())
         .map(([date, times]) => ({
-          date: format(new Date(date), 'dd/MM', { locale: ptBR }),
+          date: format(new Date(date + 'T00:00:00'), 'dd/MM', { locale: ptBR }),
+          fullDate: date,
           avgTime: Math.round(times.reduce((sum, time) => sum + time, 0) / times.length)
         }))
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        .sort((a, b) => new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime())
+        .map(({ date, avgTime }) => ({ date, avgTime }));
 
       setStats({
         totalProcessed,
@@ -403,6 +405,11 @@ export function AttendanceTimeDashboard() {
         <Button onClick={exportReport} variant="outline">
           <Download className="h-4 w-4 mr-2" />
           Exportar PDF
+        </Button>
+        
+        <Button onClick={fetchStats} variant="outline" disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Atualizar
         </Button>
       </div>
 
