@@ -69,11 +69,11 @@ export function AttendanceTimeDashboard() {
         return { start: subDays(now, 365), end: now };
       case 'custom':
         return { 
-          start: customStartDate ? new Date(customStartDate) : subDays(now, 7), 
+          start: customStartDate ? new Date(customStartDate) : subDays(now, 30), 
           end: customEndDate ? new Date(customEndDate) : now 
         };
       default:
-        return { start: subDays(now, 7), end: now };
+        return { start: subDays(now, 30), end: now }; // Mudança: aumentar período padrão para 30 dias
     }
   };
 
@@ -91,13 +91,15 @@ export function AttendanceTimeDashboard() {
           processed_at,
           attendant_id,
           complainant_name,
-          occurrence_type,
-          users!inner(id, full_name)
+          occurrence_type
         `)
         .not('processed_at', 'is', null)
         .not('attendant_id', 'is', null)
         .gte('processed_at', startOfDay(start).toISOString())
         .lte('processed_at', endOfDay(end).toISOString());
+
+      console.log('🔍 DEBUG AttendanceTime - Complaints found:', complaints?.length);
+      console.log('🔍 DEBUG AttendanceTime - Date range:', { start: startOfDay(start).toISOString(), end: endOfDay(end).toISOString() });
 
       if (error) {
         console.error('Erro ao buscar estatísticas:', error);
@@ -110,6 +112,18 @@ export function AttendanceTimeDashboard() {
       }
 
       if (!complaints || complaints.length === 0) {
+        console.log('🔍 DEBUG AttendanceTime - No complaints found, checking all data...');
+        
+        // Verificar se há dados no banco sem filtro de data
+        const { data: allComplaints } = await supabase
+          .from('complaints')
+          .select('id, processed_at, attendant_id')
+          .not('processed_at', 'is', null)
+          .not('attendant_id', 'is', null)
+          .limit(5);
+          
+        console.log('🔍 DEBUG AttendanceTime - All complaints sample:', allComplaints);
+        
         setStats({
           totalProcessed: 0,
           averageTime: 0,
@@ -120,6 +134,25 @@ export function AttendanceTimeDashboard() {
         });
         return;
       }
+
+      // Buscar informações dos usuários separadamente
+      const attendantIds = [...new Set(complaints.map(c => c.attendant_id))];
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, full_name')
+        .in('id', attendantIds);
+
+      if (usersError) {
+        console.error('Erro ao buscar usuários:', usersError);
+      }
+
+      console.log('🔍 DEBUG AttendanceTime - Users found:', users?.length);
+
+      // Criar mapa de usuários para lookup rápido
+      const usersMap = new Map();
+      users?.forEach(user => {
+        usersMap.set(user.id, user.full_name);
+      });
 
       // Calcular tempos de atendimento
       const processedComplaints = complaints.map(complaint => ({
@@ -145,7 +178,7 @@ export function AttendanceTimeDashboard() {
 
       processedComplaints.forEach(complaint => {
         const attendantId = complaint.attendant_id!;
-        const attendantName = (complaint.users as any).full_name;
+        const attendantName = usersMap.get(attendantId) || 'Usuário não encontrado';
         
         if (!attendantStats.has(attendantId)) {
           attendantStats.set(attendantId, {
