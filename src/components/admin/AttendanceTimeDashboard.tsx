@@ -326,8 +326,7 @@ export function AttendanceTimeDashboard() {
     if (!stats) return;
 
     try {
-      // Buscar logo do sistema
-      console.log('🔍 Buscando logo do sistema...');
+      // Buscar logo do sistema (seguindo padrão do ComplaintsList)
       const { data: logoData, error: logoError } = await supabase
         .from('system_settings')
         .select('value')
@@ -337,8 +336,11 @@ export function AttendanceTimeDashboard() {
       console.log('🔍 Logo data:', logoData);
       console.log('🔍 Logo error:', logoError);
 
-      const logoUrl = logoData?.value?.[0] || logoData?.value || '';
-      console.log('🔍 Logo URL:', logoUrl);
+      let logoUrl = '';
+      if (logoData?.value) {
+        logoUrl = logoData.value as string;
+      }
+      console.log('🔍 Logo URL final:', logoUrl);
 
       // Criar PDF usando jsPDF
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -350,13 +352,18 @@ export function AttendanceTimeDashboard() {
       
       let yPosition = 30;
       
-      // Adicionar logo se disponível
+      // Adicionar logo se disponível (seguindo padrão do ComplaintsList)
       if (logoUrl) {
         try {
+          console.log('🔍 Carregando logo:', logoUrl);
           // Converter URL da logo para base64
           const logoResponse = await fetch(logoUrl);
+          console.log('🔍 Logo response status:', logoResponse.status);
+          
           if (logoResponse.ok) {
             const logoBlob = await logoResponse.blob();
+            console.log('🔍 Logo blob type:', logoBlob.type);
+            
             const logoBase64 = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
               reader.onload = () => resolve(reader.result as string);
@@ -368,11 +375,16 @@ export function AttendanceTimeDashboard() {
             const imageFormat = logoBlob.type.includes('png') ? 'PNG' : 
                                logoBlob.type.includes('jpeg') || logoBlob.type.includes('jpg') ? 'JPEG' : 'PNG';
             
+            console.log('🔍 Image format:', imageFormat);
+            console.log('🔍 Adicionando logo ao PDF...');
+            
             // Adicionar logo no cabeçalho (lado esquerdo)
             pdf.addImage(logoBase64, imageFormat, 20, 10, 30, 30);
+            
+            console.log('🔍 Logo adicionada com sucesso!');
           }
           
-          // Posicionar o título ao lado da logo
+          // Posicionar o título ao lado da logo, não em cima
           pdf.setFontSize(18);
           pdf.text('RELATÓRIO DE TEMPOS DE ATENDIMENTO', 60, 20);
           yPosition = 50; // Aumentar a posição Y para dar espaço à logo
@@ -383,6 +395,7 @@ export function AttendanceTimeDashboard() {
           yPosition = 30;
         }
       } else {
+        console.log('🔍 Nenhuma logo encontrada, usando layout sem logo');
         pdf.setFontSize(18);
         pdf.text('RELATÓRIO DE TEMPOS DE ATENDIMENTO', 20, 20);
         yPosition = 30;
