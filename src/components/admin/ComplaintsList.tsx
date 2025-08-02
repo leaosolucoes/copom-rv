@@ -415,6 +415,8 @@ export const ComplaintsList = () => {
         `)
         .order('created_at', { ascending: false });
 
+      console.log('🔍 DEBUG fetchComplaints - Dados brutos:', data?.slice(0, 2));
+
       console.log('📊 Query result:', { error, dataLength: data?.length });
 
       if (error) {
@@ -1556,11 +1558,17 @@ export const ComplaintsList = () => {
                          <div className="flex space-x-2">
                             <Dialog>
                               <DialogTrigger asChild>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  onClick={() => setSelectedComplaint(complaint)}
-                                >
+                                 <Button 
+                                   size="sm" 
+                                   variant="outline" 
+                                   onClick={() => {
+                                     console.log('🔍 DEBUG onClick Ver (Novas) - Complaint selecionada:', complaint);
+                                     console.log('🔍 DEBUG onClick Ver (Novas) - user_location:', complaint.user_location);
+                                     console.log('🔍 DEBUG onClick Ver (Novas) - photos:', complaint.photos);
+                                     console.log('🔍 DEBUG onClick Ver (Novas) - videos:', complaint.videos);
+                                     setSelectedComplaint(complaint);
+                                   }}
+                                 >
                                   <Eye className="h-4 w-4 mr-1" />
                                   Ver
                                 </Button>
@@ -2194,11 +2202,17 @@ export const ComplaintsList = () => {
                       <TableCell>
                        <Dialog>
                          <DialogTrigger asChild>
-                           <Button 
-                             size="sm" 
-                             variant="outline" 
-                             onClick={() => setSelectedComplaint(complaint)}
-                           >
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => {
+                                console.log('🔍 DEBUG onClick Ver (Histórico) - Complaint selecionada:', complaint);
+                                console.log('🔍 DEBUG onClick Ver (Histórico) - user_location:', complaint.user_location);
+                                console.log('🔍 DEBUG onClick Ver (Histórico) - photos:', complaint.photos);
+                                console.log('🔍 DEBUG onClick Ver (Histórico) - videos:', complaint.videos);
+                                setSelectedComplaint(complaint);
+                              }}
+                            >
                              <Eye className="h-4 w-4 mr-1" />
                              Ver
                            </Button>
