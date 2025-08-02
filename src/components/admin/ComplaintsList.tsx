@@ -1986,17 +1986,6 @@ export const ComplaintsList = () => {
                                </DialogContent>
                              </Dialog>
                             
-                             {userRole === 'atendente' && complaint.status === 'nova' && (
-                               <Button 
-                                 size="sm" 
-                                 variant="secondary"
-                                 onClick={() => sendToAdmin(complaint.id)}
-                                 title="Enviar para Admin"
-                               >
-                                 <Send className="h-4 w-4 mr-1" />
-                                 Enviar
-                               </Button>
-                             )}
                              
                              {/* Botão para denúncias duplicadas (2ª solicitação em diante) */}
                              {userRole === 'atendente' && duplicateInfo.isDuplicate && duplicateInfo.sequence >= 2 && complaint.status === 'nova' && (
