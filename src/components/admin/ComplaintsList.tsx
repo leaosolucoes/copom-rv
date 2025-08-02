@@ -943,7 +943,7 @@ export const ComplaintsList = () => {
       
       toast({
         title: "Sucesso",
-        description: `Denúncia ${status === 'cadastrada' ? 'cadastrada com RAI' : 'atualizada'} com sucesso! Verifique na aba Histórico.`,
+        description: `Denúncia ${status === 'cadastrada' ? 'cadastrada com PROTOCOLO' : 'atualizada'} com sucesso! Verifique na aba Histórico.`,
       });
       
       // Limpar dados do formulário
@@ -1889,14 +1889,14 @@ export const ComplaintsList = () => {
                                     {/* Formulário RAI - mostrar para atendente e denúncia nova ou verificada */}
                                     {userRole === 'atendente' && (selectedComplaint.status === 'nova' || selectedComplaint.status === 'verificado') && (
                                      <div className="space-y-4 border-t pt-4">
-                                       <h4 className="text-md font-semibold text-primary">Cadastrar com RAI</h4>
+                                       <h4 className="text-md font-semibold text-primary">Cadastrar com PROTOCOLO</h4>
                                        <div className="grid grid-cols-2 gap-4">
                                          <div>
-                                           <Label htmlFor="rai-input">Número RAI *</Label>
+                                           <Label htmlFor="rai-input">Número PROTOCOLO *</Label>
                                            <Input
                                              id="rai-input"
                                              type="text"
-                                             placeholder="Digite o número RAI"
+                                             placeholder="Digite o número PROTOCOLO"
                                              value={raiData.rai}
                                              onChange={(e) => setRaiData(prev => ({ ...prev, rai: e.target.value }))}
                                            />
@@ -1945,7 +1945,7 @@ export const ComplaintsList = () => {
                                                if (!raiData.rai.trim()) {
                                                  toast({
                                                    title: "Erro",
-                                                   description: "Por favor, digite o número RAI",
+                                                    description: "Por favor, digite o número PROTOCOLO",
                                                    variant: "destructive",
                                                  });
                                                  return;
@@ -1967,7 +1967,7 @@ export const ComplaintsList = () => {
                                             variant="default"
                                           >
                                             <Calendar className="h-4 w-4 mr-2" />
-                                            Cadastrar com RAI
+                                             Cadastrar com PROTOCOLO
                                           </Button>
                                         </>
                                       )}
@@ -1984,7 +1984,7 @@ export const ComplaintsList = () => {
                                              if (!raiData.rai.trim()) {
                                                toast({
                                                  title: "Erro",
-                                                 description: "Por favor, digite o número RAI",
+                                                 description: "Por favor, digite o número PROTOCOLO",
                                                  variant: "destructive",
                                                });
                                                return;
@@ -2006,7 +2006,7 @@ export const ComplaintsList = () => {
                                           variant="default"
                                         >
                                           <Calendar className="h-4 w-4 mr-2" />
-                                          Cadastrar com RAI
+                                           Cadastrar com PROTOCOLO
                                         </Button>
                                       )}
                                        
