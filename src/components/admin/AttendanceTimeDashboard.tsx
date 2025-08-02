@@ -327,13 +327,18 @@ export function AttendanceTimeDashboard() {
 
     try {
       // Buscar logo do sistema
-      const { data: logoData } = await supabase
+      console.log('🔍 Buscando logo do sistema...');
+      const { data: logoData, error: logoError } = await supabase
         .from('system_settings')
         .select('value')
         .eq('key', 'public_logo_url')
         .single();
 
-      const logoUrl = logoData?.value?.[0] || '';
+      console.log('🔍 Logo data:', logoData);
+      console.log('🔍 Logo error:', logoError);
+
+      const logoUrl = logoData?.value?.[0] || logoData?.value || '';
+      console.log('🔍 Logo URL:', logoUrl);
 
       // Criar PDF usando jsPDF
       const pdf = new jsPDF('p', 'mm', 'a4');
