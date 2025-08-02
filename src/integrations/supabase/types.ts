@@ -346,6 +346,7 @@ export type Database = {
           user_device_type: string | null
           user_ip: unknown | null
           user_location: Json | null
+          verified_at: string | null
           videos: string[] | null
           whatsapp_sent: boolean | null
         }
@@ -384,6 +385,7 @@ export type Database = {
           user_device_type?: string | null
           user_ip?: unknown | null
           user_location?: Json | null
+          verified_at?: string | null
           videos?: string[] | null
           whatsapp_sent?: boolean | null
         }
@@ -422,6 +424,7 @@ export type Database = {
           user_device_type?: string | null
           user_ip?: unknown | null
           user_location?: Json | null
+          verified_at?: string | null
           videos?: string[] | null
           whatsapp_sent?: boolean | null
         }

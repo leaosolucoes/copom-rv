@@ -91,7 +91,8 @@ export function AttendanceTimeDashboard() {
           processed_at,
           attendant_id,
           complainant_name,
-          occurrence_type
+          occurrence_type,
+          verified_at
         `)
         .not('processed_at', 'is', null)
         .not('attendant_id', 'is', null)
@@ -155,12 +156,23 @@ export function AttendanceTimeDashboard() {
       });
 
       // Calcular tempos de atendimento
-      const processedComplaints = complaints.map(complaint => ({
-        ...complaint,
-        attendanceTime: Math.round(
-          (new Date(complaint.processed_at!).getTime() - new Date(complaint.created_at).getTime()) / (1000 * 60)
-        ) // em minutos
-      }));
+      const processedComplaints = complaints.map(complaint => {
+        // Se a denúncia foi verificada pelo admin (tem verified_at), 
+        // calcular tempo a partir de verified_at até processed_at
+        // Caso contrário, usar o tempo total desde created_at
+        const startTime = complaint.verified_at 
+          ? new Date(complaint.verified_at).getTime()
+          : new Date(complaint.created_at).getTime();
+          
+        const attendanceTime = Math.round(
+          (new Date(complaint.processed_at!).getTime() - startTime) / (1000 * 60)
+        ); // em minutos
+        
+        return {
+          ...complaint,
+          attendanceTime
+        };
+      });
 
       // Estatísticas gerais
       const totalProcessed = processedComplaints.length;
@@ -268,7 +280,8 @@ export function AttendanceTimeDashboard() {
           complainant_name,
           occurrence_type,
           created_at,
-          processed_at
+          processed_at,
+          verified_at
         `)
         .eq('attendant_id', attendantId)
         .not('processed_at', 'is', null)
@@ -278,12 +291,23 @@ export function AttendanceTimeDashboard() {
 
       if (error) throw error;
 
-      const details = (complaints || []).map(complaint => ({
-        ...complaint,
-        attendanceTime: Math.round(
-          (new Date(complaint.processed_at!).getTime() - new Date(complaint.created_at).getTime()) / (1000 * 60)
-        )
-      }));
+      const details = (complaints || []).map(complaint => {
+        // Se a denúncia foi verificada pelo admin (tem verified_at), 
+        // calcular tempo a partir de verified_at até processed_at
+        // Caso contrário, usar o tempo total desde created_at
+        const startTime = complaint.verified_at 
+          ? new Date(complaint.verified_at).getTime()
+          : new Date(complaint.created_at).getTime();
+          
+        const attendanceTime = Math.round(
+          (new Date(complaint.processed_at!).getTime() - startTime) / (1000 * 60)
+        ); // em minutos
+        
+        return {
+          ...complaint,
+          attendanceTime
+        };
+      });
 
       setAttendantDetails(details);
     } catch (error) {
