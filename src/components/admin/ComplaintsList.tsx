@@ -1499,8 +1499,8 @@ export const ComplaintsList = () => {
           </div>
         )}
         
-        {/* Para super_admin: Filtro de Dispositivo */}
-        {userRole === 'super_admin' && (
+        {/* Para admin e super_admin: Filtro de Dispositivo */}
+        {(userRole === 'admin' || userRole === 'super_admin') && (
           <div className="flex gap-4 items-center flex-wrap">
             <div className="flex gap-2 items-center">
               <span className="text-sm font-medium">Filtro por Dispositivo:</span>
