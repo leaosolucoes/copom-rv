@@ -14,7 +14,7 @@ import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface AttendanceTimeStats {
   totalProcessed: number;
@@ -322,63 +322,181 @@ export function AttendanceTimeDashboard() {
     }
   };
 
-  const exportReport = () => {
+  const exportReport = async () => {
     if (!stats) return;
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
+    try {
+      // Buscar logo do sistema
+      const { data: logoData } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'public_logo_url')
+        .single();
 
-    // Cabeçalho
-    doc.setFontSize(20);
-    doc.text('Relatório de Tempos de Atendimento', pageWidth / 2, 20, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.text(`Período: ${period === 'custom' ? `${customStartDate} a ${customEndDate}` : `Últimos ${period} dias`}`, pageWidth / 2, 30, { align: 'center' });
-    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, pageWidth / 2, 40, { align: 'center' });
+      const logoUrl = logoData?.value?.[0] || '';
 
-    // Estatísticas gerais
-    let yPosition = 60;
-    doc.setFontSize(14);
-    doc.text('Estatísticas Gerais', 20, yPosition);
-    
-    yPosition += 10;
-    doc.setFontSize(10);
-    doc.text(`Total de denúncias processadas: ${stats.totalProcessed}`, 20, yPosition);
-    doc.text(`Tempo médio de atendimento: ${stats.averageTime} minutos`, 20, yPosition + 10);
-    
-    if (stats.fastestAttendant) {
-      doc.text(`Atendente mais rápido: ${stats.fastestAttendant.name} (${stats.fastestAttendant.avgTime} min)`, 20, yPosition + 20);
-    }
-    
-    if (stats.mostProductiveAttendant) {
-      doc.text(`Atendente mais produtivo: ${stats.mostProductiveAttendant.name} (${stats.mostProductiveAttendant.count} atendimentos)`, 20, yPosition + 30);
-    }
-
-    // Ranking de atendentes
-    yPosition += 50;
-    if (stats.attendantRanking.length > 0) {
-      doc.setFontSize(14);
-      doc.text('Ranking de Atendentes', 20, yPosition);
+      // Criar PDF usando jsPDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
       
-      const tableData = stats.attendantRanking.map((attendant, index) => [
-        `${index + 1}º`,
-        attendant.name,
-        `${attendant.avgTime} min`,
-        attendant.totalProcessed.toString(),
-        `${attendant.minTime} min`,
-        `${attendant.maxTime} min`
-      ]);
+      // Configurar fontes
+      pdf.setFont('helvetica', 'bold');
+      
+      let yPosition = 30;
+      
+      // Adicionar logo se disponível
+      if (logoUrl) {
+        try {
+          // Converter URL da logo para base64
+          const logoResponse = await fetch(logoUrl);
+          if (logoResponse.ok) {
+            const logoBlob = await logoResponse.blob();
+            const logoBase64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(logoBlob);
+            });
+            
+            // Detectar formato da imagem
+            const imageFormat = logoBlob.type.includes('png') ? 'PNG' : 
+                               logoBlob.type.includes('jpeg') || logoBlob.type.includes('jpg') ? 'JPEG' : 'PNG';
+            
+            // Adicionar logo no cabeçalho (lado esquerdo)
+            pdf.addImage(logoBase64, imageFormat, 20, 10, 30, 30);
+          }
+          
+          // Posicionar o título ao lado da logo
+          pdf.setFontSize(18);
+          pdf.text('RELATÓRIO DE TEMPOS DE ATENDIMENTO', 60, 20);
+          yPosition = 50; // Aumentar a posição Y para dar espaço à logo
+        } catch (logoError) {
+          console.error('Erro ao carregar logo:', logoError);
+          pdf.setFontSize(18);
+          pdf.text('RELATÓRIO DE TEMPOS DE ATENDIMENTO', 20, 20);
+          yPosition = 30;
+        }
+      } else {
+        pdf.setFontSize(18);
+        pdf.text('RELATÓRIO DE TEMPOS DE ATENDIMENTO', 20, 20);
+        yPosition = 30;
+      }
+      
+      // Adicionar informações do relatório
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      
+      const today = new Date();
+      const { start, end } = getDateRange();
+      const dateRange = period === 'custom' && customStartDate && customEndDate
+        ? `${format(new Date(customStartDate), 'dd/MM/yyyy')} a ${format(new Date(customEndDate), 'dd/MM/yyyy')}`
+        : period === 'custom' && customStartDate
+        ? `A partir de ${format(new Date(customStartDate), 'dd/MM/yyyy')}`
+        : period === 'custom' && customEndDate
+        ? `Até ${format(new Date(customEndDate), 'dd/MM/yyyy')}`
+        : `${format(start, 'dd/MM/yyyy')} a ${format(end, 'dd/MM/yyyy')}`;
+      
+      pdf.text(`Período: ${dateRange}`, 20, yPosition + 5);
+      pdf.text(`Data de geração: ${format(today, 'dd/MM/yyyy HH:mm')}`, 20, yPosition + 15);
+      pdf.text(`Total de denúncias processadas: ${stats.totalProcessed}`, 20, yPosition + 25);
+      
+      yPosition += 40;
 
-      (doc as any).autoTable({
-        startY: yPosition + 10,
-        head: [['Posição', 'Atendente', 'Tempo Médio', 'Total', 'Menor Tempo', 'Maior Tempo']],
-        body: tableData,
-        fontSize: 8,
-        margin: { left: 20, right: 20 }
+      // Seção de Estatísticas Gerais
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14);
+      pdf.text('ESTATÍSTICAS GERAIS', 20, yPosition);
+      
+      yPosition += 15;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      
+      const statsData = [
+        ['Tempo médio geral de atendimento:', `${stats.averageTime} minutos`],
+        ['Total de denúncias processadas:', stats.totalProcessed.toString()],
+      ];
+      
+      if (stats.fastestAttendant) {
+        statsData.push(['Atendente mais rápido:', `${stats.fastestAttendant.name} (${stats.fastestAttendant.avgTime} min)`]);
+      }
+      
+      if (stats.mostProductiveAttendant) {
+        statsData.push(['Atendente mais produtivo:', `${stats.mostProductiveAttendant.name} (${stats.mostProductiveAttendant.count} atendimentos)`]);
+      }
+
+      // Adicionar estatísticas usando autoTable
+      autoTable(pdf, {
+        body: statsData,
+        startY: yPosition,
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+        },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 70 },
+          1: { cellWidth: 100 }
+        },
+        margin: { left: 20, right: 20 },
+        theme: 'plain'
+      });
+
+      // Seção de Ranking de Atendentes
+      const finalY = (pdf as any).lastAutoTable.finalY + 20;
+      
+      if (stats.attendantRanking.length > 0) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.text('RANKING DE ATENDENTES', 20, finalY);
+        
+        const tableColumns = ['Posição', 'Atendente', 'Tempo Médio', 'Total', 'Menor Tempo', 'Maior Tempo'];
+        
+        const tableData = stats.attendantRanking.map((attendant, index) => [
+          `${index + 1}º`,
+          attendant.name,
+          `${attendant.avgTime} min`,
+          attendant.totalProcessed.toString(),
+          `${attendant.minTime} min`,
+          `${attendant.maxTime} min`
+        ]);
+
+        // Adicionar tabela de ranking
+        autoTable(pdf, {
+          head: [tableColumns],
+          body: tableData,
+          startY: finalY + 10,
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+          },
+          headStyles: {
+            fillColor: [240, 240, 240],
+            textColor: [0, 0, 0],
+            fontStyle: 'bold'
+          },
+          alternateRowStyles: {
+            fillColor: [250, 250, 250]
+          },
+          margin: { left: 20, right: 20 }
+        });
+      }
+
+      // Salvar PDF
+      pdf.save(`relatorio-tempos-atendimento-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
+      
+      toast({
+        title: "Sucesso",
+        description: "Relatório PDF gerado com sucesso!",
+      });
+
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao gerar relatório PDF",
+        variant: "destructive",
       });
     }
-
-    doc.save(`relatorio-tempos-atendimento-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
   const formatTime = (minutes: number) => {
