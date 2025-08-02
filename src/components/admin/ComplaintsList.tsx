@@ -1703,92 +1703,122 @@ export const ComplaintsList = () => {
                                      </div>
                                     </div>
 
-                                    {/* Dados do Usuário Capturados */}
-                                    {(selectedComplaint.user_location || selectedComplaint.user_device_type || selectedComplaint.user_browser || selectedComplaint.user_ip || selectedComplaint.user_agent) && (
-                                      <div className="space-y-4">
-                                        <h3 className="text-lg font-semibold">Informações do Usuário</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          {selectedComplaint.user_device_type && (
-                                            <div>
-                                              <strong>Dispositivo:</strong> {selectedComplaint.user_device_type}
-                                            </div>
-                                          )}
-                                          {selectedComplaint.user_browser && (
-                                            <div>
-                                              <strong>Navegador:</strong> {selectedComplaint.user_browser}
-                                            </div>
-                                          )}
-                                          {selectedComplaint.user_ip && (
-                                            <div>
-                                              <strong>Endereço IP:</strong> {selectedComplaint.user_ip}
-                                            </div>
-                                          )}
-                                           {selectedComplaint.user_location && (
+                                     {/* Dados do Usuário Capturados */}
+                                     {(() => {
+                                       // Debug: Log da denúncia selecionada
+                                       console.log('🔍 DEBUG Modal - Denúncia completa:', selectedComplaint);
+                                       console.log('🔍 DEBUG Modal - user_location:', selectedComplaint.user_location);
+                                       console.log('🔍 DEBUG Modal - Tipo user_location:', typeof selectedComplaint.user_location);
+                                       
+                                       const hasUserInfo = selectedComplaint.user_location || 
+                                                         selectedComplaint.user_device_type || 
+                                                         selectedComplaint.user_browser || 
+                                                         selectedComplaint.user_ip || 
+                                                         selectedComplaint.user_agent;
+                                       
+                                       console.log('🔍 DEBUG Modal - hasUserInfo:', hasUserInfo);
+                                       return hasUserInfo;
+                                     })() && (
+                                       <div className="space-y-4">
+                                         <h3 className="text-lg font-semibold">Informações do Usuário</h3>
+                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                           {selectedComplaint.user_device_type && (
+                                             <div>
+                                               <strong>Dispositivo:</strong> {selectedComplaint.user_device_type}
+                                             </div>
+                                           )}
+                                           {selectedComplaint.user_browser && (
+                                             <div>
+                                               <strong>Navegador:</strong> {selectedComplaint.user_browser}
+                                             </div>
+                                           )}
+                                           {selectedComplaint.user_ip && (
+                                             <div>
+                                               <strong>Endereço IP:</strong> {selectedComplaint.user_ip}
+                                             </div>
+                                           )}
+                                            {selectedComplaint.user_location && (
+                                              <div className="md:col-span-2">
+                                                <strong>Localização:</strong>
+                                                <div className="mt-1 text-sm bg-gray-50 p-2 rounded">
+                                                  {(() => {
+                                                    let latitude: number | null = null;
+                                                    let longitude: number | null = null;
+                                                    let accuracy: number | null = null;
+
+                                                    console.log('🔍 DEBUG Modal - Processando localização:', selectedComplaint.user_location);
+
+                                                    // Se é um objeto estruturado
+                                                    if (typeof selectedComplaint.user_location === 'object' && selectedComplaint.user_location?.latitude) {
+                                                      latitude = selectedComplaint.user_location.latitude;
+                                                      longitude = selectedComplaint.user_location.longitude;
+                                                      accuracy = selectedComplaint.user_location.accuracy;
+                                                      console.log('🔍 DEBUG Modal - Objeto estruturado:', { latitude, longitude, accuracy });
+                                                    }
+                                                    // Se é uma string, tentar processar
+                                                    else if (typeof selectedComplaint.user_location === 'string') {
+                                                      console.log('🔍 DEBUG Modal - String localização:', selectedComplaint.user_location);
+                                                      const lines = selectedComplaint.user_location.trim().split('\n');
+                                                      console.log('🔍 DEBUG Modal - Lines:', lines);
+                                                      if (lines.length === 2) {
+                                                        latitude = parseFloat(lines[0]);
+                                                        longitude = parseFloat(lines[1]);
+                                                        console.log('🔍 DEBUG Modal - String parseada:', { latitude, longitude });
+                                                      } else if (lines.length === 1) {
+                                                        // Tentar com vírgula ou espaço
+                                                        const parts = lines[0].split(/[,\s]+/);
+                                                        if (parts.length >= 2) {
+                                                          latitude = parseFloat(parts[0]);
+                                                          longitude = parseFloat(parts[1]);
+                                                          console.log('🔍 DEBUG Modal - String com separador:', { latitude, longitude });
+                                                        }
+                                                      }
+                                                    }
+
+                                                    console.log('🔍 DEBUG Modal - Resultado final:', { latitude, longitude, accuracy });
+
+                                                    if (latitude && longitude && !isNaN(latitude) && !isNaN(longitude)) {
+                                                      return (
+                                                        <>
+                                                          <div>Latitude: {latitude}</div>
+                                                          <div>Longitude: {longitude}</div>
+                                                          {accuracy && (
+                                                            <div>Precisão: {Math.round(accuracy)}m</div>
+                                                          )}
+                                                          <div className="mt-2">
+                                                            <a 
+                                                              href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                                                              target="_blank"
+                                                              rel="noopener noreferrer"
+                                                              className="text-blue-600 hover:text-blue-800 underline"
+                                                            >
+                                                              Ver no Google Maps
+                                                            </a>
+                                                          </div>
+                                                        </>
+                                                      );
+                                                    } else {
+                                                      return (
+                                                        <div className="text-gray-500">
+                                                          Dados de localização inválidos: {JSON.stringify(selectedComplaint.user_location)}
+                                                        </div>
+                                                      );
+                                                    }
+                                                  })()}
+                                                </div>
+                                              </div>
+                                            )}
+                                           {selectedComplaint.user_agent && (
                                              <div className="md:col-span-2">
-                                               <strong>Localização:</strong>
-                                               <div className="mt-1 text-sm bg-gray-50 p-2 rounded">
-                                                 {(() => {
-                                                   let latitude: number | null = null;
-                                                   let longitude: number | null = null;
-                                                   let accuracy: number | null = null;
-
-                                                   // Se é um objeto estruturado
-                                                   if (typeof selectedComplaint.user_location === 'object' && selectedComplaint.user_location.latitude) {
-                                                     latitude = selectedComplaint.user_location.latitude;
-                                                     longitude = selectedComplaint.user_location.longitude;
-                                                     accuracy = selectedComplaint.user_location.accuracy;
-                                                   }
-                                                   // Se é uma string, tentar processar
-                                                   else if (typeof selectedComplaint.user_location === 'string') {
-                                                     const lines = selectedComplaint.user_location.trim().split('\n');
-                                                     if (lines.length === 2) {
-                                                       latitude = parseFloat(lines[0]);
-                                                       longitude = parseFloat(lines[1]);
-                                                     }
-                                                   }
-
-                                                   if (latitude && longitude) {
-                                                     return (
-                                                       <>
-                                                         <div>Latitude: {latitude}</div>
-                                                         <div>Longitude: {longitude}</div>
-                                                         {accuracy && (
-                                                           <div>Precisão: {Math.round(accuracy)}m</div>
-                                                         )}
-                                                         <div className="mt-2">
-                                                           <a 
-                                                             href={`https://www.google.com/maps?q=${latitude},${longitude}`}
-                                                             target="_blank"
-                                                             rel="noopener noreferrer"
-                                                             className="text-blue-600 hover:text-blue-800 underline"
-                                                           >
-                                                             Ver no Google Maps
-                                                           </a>
-                                                         </div>
-                                                       </>
-                                                     );
-                                                   } else {
-                                                     return (
-                                                       <div className="text-gray-500">
-                                                         Dados de localização inválidos: {JSON.stringify(selectedComplaint.user_location)}
-                                                       </div>
-                                                     );
-                                                   }
-                                                 })()}
+                                               <strong>User Agent:</strong>
+                                               <div className="mt-1 text-xs bg-gray-50 p-2 rounded break-all">
+                                                 {selectedComplaint.user_agent}
                                                </div>
                                              </div>
                                            )}
-                                          {selectedComplaint.user_agent && (
-                                            <div className="md:col-span-2">
-                                              <strong>User Agent:</strong>
-                                              <div className="mt-1 text-xs bg-gray-50 p-2 rounded break-all">
-                                                {selectedComplaint.user_agent}
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
+                                         </div>
+                                       </div>
+                                     )}
                                     
                                     {/* Formulário RAI - mostrar para atendente e denúncia nova ou verificada */}
                                     {userRole === 'atendente' && (selectedComplaint.status === 'nova' || selectedComplaint.status === 'verificado') && (
