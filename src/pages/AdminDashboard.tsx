@@ -11,7 +11,8 @@ import { ComplaintsListLazy } from '@/components/admin/ComplaintsListLazy';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
-import { Users, FileText, Search } from 'lucide-react';
+import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
+import { Users, FileText, Search, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
@@ -98,7 +99,7 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-4 md:py-8">
         <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-3 md:w-fit">
+          <TabsList className="grid w-full grid-cols-4 md:w-fit">
             <TabsTrigger value="complaints" className="flex items-center gap-2 text-xs md:text-sm">
               <FileText className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Denúncias</span>
@@ -108,6 +109,11 @@ const AdminDashboard = () => {
               <Users className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Atendentes/Fiscais</span>
               <span className="sm:hidden">Users</span>
+            </TabsTrigger>
+            <TabsTrigger value="attendance-time" className="flex items-center gap-2 text-xs md:text-sm">
+              <Clock className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Tempos Atend.</span>
+              <span className="sm:hidden">Tempos</span>
             </TabsTrigger>
             <TabsTrigger value="consultas" className="flex items-center gap-2 text-xs md:text-sm">
               <Search className="h-3 w-3 md:h-4 md:w-4" />
@@ -147,6 +153,20 @@ const AdminDashboard = () => {
                 ) : (
                   <UserManagement userRole="admin" />
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="attendance-time" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Dashboard de Tempos de Atendimento</CardTitle>
+                <CardDescription>
+                  Monitore e analise os tempos de atendimento geral e por atendente
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AttendanceTimeDashboard />
               </CardContent>
             </Card>
           </TabsContent>
