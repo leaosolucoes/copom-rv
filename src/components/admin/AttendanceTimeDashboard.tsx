@@ -157,15 +157,6 @@ export function AttendanceTimeDashboard() {
 
       // Calcular tempos de atendimento
       const processedComplaints = complaints.map(complaint => {
-        // Debug: verificar se verified_at está presente
-        console.log('🔍 DEBUG - Complaint:', {
-          id: complaint.id,
-          created_at: complaint.created_at,
-          verified_at: complaint.verified_at,
-          processed_at: complaint.processed_at,
-          has_verified_at: !!complaint.verified_at
-        });
-        
         // Se a denúncia foi verificada pelo admin (tem verified_at), 
         // calcular tempo a partir de verified_at até processed_at
         // Caso contrário, usar o tempo total desde created_at
@@ -176,14 +167,6 @@ export function AttendanceTimeDashboard() {
         const attendanceTime = Math.round(
           (new Date(complaint.processed_at!).getTime() - startTime) / (1000 * 60)
         ); // em minutos
-        
-        console.log('🔍 DEBUG - Time calculation:', {
-          complaint_id: complaint.id,
-          start_time_source: complaint.verified_at ? 'verified_at' : 'created_at',
-          start_time: new Date(startTime).toISOString(),
-          processed_at: complaint.processed_at,
-          attendance_time_minutes: attendanceTime
-        });
         
         return {
           ...complaint,
