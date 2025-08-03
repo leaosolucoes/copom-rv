@@ -225,10 +225,11 @@ export const ComplaintsList = () => {
   }, [userRole]);
 
   useEffect(() => {
-    // Desabilitar real-time no mobile para evitar problemas de performance
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // Desabilitar real-time no mobile e tablet para evitar problemas de performance
+    const isMobileOrTablet = /iPhone|iPad|iPod|Android|Tablet/i.test(navigator.userAgent) || 
+                             window.innerWidth <= 1024; // Incluir tablets baseado na largura da tela
     
-    if (!isMobile) {
+    if (!isMobileOrTablet) {
       const subscription = setupRealtimeUpdates();
       return () => {
         supabase.removeChannel(subscription);
@@ -236,11 +237,12 @@ export const ComplaintsList = () => {
     }
   }, [userRole, soundEnabled]);
 
-  // Atualização automática desabilitada no mobile - somente manual via botão
+  // Atualização automática desabilitada no mobile e tablet - somente manual via botão
   useEffect(() => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const isMobileOrTablet = /iPhone|iPad|iPod|Android|Tablet/i.test(navigator.userAgent) || 
+                             window.innerWidth <= 1024; // Incluir tablets baseado na largura da tela
     
-    if (!isMobile) {
+    if (!isMobileOrTablet) {
       const interval = setInterval(() => {
         logger.debug('🔄 Atualizando lista automaticamente...');
         fetchComplaints();
