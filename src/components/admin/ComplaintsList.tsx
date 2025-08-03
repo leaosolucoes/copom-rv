@@ -195,6 +195,7 @@ export const ComplaintsList = () => {
   const [raiData, setRaiData] = useState({ rai: '', classification: '' });
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+  const [activeTab, setActiveTab] = useState('novas');
   const [logoUrl, setLogoUrl] = useState<string>('');
   const [cnpjSearch, setCnpjSearch] = useState<string>('');
   const [cnpjData, setCnpjData] = useState<any>(null);
@@ -1362,8 +1363,18 @@ export const ComplaintsList = () => {
     const matchesDevice = deviceFilter === 'todos' || 
       (deviceFilter === 'não informado' && !complaint.user_device_type) ||
       complaint.user_device_type?.toLowerCase() === deviceFilter.toLowerCase();
+
+    // Se estiver na aba histórico, filtrar apenas denúncias do dia atual por padrão
+    let matchesDateFilter = true;
+    if (activeTab === 'historico' && !startDate && !endDate) {
+      const today = new Date();
+      const complaintDate = new Date(complaint.created_at);
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+      matchesDateFilter = complaintDate >= todayStart && complaintDate <= todayEnd;
+    }
     
-    return matchesSearch && matchesDevice;
+    return matchesSearch && matchesDevice && matchesDateFilter;
   });
 
   // Get unique device types for filter
@@ -1543,7 +1554,7 @@ export const ComplaintsList = () => {
         )}
       </div>
 
-      <Tabs defaultValue="novas" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="novas">Novas</TabsTrigger>
           <TabsTrigger value="historico">Histórico</TabsTrigger>
@@ -2105,12 +2116,20 @@ export const ComplaintsList = () => {
          </Card>
        </TabsContent>
 
-       {/* Tab Histórico */}
-       <TabsContent value="historico">
-         <Card>
-           <CardHeader>
-             <CardTitle>Histórico de Denúncias</CardTitle>
-           </CardHeader>
+        {/* Tab Histórico */}
+        <TabsContent value="historico">
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico de Denúncias</CardTitle>
+              {!startDate && !endDate && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-2">
+                  <p className="text-sm text-blue-700">
+                    📅 Por padrão, são exibidas apenas as denúncias de hoje. 
+                    Para ver denúncias de outros dias, use os filtros de data acima.
+                  </p>
+                </div>
+              )}
+            </CardHeader>
            <CardContent>
              <Table>
                <TableHeader>
