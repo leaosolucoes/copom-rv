@@ -1364,14 +1364,32 @@ export const ComplaintsList = () => {
       (deviceFilter === 'não informado' && !complaint.user_device_type) ||
       complaint.user_device_type?.toLowerCase() === deviceFilter.toLowerCase();
 
-    // Se estiver na aba histórico, filtrar apenas denúncias do dia atual por padrão
+    // Filtros de data para o histórico
     let matchesDateFilter = true;
-    if (activeTab === 'historico' && !startDate && !endDate) {
-      const today = new Date();
+    if (activeTab === 'historico') {
       const complaintDate = new Date(complaint.created_at);
-      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-      matchesDateFilter = complaintDate >= todayStart && complaintDate <= todayEnd;
+      
+      // Se não há datas selecionadas, mostrar apenas do dia atual
+      if (!startDate && !endDate) {
+        const today = new Date();
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+        matchesDateFilter = complaintDate >= todayStart && complaintDate <= todayEnd;
+      } else {
+        // Se há datas selecionadas, aplicar filtro por intervalo
+        if (startDate && endDate) {
+          const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+          const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59);
+          matchesDateFilter = complaintDate >= start && complaintDate <= end;
+        } else if (startDate) {
+          const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+          const endOfDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 23, 59, 59);
+          matchesDateFilter = complaintDate >= start && complaintDate <= endOfDay;
+        } else if (endDate) {
+          const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59);
+          matchesDateFilter = complaintDate <= end;
+        }
+      }
     }
     
     return matchesSearch && matchesDevice && matchesDateFilter;
@@ -1510,8 +1528,12 @@ export const ComplaintsList = () => {
                 <Button 
                   variant="default" 
                   onClick={() => {
-                    // Força re-render da lista para aplicar filtros
-                    setComplaints([...complaints]);
+                    // Toast para confirmar que o filtro foi aplicado
+                    toast({
+                      title: "Filtro Aplicado",
+                      description: `Mostrando denúncias de ${startDate ? format(startDate, 'dd/MM/yyyy', { locale: ptBR }) : 'qualquer data'} até ${endDate ? format(endDate, 'dd/MM/yyyy', { locale: ptBR }) : 'qualquer data'}`,
+                      duration: 3000,
+                    });
                   }}
                   className="text-sm"
                 >
