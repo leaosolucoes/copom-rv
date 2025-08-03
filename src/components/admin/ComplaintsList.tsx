@@ -225,22 +225,34 @@ export const ComplaintsList = () => {
   }, [userRole]);
 
   useEffect(() => {
-    // Desabilitar real-time no mobile e tablet para evitar problemas de performance
-    const isMobileOrTablet = /iPhone|iPad|iPod|Android|Tablet/i.test(navigator.userAgent) || 
-                             window.innerWidth <= 1024; // Incluir tablets baseado na largura da tela
+    // Detecção mais robusta de tablets e dispositivos móveis
+    const isMobileOrTablet = /iPhone|iPad|iPod|Android|Tablet|Mobile/i.test(navigator.userAgent) || 
+                             window.innerWidth <= 1280 || // Incluir tablets baseado na largura da tela (aumentado para 1280)
+                             ('ontouchstart' in window); // Detectar dispositivos touch
     
+    console.log('Device detection:', {
+      userAgent: navigator.userAgent,
+      windowWidth: window.innerWidth,
+      hasTouch: 'ontouchstart' in window,
+      isMobileOrTablet
+    });
+    
+    // DESABILITAR COMPLETAMENTE realtime para dispositivos móveis/tablets
     if (!isMobileOrTablet) {
       const subscription = setupRealtimeUpdates();
       return () => {
         supabase.removeChannel(subscription);
       };
+    } else {
+      console.log('🚫 Realtime DESABILITADO para dispositivo móvel/tablet');
     }
   }, [userRole, soundEnabled]);
 
-  // Atualização automática desabilitada no mobile e tablet - somente manual via botão
+  // Atualização automática COMPLETAMENTE desabilitada para mobile e tablet
   useEffect(() => {
-    const isMobileOrTablet = /iPhone|iPad|iPod|Android|Tablet/i.test(navigator.userAgent) || 
-                             window.innerWidth <= 1024; // Incluir tablets baseado na largura da tela
+    const isMobileOrTablet = /iPhone|iPad|iPod|Android|Tablet|Mobile/i.test(navigator.userAgent) || 
+                             window.innerWidth <= 1280 || // Incluir tablets baseado na largura da tela (aumentado para 1280)
+                             ('ontouchstart' in window); // Detectar dispositivos touch
     
     if (!isMobileOrTablet) {
       const interval = setInterval(() => {
