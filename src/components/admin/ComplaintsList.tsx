@@ -20,6 +20,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useComplaintsFilter } from '@/hooks/useComplaintsFilter';
+import { useLazyRender } from '@/hooks/useLazyRender';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
@@ -1354,45 +1356,35 @@ export const ComplaintsList = () => {
     }
   };
 
-  // Filter complaints based on search term and device filter
-  const filteredComplaints = complaints.filter(complaint => {
-    const matchesSearch = complaint.complainant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      complaint.occurrence_address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      complaint.classification.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesDevice = deviceFilter === 'todos' || 
-      (deviceFilter === 'não informado' && !complaint.user_device_type) ||
-      complaint.user_device_type?.toLowerCase() === deviceFilter.toLowerCase();
+  // Use optimized filter hook
+  const { filteredComplaints, complaintsForNewTab, complaintsForHistoryTab } = useComplaintsFilter(complaints, {
+    searchTerm,
+    deviceFilter,
+    activeTab,
+    startDate,
+    endDate,
+    userRole
+  });
 
-    // Filtros de data para o histórico
-    let matchesDateFilter = true;
-    if (activeTab === 'historico') {
-      const complaintDate = new Date(complaint.created_at);
-      
-      // Se não há datas selecionadas, mostrar apenas do dia atual
-      if (!startDate && !endDate) {
-        const today = new Date();
-        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-        matchesDateFilter = complaintDate >= todayStart && complaintDate <= todayEnd;
-      } else {
-        // Se há datas selecionadas, aplicar filtro por intervalo
-        if (startDate && endDate) {
-          const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-          const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59);
-          matchesDateFilter = complaintDate >= start && complaintDate <= end;
-        } else if (startDate) {
-          const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-          const endOfDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 23, 59, 59);
-          matchesDateFilter = complaintDate >= start && complaintDate <= endOfDay;
-        } else if (endDate) {
-          const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59);
-          matchesDateFilter = complaintDate <= end;
-        }
-      }
-    }
-    
-    return matchesSearch && matchesDevice && matchesDateFilter;
+  // Lazy loading for performance
+  const { 
+    visibleItems: visibleNewComplaints, 
+    hasMore: hasMoreNew, 
+    loadMore: loadMoreNew 
+  } = useLazyRender({ 
+    items: complaintsForNewTab, 
+    itemsPerPage: 20, 
+    initialLoad: 15 
+  });
+
+  const { 
+    visibleItems: visibleHistoryComplaints, 
+    hasMore: hasMoreHistory, 
+    loadMore: loadMoreHistory 
+  } = useLazyRender({ 
+    items: complaintsForHistoryTab, 
+    itemsPerPage: 20, 
+    initialLoad: 15 
   });
 
   // Get unique device types for filter
@@ -1616,17 +1608,9 @@ export const ComplaintsList = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredComplaints
-                     .filter(complaint => {
-                       // Para admin e super_admin, mostrar "nova", "a_verificar" e "verificado" na aba Novas (excluindo cadastrada)
-                       if (userRole === 'admin' || userRole === 'super_admin') {
-                         return complaint.status === 'nova' || complaint.status === 'a_verificar' || complaint.status === 'verificado';
-                       }
-                       // Para atendentes, mostrar "nova" e "verificado" (excluindo cadastrada)
-                       return complaint.status === 'nova' || complaint.status === 'verificado';
-                    })
-                    .map((complaint) => {
-                      const duplicateInfo = getDuplicateInfo(complaint, complaints);
+                  {visibleNewComplaints
+                     .map((complaint) => {
+                       const duplicateInfo = getDuplicateInfo(complaint, complaints);
                       
                       return (
                     <TableRow 
@@ -2147,9 +2131,22 @@ export const ComplaintsList = () => {
                    </TableRow>
                    );
                  })}
-               </TableBody>
-             </Table>
-           </CardContent>
+                </TableBody>
+              </Table>
+              
+              {/* Botão Carregar Mais para aba Novas */}
+              {hasMoreNew && (
+                <div className="flex justify-center py-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={loadMoreNew}
+                    className="text-sm"
+                  >
+                    Carregar mais denúncias ({complaintsForNewTab.length - visibleNewComplaints.length} restantes)
+                  </Button>
+                </div>
+              )}
+            </CardContent>
          </Card>
        </TabsContent>
 
@@ -2183,24 +2180,9 @@ export const ComplaintsList = () => {
                  </TableRow>
                </TableHeader>
                <TableBody>
-                   {filteredComplaints
-                      .filter(complaint => {
-                        // Para atendentes: apenas "cadastrada" e "fiscal_solicitado"
-                        if (userRole === 'atendente') {
-                          return complaint.status === 'cadastrada' || complaint.status === 'fiscal_solicitado';
-                        }
-                        
-                        // Para admin e super_admin: incluir também "finalizada" e "a_verificar" processadas
-                        if (userRole === 'admin' || userRole === 'super_admin') {
-                          if (complaint.status === 'cadastrada' || complaint.status === 'fiscal_solicitado' || complaint.status === 'finalizada') return true;
-                          if (complaint.status === 'a_verificar' && complaint.processed_at) return true;
-                        }
-                        
-                        // Excluir "nova" e "verificado" da aba histórico
-                        return false;
-                     })
-                    .map((complaint) => {
-                      const duplicateInfo = getDuplicateInfo(complaint, complaints);
+                    {visibleHistoryComplaints
+                     .map((complaint) => {
+                       const duplicateInfo = getDuplicateInfo(complaint, complaints);
                       
                       return (
                      <TableRow 
@@ -2452,9 +2434,22 @@ export const ComplaintsList = () => {
                     </TableRow>
                     );
                   })}
-                </TableBody>
-             </Table>
-           </CardContent>
+                 </TableBody>
+              </Table>
+              
+              {/* Botão Carregar Mais para aba Histórico */}
+              {hasMoreHistory && (
+                <div className="flex justify-center py-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={loadMoreHistory}
+                    className="text-sm"
+                  >
+                    Carregar mais denúncias ({complaintsForHistoryTab.length - visibleHistoryComplaints.length} restantes)
+                  </Button>
+                </div>
+              )}
+            </CardContent>
          </Card>
        </TabsContent>
      </Tabs>
