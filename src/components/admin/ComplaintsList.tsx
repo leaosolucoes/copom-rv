@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, UserCheck, RefreshCw, Smartphone } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, UserCheck, RefreshCw, Smartphone, Search } from 'lucide-react';
 import { MediaModal } from "@/components/ui/media-modal";
 import { logger } from '@/lib/secureLogger';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -1504,6 +1504,21 @@ export const ComplaintsList = () => {
                   />
                 </PopoverContent>
               </Popover>
+
+              {/* Botão Buscar - aparece quando há datas selecionadas */}
+              {(startDate || endDate) && (
+                <Button 
+                  variant="default" 
+                  onClick={() => {
+                    // Força re-render da lista para aplicar filtros
+                    setComplaints([...complaints]);
+                  }}
+                  className="text-sm"
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  Buscar
+                </Button>
+              )}
 
               <Button 
                 variant="outline" 
