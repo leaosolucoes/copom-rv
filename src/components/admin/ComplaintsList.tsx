@@ -1411,8 +1411,8 @@ export const ComplaintsList = () => {
       count = complaints.filter(c => c.user_device_type?.toLowerCase() === deviceType.toLowerCase()).length;
     }
     
-    const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
-    return `${count} (${percentage}%)`;
+    const percentage = total > 0 ? ((count / total) * 100).toFixed(1).replace('.', ',') : '0,0';
+    return `(${count}) - ${percentage}%`;
   };
 
   logger.debug('RENDER DEBUG: Component status updated');
