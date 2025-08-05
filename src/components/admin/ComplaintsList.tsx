@@ -1398,15 +1398,21 @@ export const ComplaintsList = () => {
     return Array.from(devices).sort();
   };
 
-  // Get device count for display
+  // Get device count with percentage for display
   const getDeviceCount = (deviceType: string) => {
+    const total = complaints.length;
+    let count = 0;
+    
     if (deviceType === 'todos') {
-      return complaints.length;
+      count = total;
+    } else if (deviceType === 'não informado') {
+      count = complaints.filter(c => !c.user_device_type).length;
+    } else {
+      count = complaints.filter(c => c.user_device_type?.toLowerCase() === deviceType.toLowerCase()).length;
     }
-    if (deviceType === 'não informado') {
-      return complaints.filter(c => !c.user_device_type).length;
-    }
-    return complaints.filter(c => c.user_device_type?.toLowerCase() === deviceType.toLowerCase()).length;
+    
+    const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+    return `${count} (${percentage}%)`;
   };
 
   logger.debug('RENDER DEBUG: Component status updated');
