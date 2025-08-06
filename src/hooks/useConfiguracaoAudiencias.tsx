@@ -31,17 +31,35 @@ export const useConfiguracaoAudiencias = () => {
 
   const ativarModulo = useMutation({
     mutationFn: async (configuradoPor: string) => {
-      const { data, error } = await supabase
+      // Primeiro, tentar buscar uma configuração existente
+      const { data: existing } = await supabase
         .from('configuracao_audiencias')
-        .upsert({
-          ativo: true,
-          configurado_por: configuradoPor
-        })
-        .select()
-        .single();
+        .select('*')
+        .limit(1)
+        .maybeSingle();
 
-      if (error) throw error;
-      return data;
+      if (existing) {
+        // Se existe, atualizar
+        const { data, error } = await supabase
+          .from('configuracao_audiencias')
+          .update({ ativo: true, configurado_por: configuradoPor })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return data;
+      } else {
+        // Se não existe, criar novo
+        const { data, error } = await supabase
+          .from('configuracao_audiencias')
+          .insert({ ativo: true, configurado_por: configuradoPor })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return data;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['configuracao-audiencias'] });
@@ -61,17 +79,26 @@ export const useConfiguracaoAudiencias = () => {
 
   const desativarModulo = useMutation({
     mutationFn: async (configuradoPor: string) => {
-      const { data, error } = await supabase
+      // Buscar configuração existente
+      const { data: existing } = await supabase
         .from('configuracao_audiencias')
-        .upsert({
-          ativo: false,
-          configurado_por: configuradoPor
-        })
-        .select()
-        .single();
+        .select('*')
+        .limit(1)
+        .maybeSingle();
 
-      if (error) throw error;
-      return data;
+      if (existing) {
+        const { data, error } = await supabase
+          .from('configuracao_audiencias')
+          .update({ ativo: false, configurado_por: configuradoPor })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return data;
+      } else {
+        throw new Error('Configuração não encontrada');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['configuracao-audiencias'] });
