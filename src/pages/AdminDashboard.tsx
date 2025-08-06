@@ -12,7 +12,8 @@ import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
 import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
-import { Users, FileText, Search, Clock } from 'lucide-react';
+import { AudienciasDashboard } from '@/components/audiencias/AudienciasDashboard';
+import { Users, FileText, Search, Clock, Scale } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
@@ -99,7 +100,7 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-4 md:py-8">
         <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-4 md:w-fit">
+          <TabsList className="grid w-full grid-cols-5 md:w-fit">
             <TabsTrigger value="complaints" className="flex items-center gap-2 text-xs md:text-sm">
               <FileText className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Denúncias</span>
@@ -114,6 +115,11 @@ const AdminDashboard = () => {
               <Clock className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Tempos Atend.</span>
               <span className="sm:hidden">Tempos</span>
+            </TabsTrigger>
+            <TabsTrigger value="audiencias" className="flex items-center gap-2 text-xs md:text-sm">
+              <Scale className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Audiências</span>
+              <span className="sm:hidden">Aud.</span>
             </TabsTrigger>
             <TabsTrigger value="consultas" className="flex items-center gap-2 text-xs md:text-sm">
               <Search className="h-3 w-3 md:h-4 md:w-4" />
@@ -169,6 +175,10 @@ const AdminDashboard = () => {
                 <AttendanceTimeDashboard />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="audiencias" className="space-y-6">
+            <AudienciasDashboard />
           </TabsContent>
 
           <TabsContent value="consultas" className="space-y-6">
