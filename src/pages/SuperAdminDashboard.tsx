@@ -18,10 +18,11 @@ import { ApiManagement } from '@/components/admin/ApiManagement';
 import { ConsultationAuditDashboard } from '@/components/admin/ConsultationAuditDashboard';
 import AccessAuditDashboard from '@/components/admin/AccessAuditDashboard';
 import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
+import { AudienciasDashboard } from '@/components/audiencias/AudienciasDashboard';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Clock } from 'lucide-react';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Clock, Scale } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -155,6 +156,11 @@ const SuperAdminDashboard = () => {
                 <Shield className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Auditoria</span>
                 <span className="sm:hidden">Audit</span>
+              </TabsTrigger>
+              <TabsTrigger value="audiencias" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Scale className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Audiências</span>
+                <span className="sm:hidden">Aud.</span>
               </TabsTrigger>
               <TabsTrigger value="attendance-time" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Clock className="h-3 w-3 md:h-4 md:w-4" />
@@ -308,6 +314,10 @@ const SuperAdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="audiencias" className="space-y-6">
+            <AudienciasDashboard />
           </TabsContent>
 
           <TabsContent value="attendance-time" className="space-y-6">
