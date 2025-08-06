@@ -263,6 +263,100 @@ export type Database = {
           },
         ]
       }
+      audiencias: {
+        Row: {
+          arquivo_oficio_url: string
+          concluido_por: string | null
+          created_at: string
+          criado_por: string
+          dados_assinatura: Json | null
+          dados_validacao: Json | null
+          data_assinatura: string | null
+          data_audiencia: string
+          data_conclusao_oficio: string | null
+          eh_presencial: boolean | null
+          hash_assinatura: string | null
+          horario_audiencia: string
+          id: string
+          link_videoconferencia: string | null
+          numero_processo: string
+          oficio_concluido: boolean | null
+          salt_assinatura: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          vara: string
+        }
+        Insert: {
+          arquivo_oficio_url: string
+          concluido_por?: string | null
+          created_at?: string
+          criado_por: string
+          dados_assinatura?: Json | null
+          dados_validacao?: Json | null
+          data_assinatura?: string | null
+          data_audiencia: string
+          data_conclusao_oficio?: string | null
+          eh_presencial?: boolean | null
+          hash_assinatura?: string | null
+          horario_audiencia: string
+          id?: string
+          link_videoconferencia?: string | null
+          numero_processo: string
+          oficio_concluido?: boolean | null
+          salt_assinatura?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          vara: string
+        }
+        Update: {
+          arquivo_oficio_url?: string
+          concluido_por?: string | null
+          created_at?: string
+          criado_por?: string
+          dados_assinatura?: Json | null
+          dados_validacao?: Json | null
+          data_assinatura?: string | null
+          data_audiencia?: string
+          data_conclusao_oficio?: string | null
+          eh_presencial?: boolean | null
+          hash_assinatura?: string | null
+          horario_audiencia?: string
+          id?: string
+          link_videoconferencia?: string | null
+          numero_processo?: string
+          oficio_concluido?: boolean | null
+          salt_assinatura?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          vara?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audiencias_concluido_por_fkey"
+            columns: ["concluido_por"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audiencias_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audiencias_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -439,6 +533,38 @@ export type Database = {
           {
             foreignKeyName: "complaints_attendant_id_fkey"
             columns: ["attendant_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      configuracao_audiencias: {
+        Row: {
+          ativo: boolean
+          configurado_por: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          configurado_por: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          configurado_por?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuracao_audiencias_configurado_por_fkey"
+            columns: ["configurado_por"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
