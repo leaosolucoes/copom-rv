@@ -38,11 +38,22 @@ export const useDevToolsProtection = () => {
       }
     };
     
+    // Block right-click context menu in production
+    const blockRightClick = (e: MouseEvent) => {
+      // Only block in production
+      if (process.env.NODE_ENV !== 'production') return;
+      
+      e.preventDefault();
+      return false;
+    };
+    
     document.addEventListener('keydown', blockDevToolsKeys);
+    document.addEventListener('contextmenu', blockRightClick);
     
     // Cleanup
     return () => {
       document.removeEventListener('keydown', blockDevToolsKeys);
+      document.removeEventListener('contextmenu', blockRightClick);
     };
   }, []);
 
