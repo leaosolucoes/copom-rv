@@ -83,12 +83,13 @@ export const CriarOficioAudiencia = ({
   });
 
   const { data: users } = useQuery({
-    queryKey: ['users-active'],
+    queryKey: ['users-fiscais-admins'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('users')
         .select('id, full_name, email, role')
         .eq('is_active', true)
+        .in('role', ['fiscal', 'admin', 'super_admin'])
         .order('full_name');
 
       if (error) throw error;
