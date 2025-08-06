@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAudiencias } from '@/hooks/useAudiencias';
-import { useConfiguracaoAudiencias } from '@/hooks/useConfiguracaoAudiencias';
 import { CriarOficioAudiencia } from './CriarOficioAudiencia';
 import { ListaAudiencias } from './ListaAudiencias';
 import { 
@@ -12,9 +11,7 @@ import {
   Plus, 
   Calendar, 
   Clock, 
-  Users, 
-  CheckCircle,
-  AlertCircle
+  CheckCircle
 } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
@@ -29,26 +26,6 @@ export const AudienciasDashboard = () => {
     audienciasAssinadas,
     isLoading 
   } = useAudiencias();
-  
-  const { 
-    configuracao, 
-    ativarModulo, 
-    desativarModulo, 
-    verificarModuloAtivo 
-  } = useConfiguracaoAudiencias();
-
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
-  const moduloAtivo = verificarModuloAtivo();
-
-  const handleToggleModulo = () => {
-    if (!profile?.id) return;
-    
-    if (moduloAtivo) {
-      desativarModulo.mutate(profile.id);
-    } else {
-      ativarModulo.mutate(profile.id);
-    }
-  };
 
   // Cards de estatísticas
   const stats = [
@@ -90,49 +67,6 @@ export const AudienciasDashboard = () => {
     );
   }
 
-  if (!moduloAtivo && isAdmin) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-warning" />
-              Módulo de Audiências Desativado
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">
-              O módulo de audiências está atualmente desativado. Ative-o para começar a gerenciar ofícios de audiência.
-            </p>
-            <Button onClick={handleToggleModulo} disabled={ativarModulo.isPending}>
-              {ativarModulo.isPending ? 'Ativando...' : 'Ativar Módulo'}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!moduloAtivo && !isAdmin) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-warning" />
-              Módulo Não Disponível
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              O módulo de audiências não está ativado. Entre em contato com um administrador para ativá-lo.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Header com título e ações */}
@@ -144,15 +78,6 @@ export const AudienciasDashboard = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          {isAdmin && (
-            <Button
-              variant="outline"
-              onClick={handleToggleModulo}
-              disabled={desativarModulo.isPending}
-            >
-              {desativarModulo.isPending ? 'Processando...' : 'Desativar Módulo'}
-            </Button>
-          )}
           <Button onClick={() => setIsCreateModalOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Ofício
