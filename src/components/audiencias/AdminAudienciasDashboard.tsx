@@ -20,7 +20,13 @@ interface Audiencia {
   link_videoconferencia?: string;
   data_assinatura?: string;
   user_id: string;
+  criado_por?: string;
+  hash_assinatura?: string;
+  dados_assinatura?: any;
   users?: {
+    full_name: string;
+  } | null;
+  criador?: {
     full_name: string;
   } | null;
 }
@@ -53,7 +59,13 @@ export function AdminAudienciasDashboard() {
           link_videoconferencia,
           data_assinatura,
           user_id,
+          criado_por,
+          hash_assinatura,
+          dados_assinatura,
           users:user_id (
+            full_name
+          ),
+          criador:criado_por (
             full_name
           )
         `)
