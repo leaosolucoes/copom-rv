@@ -74,7 +74,15 @@ export const ChecklistViatura = () => {
 
   useEffect(() => {
     fetchViaturas();
-  }, []);
+    
+    // Preencher nome do fiscal automaticamente
+    if (profile?.full_name) {
+      setFormData(prev => ({
+        ...prev,
+        nome_guerra: profile.full_name
+      }));
+    }
+  }, [profile]);
 
   const fetchViaturas = async () => {
     try {
@@ -176,7 +184,7 @@ export const ChecklistViatura = () => {
       setFormData({
         data_checklist: new Date().toISOString().split('T')[0],
         horario_checklist: new Date().toTimeString().slice(0, 5),
-        nome_guerra: '',
+        nome_guerra: profile?.full_name || '',
         km_inicial: 0,
         combustivel_nivel: '',
         oleo_nivel: '',
