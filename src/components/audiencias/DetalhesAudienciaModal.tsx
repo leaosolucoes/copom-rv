@@ -77,11 +77,8 @@ export function DetalhesAudienciaModal({ isOpen, onClose, audiencia, isFiscal = 
         variant: "default",
       });
 
-      // Fechar modal e atualizar dados
+      // Fechar modal - os dados serão atualizados automaticamente via real-time
       onClose();
-      
-      // Reload the page to show updated data
-      window.location.reload();
       
     } catch (error) {
       console.error('Erro ao assinar ofício:', error);
