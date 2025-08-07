@@ -33,6 +33,7 @@ interface ChecklistViatura {
   oleo_nivel: string;
   limpeza_ok: boolean;
   observacoes_alteracoes: string | null;
+  status_aprovacao: string | null;
   created_at: string;
 }
 
@@ -242,14 +243,26 @@ export const ViaturasManagement = () => {
   };
 
   const getStatusBadge = (checklist: ChecklistViatura) => {
-    // Considera aprovado se não há observações de alterações e limpeza está ok
-    const isApproved = checklist.limpeza_ok && !checklist.observacoes_alteracoes;
-    
-    return (
-      <Badge variant={isApproved ? "default" : "destructive"}>
-        {isApproved ? "Aprovado" : "Reprovado pelo Fiscal"}
-      </Badge>
-    );
+    // Usar o status_aprovacao salvo no banco de dados
+    if (checklist.status_aprovacao === 'aprovado') {
+      return (
+        <Badge variant="default" className="bg-green-500">
+          Aprovado pelo Fiscal
+        </Badge>
+      );
+    } else if (checklist.status_aprovacao === 'reprovado') {
+      return (
+        <Badge variant="destructive">
+          Reprovado pelo Fiscal
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge variant="outline">
+          Pendente
+        </Badge>
+      );
+    }
   };
 
   if (loading) {
