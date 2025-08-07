@@ -142,7 +142,8 @@ export const CriarOficioAudiencia = ({
         salt_assinatura: null,
         oficio_concluido: false,
         data_conclusao_oficio: null,
-        concluido_por: null
+        concluido_por: null,
+        assinador_nome: null
       });
 
       form.reset();

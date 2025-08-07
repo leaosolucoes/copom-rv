@@ -22,6 +22,7 @@ interface Audiencia {
   user_id: string;
   criado_por?: string;
   concluido_por?: string;
+  assinador_nome?: string;
   hash_assinatura?: string;
   dados_assinatura?: any;
   users?: {
@@ -65,6 +66,7 @@ export function AdminAudienciasDashboard() {
           user_id,
           criado_por,
           concluido_por,
+          assinador_nome,
           hash_assinatura,
           dados_assinatura,
           users:user_id (

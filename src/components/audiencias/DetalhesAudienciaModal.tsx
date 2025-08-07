@@ -74,6 +74,7 @@ export function DetalhesAudienciaModal({ isOpen, onClose, audiencia, isFiscal = 
           status: 'assinado',
           data_assinatura: new Date().toISOString(),
           concluido_por: profile.id, // Armazena quem assinou
+          assinador_nome: profile.full_name, // Nome completo do assinador
           dados_assinatura: {
             assinado_em: new Date().toISOString(),
             assinado_por: profile.id,

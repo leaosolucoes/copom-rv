@@ -16,6 +16,7 @@ interface AudienciaAssinada {
   arquivo_oficio_url: string;
   link_videoconferencia?: string;
   data_assinatura?: string;
+  assinador_nome?: string;
   hash_assinatura?: string;
   dados_assinatura?: any;
   users?: {
@@ -146,7 +147,7 @@ export function DetalhesAudienciaAssinadaModal({ isOpen, onClose, audiencia }: D
                   <User className="h-3 w-3 text-muted-foreground" />
                   <span className="text-muted-foreground">Assinador</span>
                 </div>
-                <p className="font-medium text-sm">{audiencia.assinador?.full_name || audiencia.dados_assinatura?.assinado_por_nome || audiencia.users?.full_name || 'Não informado'}</p>
+                <p className="font-medium text-sm">{audiencia.assinador_nome || audiencia.assinador?.full_name || audiencia.dados_assinatura?.assinado_por_nome || 'Não informado'}</p>
               </div>
 
               <div className="space-y-1">

@@ -266,6 +266,7 @@ export type Database = {
       audiencias: {
         Row: {
           arquivo_oficio_url: string
+          assinador_nome: string | null
           concluido_por: string | null
           created_at: string
           criado_por: string
@@ -289,6 +290,7 @@ export type Database = {
         }
         Insert: {
           arquivo_oficio_url: string
+          assinador_nome?: string | null
           concluido_por?: string | null
           created_at?: string
           criado_por: string
@@ -312,6 +314,7 @@ export type Database = {
         }
         Update: {
           arquivo_oficio_url?: string
+          assinador_nome?: string | null
           concluido_por?: string | null
           created_at?: string
           criado_por?: string
