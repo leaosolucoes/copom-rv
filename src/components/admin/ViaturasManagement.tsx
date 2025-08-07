@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Car, Power, PowerOff } from 'lucide-react';
@@ -26,6 +27,8 @@ export const ViaturasManagement = () => {
   const [viaturas, setViaturas] = useState<Viatura[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [viatureToDelete, setViatureToDelete] = useState<Viatura | null>(null);
   const [editingViatura, setEditingViatura] = useState<Viatura | null>(null);
   const [formData, setFormData] = useState({
     prefixo: '',
@@ -146,14 +149,19 @@ export const ViaturasManagement = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta viatura?')) return;
+  const handleDelete = async (viatura: Viatura) => {
+    setViatureToDelete(viatura);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!viatureToDelete) return;
 
     try {
       const { error } = await supabase
         .from('viaturas')
         .delete()
-        .eq('id', id);
+        .eq('id', viatureToDelete.id);
 
       if (error) throw error;
       
@@ -169,6 +177,9 @@ export const ViaturasManagement = () => {
         description: error.message || "Erro ao excluir viatura",
         variant: "destructive"
       });
+    } finally {
+      setDeleteDialogOpen(false);
+      setViatureToDelete(null);
     }
   };
 
@@ -347,7 +358,7 @@ export const ViaturasManagement = () => {
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => handleDelete(viatura.id)}
+                            onClick={() => handleDelete(viatura)}
                             title="Excluir viatura"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -362,6 +373,25 @@ export const ViaturasManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a viatura <strong>{viatureToDelete?.prefixo}</strong> - <strong>{viatureToDelete?.placa}</strong>?
+              <br />
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
