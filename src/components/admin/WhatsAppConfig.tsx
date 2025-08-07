@@ -21,7 +21,10 @@ export const WhatsAppConfig = () => {
     auto_send_enabled: true,
     verify_auto_send_enabled: false,
     verify_phone_numbers: '',
-    verify_message_template: 'Olá! Temos uma nova denúncia para verificar no sistema. Acesse agora e verifique ou arquive a denúncia.'
+    verify_message_template: 'Olá! Temos uma nova denúncia para verificar no sistema. Acesse agora e verifique ou arquive a denúncia.',
+    checklist_auto_send_enabled: false,
+    checklist_phone_numbers: '',
+    checklist_message_template: ''
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,7 +46,10 @@ export const WhatsAppConfig = () => {
           'whatsapp_auto_send_enabled',
           'whatsapp_verify_auto_send_enabled',
           'whatsapp_verify_phone_numbers',
-          'whatsapp_verify_message_template'
+          'whatsapp_verify_message_template',
+          'whatsapp_checklist_auto_send_enabled',
+          'whatsapp_checklist_phone_numbers',
+          'whatsapp_checklist_message_template'
         ]);
 
       if (error) throw error;
@@ -101,7 +107,35 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
         auto_send_enabled: settings.auto_send_enabled !== false,
         verify_auto_send_enabled: settings.verify_auto_send_enabled || false,
         verify_phone_numbers: settings.verify_phone_numbers || '',
-        verify_message_template: settings.verify_message_template || 'Olá! Temos uma nova denúncia para verificar no sistema. Acesse agora e verifique ou arquive a denúncia.'
+        verify_message_template: settings.verify_message_template || 'Olá! Temos uma nova denúncia para verificar no sistema. Acesse agora e verifique ou arquive a denúncia.',
+        checklist_auto_send_enabled: settings.checklist_auto_send_enabled || false,
+        checklist_phone_numbers: settings.checklist_phone_numbers || '',
+        checklist_message_template: settings.checklist_message_template || `🚨 *CHECKLIST REPROVADO*
+
+📋 *Sistema de Posturas - Rio Verde*
+
+🚗 *DADOS DA VIATURA:*
+• Prefixo: {viatura_prefixo}
+• Modelo: {viatura_modelo}
+• Placa: {viatura_placa}
+
+👤 *FISCAL RESPONSÁVEL:*
+{fiscal_nome}
+
+📅 *DATA/HORÁRIO DO CHECKLIST:*
+{data_checklist} - {horario_checklist}
+
+⚠️ *STATUS:*
+REPROVADO
+
+📝 *OBSERVAÇÕES/ALTERAÇÕES:*
+{observacoes_alteracoes}
+
+🔧 *AÇÃO NECESSÁRIA:*
+Viatura requer atenção imediata. Acesse o sistema para mais detalhes.
+
+🏛️ *Secretaria Municipal de Posturas*
+_Acesse o sistema para acompanhamento._`
       });
     } catch (error) {
       toast({
@@ -172,7 +206,10 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
         { key: 'whatsapp_auto_send_enabled', value: config.auto_send_enabled, description: 'Envio automático habilitado' },
         { key: 'whatsapp_verify_auto_send_enabled', value: config.verify_auto_send_enabled, description: 'Envio automático de verificação habilitado' },
         { key: 'whatsapp_verify_phone_numbers', value: config.verify_phone_numbers, description: 'Números do WhatsApp para notificações de verificação' },
-        { key: 'whatsapp_verify_message_template', value: config.verify_message_template, description: 'Template da mensagem de verificação' }
+        { key: 'whatsapp_verify_message_template', value: config.verify_message_template, description: 'Template da mensagem de verificação' },
+        { key: 'whatsapp_checklist_auto_send_enabled', value: config.checklist_auto_send_enabled, description: 'Envio automático habilitado para checklist reprovado' },
+        { key: 'whatsapp_checklist_phone_numbers', value: config.checklist_phone_numbers, description: 'Números do WhatsApp para notificações de checklist reprovado' },
+        { key: 'whatsapp_checklist_message_template', value: config.checklist_message_template, description: 'Template da mensagem para checklist reprovado' }
       ];
 
       for (const setting of settings) {
@@ -419,6 +456,52 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
             />
             <p className="text-sm text-gray-500 mt-1">
               Mensagem enviada quando uma denúncia é encaminhada para verificação do admin.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Configurações para Checklist Reprovado</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="checklist_auto_send_enabled"
+              checked={config.checklist_auto_send_enabled}
+              onCheckedChange={(checked) => 
+                setConfig(prev => ({ ...prev, checklist_auto_send_enabled: checked }))
+              }
+            />
+            <Label htmlFor="checklist_auto_send_enabled">Envio automático para checklist reprovado</Label>
+          </div>
+
+          <div>
+            <Label htmlFor="checklist_phone_numbers">Números para Checklist Reprovado</Label>
+            <Input
+              id="checklist_phone_numbers"
+              value={config.checklist_phone_numbers}
+              onChange={(e) => setConfig(prev => ({ ...prev, checklist_phone_numbers: e.target.value }))}
+              placeholder="556299999999, 556288888888"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Números que receberão as notificações quando um checklist for reprovado. 
+              Para múltiplos números, separe por vírgula.
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="checklist_message_template">Template da Mensagem de Checklist Reprovado</Label>
+            <Textarea
+              id="checklist_message_template"
+              value={config.checklist_message_template}
+              onChange={(e) => setConfig(prev => ({ ...prev, checklist_message_template: e.target.value }))}
+              rows={6}
+              placeholder="Digite o template da mensagem para checklist reprovado..."
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Variáveis disponíveis: {'{viatura_prefixo}'}, {'{viatura_modelo}'}, {'{viatura_placa}'}, {'{fiscal_nome}'}, {'{data_checklist}'}, {'{horario_checklist}'}, {'{observacoes_alteracoes}'}
             </p>
           </div>
         </CardContent>
