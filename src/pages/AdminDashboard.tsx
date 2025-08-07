@@ -12,7 +12,7 @@ import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
 import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
-import { AudienciasDashboard } from '@/components/audiencias/AudienciasDashboard';
+import { AdminAudienciasDashboard } from '@/components/audiencias/AdminAudienciasDashboard';
 import { Users, FileText, Search, Clock, Scale } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -178,7 +178,7 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="audiencias" className="space-y-6">
-            <AudienciasDashboard />
+            <AdminAudienciasDashboard />
           </TabsContent>
 
           <TabsContent value="consultas" className="space-y-6">
