@@ -117,19 +117,24 @@ export function FiscalAudienciasDashboard() {
             audienciasHoje.map((audiencia) => {
               const { date, time } = formatDateTime(audiencia.data_audiencia, audiencia.horario_audiencia);
               return (
-                <div key={audiencia.id} className="p-3 border rounded-lg space-y-2">
+                <div key={audiencia.id} className="p-3 border-2 border-red-500 bg-red-50 rounded-lg space-y-2 pulse">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-medium text-sm">Processo: {audiencia.numero_processo}</p>
-                      <p className="text-xs text-muted-foreground">{date} às {time} - {audiencia.vara}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant="destructive" className="text-xs animate-pulse">
+                          HOJE
+                        </Badge>
+                      </div>
+                      <p className="font-medium text-sm text-red-800">Processo: {audiencia.numero_processo}</p>
+                      <p className="text-xs text-red-600">{date} às {time} - {audiencia.vara}</p>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant={audiencia.status === 'assinado' ? 'default' : 'secondary'} className="text-xs">
                       {audiencia.status === 'assinado' ? 'Assinado' : 'Pendente'}
                     </Badge>
                   </div>
                   <div className="flex gap-2">
                     {audiencia.link_videoconferencia && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <p className="text-xs text-red-600 flex items-center gap-1">
                         <ExternalLink className="h-3 w-3" />
                         Videoconferência disponível
                       </p>
