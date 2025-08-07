@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, FileText, Calendar, Clock, MapPin } from "lucide-react";
+import { ExternalLink, FileText, Calendar, Clock, MapPin, PenTool } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -25,9 +25,10 @@ interface DetalhesAudienciaModalProps {
   isOpen: boolean;
   onClose: () => void;
   audiencia: Audiencia | null;
+  isFiscal?: boolean;
 }
 
-export function DetalhesAudienciaModal({ isOpen, onClose, audiencia }: DetalhesAudienciaModalProps) {
+export function DetalhesAudienciaModal({ isOpen, onClose, audiencia, isFiscal = false }: DetalhesAudienciaModalProps) {
   if (!audiencia) return null;
 
   const formatDate = (date: string) => {
@@ -136,14 +137,28 @@ export function DetalhesAudienciaModal({ isOpen, onClose, audiencia }: DetalhesA
             </Button>
             
             {audiencia.status === 'pendente' && (
-              <Button 
-                variant="outline" 
-                className="flex-1 text-orange-600 border-orange-300 hover:bg-orange-50"
-                disabled
-              >
-                <Clock className="h-4 w-4 mr-2" />
-                Aguardando Assinatura
-              </Button>
+              isFiscal ? (
+                <Button 
+                  variant="default" 
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => {
+                    // Aqui seria implementada a funcionalidade de assinatura digital
+                    console.log('Assinar digitalmente:', audiencia.id);
+                  }}
+                >
+                  <PenTool className="h-4 w-4 mr-2" />
+                  Assinar Digitalmente
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  className="flex-1 text-orange-600 border-orange-300 hover:bg-orange-50"
+                  disabled
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  Aguardando Assinatura
+                </Button>
+              )
             )}
           </div>
         </div>

@@ -7,6 +7,7 @@ import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { DetalhesAudienciaModal } from "./DetalhesAudienciaModal";
 
 interface Audiencia {
   id: string;
@@ -28,6 +29,8 @@ export function FiscalAudienciasDashboard() {
   const { profile } = useSupabaseAuth();
   const [audiencias, setAudiencias] = useState<Audiencia[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedAudiencia, setSelectedAudiencia] = useState<Audiencia | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (profile?.id) {
@@ -164,7 +167,14 @@ export function FiscalAudienciasDashboard() {
               {oficiosPendentes.map((audiencia) => {
                 const { date, time } = formatDateTime(audiencia.data_audiencia, audiencia.horario_audiencia);
                 return (
-                  <div key={audiencia.id} className="p-3 border rounded-lg space-y-2">
+                  <div 
+                    key={audiencia.id} 
+                    className="p-3 border rounded-lg space-y-2 cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => {
+                      setSelectedAudiencia(audiencia);
+                      setShowModal(true);
+                    }}
+                  >
                     <div>
                       <p className="font-medium text-sm">Processo: {audiencia.numero_processo}</p>
                       <p className="text-xs text-muted-foreground">{date} às {time} - {audiencia.vara}</p>
@@ -173,7 +183,10 @@ export function FiscalAudienciasDashboard() {
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      onClick={() => handleDownloadOficio(audiencia.arquivo_oficio_url, audiencia.numero_processo)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadOficio(audiencia.arquivo_oficio_url, audiencia.numero_processo);
+                      }}
                     >
                       <FileText className="h-4 w-4 mr-2" />
                       Baixar Ofício
@@ -248,6 +261,16 @@ export function FiscalAudienciasDashboard() {
           )}
         </CardContent>
       </Card>
+
+      <DetalhesAudienciaModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setSelectedAudiencia(null);
+        }}
+        audiencia={selectedAudiencia}
+        isFiscal={true}
+      />
     </div>
   );
 }
