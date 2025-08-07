@@ -179,20 +179,20 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="audiencias" className="space-y-6">
+            {/* Header com título e descrição */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold">Lançamentos de Ofícios</h2>
+                <p className="text-muted-foreground">
+                  Gerenciamento completo de ofícios de audiência judicial
+                </p>
+              </div>
+            </div>
+            
             <AdminAudienciasDashboard />
             
-            {/* Seção de Lançamentos de Ofícios */}
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-bold">Lançamentos de Ofícios</h2>
-                  <p className="text-muted-foreground">
-                    Gerenciamento completo de ofícios de audiência judicial
-                  </p>
-                </div>
-              </div>
-              <AudienciasDashboard />
-            </div>
+            {/* Seção completa de Audiências */}
+            <AudienciasDashboard />
           </TabsContent>
 
           <TabsContent value="consultas" className="space-y-6">
