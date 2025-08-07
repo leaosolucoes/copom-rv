@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CNPJLookup } from "@/components/cnpj/CNPJLookup";
 import { CPFLookup } from "@/components/cpf/CPFLookup";
 import { CEPLookup } from "@/components/cep/CEPLookup";
-import { AudienciasDashboard } from "@/components/audiencias/AudienciasDashboard";
+import { FiscalAudienciasDashboard } from "@/components/audiencias/FiscalAudienciasDashboard";
 import { LogOut, FileSearch } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -74,7 +74,7 @@ export default function FiscalDashboard() {
         </div>
 
         <div className="grid gap-6">
-          <AudienciasDashboard />
+          <FiscalAudienciasDashboard />
           
           <div className="bg-card border rounded-lg p-6">
             <h2 className="text-lg font-semibold text-foreground mb-2">
