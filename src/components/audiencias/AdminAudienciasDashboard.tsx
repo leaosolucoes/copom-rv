@@ -21,12 +21,16 @@ interface Audiencia {
   data_assinatura?: string;
   user_id: string;
   criado_por?: string;
+  concluido_por?: string;
   hash_assinatura?: string;
   dados_assinatura?: any;
   users?: {
     full_name: string;
   } | null;
   criador?: {
+    full_name: string;
+  } | null;
+  assinador?: {
     full_name: string;
   } | null;
 }
@@ -60,12 +64,16 @@ export function AdminAudienciasDashboard() {
           data_assinatura,
           user_id,
           criado_por,
+          concluido_por,
           hash_assinatura,
           dados_assinatura,
           users:user_id (
             full_name
           ),
           criador:criado_por (
+            full_name
+          ),
+          assinador:concluido_por (
             full_name
           )
         `)

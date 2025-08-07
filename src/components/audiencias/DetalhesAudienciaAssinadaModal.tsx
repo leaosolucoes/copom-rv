@@ -24,6 +24,9 @@ interface AudienciaAssinada {
   criador?: {
     full_name: string;
   } | null;
+  assinador?: {
+    full_name: string;
+  } | null;
 }
 
 interface DetalhesAudienciaAssinadaModalProps {
@@ -143,7 +146,7 @@ export function DetalhesAudienciaAssinadaModal({ isOpen, onClose, audiencia }: D
                   <User className="h-3 w-3 text-muted-foreground" />
                   <span className="text-muted-foreground">Assinador</span>
                 </div>
-                <p className="font-medium text-sm">{audiencia.users?.full_name || audiencia.criador?.full_name || 'Não informado'}</p>
+                <p className="font-medium text-sm">{audiencia.assinador?.full_name || audiencia.dados_assinatura?.assinado_por_nome || audiencia.users?.full_name || 'Não informado'}</p>
               </div>
 
               <div className="space-y-1">

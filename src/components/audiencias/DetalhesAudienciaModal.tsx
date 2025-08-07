@@ -7,6 +7,7 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 interface Audiencia {
   id: string;
@@ -33,6 +34,7 @@ interface DetalhesAudienciaModalProps {
 
 export function DetalhesAudienciaModal({ isOpen, onClose, audiencia, isFiscal = false }: DetalhesAudienciaModalProps) {
   const { toast } = useToast();
+  const { profile } = useSupabaseAuth();
   const [isAssigning, setIsAssigning] = useState(false);
   
   if (!audiencia) return null;
@@ -54,6 +56,15 @@ export function DetalhesAudienciaModal({ isOpen, onClose, audiencia, isFiscal = 
   };
 
   const handleAssinarDigitalmente = async () => {
+    if (!profile?.id) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsAssigning(true);
     try {
       const { error } = await supabase
@@ -61,10 +72,13 @@ export function DetalhesAudienciaModal({ isOpen, onClose, audiencia, isFiscal = 
         .update({
           status: 'assinado',
           data_assinatura: new Date().toISOString(),
+          concluido_por: profile.id, // Armazena quem assinou
           dados_assinatura: {
             assinado_em: new Date().toISOString(),
+            assinado_por: profile.id,
+            assinado_por_nome: profile.full_name,
             metodo: 'digital',
-            ip_assinatura: 'fiscal_dashboard'
+            ip_assinatura: 'dashboard'
           }
         })
         .eq('id', audiencia.id);
