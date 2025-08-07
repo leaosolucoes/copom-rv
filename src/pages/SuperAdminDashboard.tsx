@@ -22,7 +22,8 @@ import { AudienciasDashboard } from '@/components/audiencias/AudienciasDashboard
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Clock, Scale } from 'lucide-react';
+import { ViaturasManagement } from '@/components/admin/ViaturasManagement';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Clock, Scale, Car } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -161,6 +162,11 @@ const SuperAdminDashboard = () => {
                 <Scale className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Audiências</span>
                 <span className="sm:hidden">Aud.</span>
+              </TabsTrigger>
+              <TabsTrigger value="viaturas" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Car className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Viaturas</span>
+                <span className="sm:hidden">Viat.</span>
               </TabsTrigger>
               <TabsTrigger value="attendance-time" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Clock className="h-3 w-3 md:h-4 md:w-4" />
@@ -318,6 +324,20 @@ const SuperAdminDashboard = () => {
 
           <TabsContent value="audiencias" className="space-y-6">
             <AudienciasDashboard />
+          </TabsContent>
+
+          <TabsContent value="viaturas" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gestão de Viaturas</CardTitle>
+                <CardDescription>
+                  Cadastre e gerencie as viaturas da corporação
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ViaturasManagement />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="attendance-time" className="space-y-6">

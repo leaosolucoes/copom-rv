@@ -7,6 +7,7 @@ import { CNPJLookup } from "@/components/cnpj/CNPJLookup";
 import { CPFLookup } from "@/components/cpf/CPFLookup";
 import { CEPLookup } from "@/components/cep/CEPLookup";
 import { FiscalAudienciasDashboard } from "@/components/audiencias/FiscalAudienciasDashboard";
+import { ChecklistViatura } from "@/components/admin/ChecklistViatura";
 import { LogOut, FileSearch } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -85,9 +86,13 @@ export default function FiscalDashboard() {
             </p>
           </div>
 
-          <CNPJLookup />
-          <CPFLookup />
-          <CEPLookup />
+          <ChecklistViatura />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <CNPJLookup />
+            <CPFLookup />
+            <CEPLookup />
+          </div>
         </div>
       </div>
     </div>

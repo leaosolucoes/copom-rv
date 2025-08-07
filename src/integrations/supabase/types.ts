@@ -407,6 +407,141 @@ export type Database = {
           },
         ]
       }
+      checklist_equipamentos: {
+        Row: {
+          checklist_id: string
+          created_at: string
+          equipamento_nome: string
+          id: string
+          status: string
+        }
+        Insert: {
+          checklist_id: string
+          created_at?: string
+          equipamento_nome: string
+          id?: string
+          status: string
+        }
+        Update: {
+          checklist_id?: string
+          created_at?: string
+          equipamento_nome?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_equipamentos_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_viaturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_pneus: {
+        Row: {
+          checklist_id: string
+          created_at: string
+          dianteiro_direito: string
+          dianteiro_esquerdo: string
+          estepe: string
+          id: string
+          traseiro_direito: string
+          traseiro_esquerdo: string
+        }
+        Insert: {
+          checklist_id: string
+          created_at?: string
+          dianteiro_direito: string
+          dianteiro_esquerdo: string
+          estepe: string
+          id?: string
+          traseiro_direito: string
+          traseiro_esquerdo: string
+        }
+        Update: {
+          checklist_id?: string
+          created_at?: string
+          dianteiro_direito?: string
+          dianteiro_esquerdo?: string
+          estepe?: string
+          id?: string
+          traseiro_direito?: string
+          traseiro_esquerdo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_pneus_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_viaturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_viaturas: {
+        Row: {
+          combustivel_nivel: string
+          created_at: string
+          data_checklist: string
+          data_proxima_troca_oleo: string | null
+          fiscal_id: string
+          horario_checklist: string
+          id: string
+          km_inicial: number
+          km_proxima_troca_oleo: number | null
+          limpeza_ok: boolean
+          nome_guerra: string
+          observacoes_alteracoes: string | null
+          oleo_nivel: string
+          updated_at: string
+          viatura_id: string
+        }
+        Insert: {
+          combustivel_nivel: string
+          created_at?: string
+          data_checklist: string
+          data_proxima_troca_oleo?: string | null
+          fiscal_id: string
+          horario_checklist: string
+          id?: string
+          km_inicial: number
+          km_proxima_troca_oleo?: number | null
+          limpeza_ok?: boolean
+          nome_guerra: string
+          observacoes_alteracoes?: string | null
+          oleo_nivel: string
+          updated_at?: string
+          viatura_id: string
+        }
+        Update: {
+          combustivel_nivel?: string
+          created_at?: string
+          data_checklist?: string
+          data_proxima_troca_oleo?: string | null
+          fiscal_id?: string
+          horario_checklist?: string
+          id?: string
+          km_inicial?: number
+          km_proxima_troca_oleo?: number | null
+          limpeza_ok?: boolean
+          nome_guerra?: string
+          observacoes_alteracoes?: string | null
+          oleo_nivel?: string
+          updated_at?: string
+          viatura_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_viaturas_viatura_id_fkey"
+            columns: ["viatura_id"]
+            isOneToOne: false
+            referencedRelation: "viaturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       complaints: {
         Row: {
           archived_by: string | null
@@ -750,6 +885,39 @@ export type Database = {
           last_login?: string | null
           password_hash?: string
           role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      viaturas: {
+        Row: {
+          ativa: boolean
+          created_at: string
+          id: string
+          km_atual: number
+          modelo: string
+          placa: string
+          prefixo: string
+          updated_at: string
+        }
+        Insert: {
+          ativa?: boolean
+          created_at?: string
+          id?: string
+          km_atual?: number
+          modelo: string
+          placa: string
+          prefixo: string
+          updated_at?: string
+        }
+        Update: {
+          ativa?: boolean
+          created_at?: string
+          id?: string
+          km_atual?: number
+          modelo?: string
+          placa?: string
+          prefixo?: string
           updated_at?: string
         }
         Relationships: []
