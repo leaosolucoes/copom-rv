@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertTriangle, XCircle, Fuel, Droplets, Car, Settings, PlusCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CheckCircle, AlertTriangle, XCircle, Fuel, Droplets, Car, Settings, PlusCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
@@ -45,6 +46,7 @@ export const ChecklistViatura = () => {
   const [viaturas, setViaturas] = useState<Viatura[]>([]);
   const [selectedViatura, setSelectedViatura] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [showFinalizarModal, setShowFinalizarModal] = useState(false);
   const [formData, setFormData] = useState({
     data_checklist: new Date().toISOString().split('T')[0],
     horario_checklist: new Date().toTimeString().slice(0, 5),
@@ -104,7 +106,7 @@ export const ChecklistViatura = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedViatura) {
@@ -136,7 +138,13 @@ export const ChecklistViatura = () => {
       return;
     }
 
+    // Abrir modal de finalização
+    setShowFinalizarModal(true);
+  };
+
+  const handleSubmit = async (aprovado: boolean) => {
     setLoading(true);
+    setShowFinalizarModal(false);
     
     try {
       // Criar checklist principal
@@ -177,7 +185,7 @@ export const ChecklistViatura = () => {
 
       toast({
         title: "Sucesso",
-        description: "Checklist salvo com sucesso"
+        description: aprovado ? "Checklist aprovado com sucesso" : "Checklist reprovado com sucesso"
       });
 
       // Reset form
@@ -261,7 +269,7 @@ export const ChecklistViatura = () => {
         <h1 className="text-2xl font-bold">Checklist de Viatura</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleFormSubmit} className="space-y-6">
         {/* Seleção de Viatura */}
         <Card>
           <CardHeader>
@@ -533,6 +541,37 @@ export const ChecklistViatura = () => {
           </CardContent>
         </Card>
       </form>
+
+      {/* Modal de Finalização */}
+      <Dialog open={showFinalizarModal} onOpenChange={setShowFinalizarModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Finalizar Checklist</DialogTitle>
+            <DialogDescription>
+              Como você deseja finalizar este checklist da viatura?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="destructive"
+              onClick={() => handleSubmit(false)}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <ThumbsDown className="h-4 w-4" />
+              Reprovar
+            </Button>
+            <Button
+              onClick={() => handleSubmit(true)}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <ThumbsUp className="h-4 w-4" />
+              Aprovar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
