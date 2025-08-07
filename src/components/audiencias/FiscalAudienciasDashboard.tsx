@@ -7,6 +7,7 @@ import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatarDataBrasilComTimezone, ehHojeBrasil } from '@/utils/dataBrasil';
 import { DetalhesAudienciaModal } from "./DetalhesAudienciaModal";
 import { DetalhesAudienciaAssinadaModal } from "./DetalhesAudienciaAssinadaModal";
 
@@ -70,8 +71,7 @@ export function FiscalAudienciasDashboard() {
   };
 
   const audienciasHoje = audiencias.filter(a => {
-    const hoje = new Date().toISOString().split('T')[0];
-    return a.data_audiencia === hoje;
+    return ehHojeBrasil(a.data_audiencia);
   });
 
   const oficiosPendentes = audiencias.filter(a => a.status === 'pendente');
@@ -84,7 +84,7 @@ export function FiscalAudienciasDashboard() {
   const formatDateTime = (date: string, time: string) => {
     const dateTime = new Date(`${date}T${time}`);
     return {
-      date: format(dateTime, 'dd/MM/yyyy', { locale: ptBR }),
+      date: formatarDataBrasilComTimezone(new Date(date + 'T00:00:00')),
       time: format(dateTime, 'HH:mm', { locale: ptBR })
     };
   };

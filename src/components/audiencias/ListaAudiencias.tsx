@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatarDataBrasilComTimezone } from '@/utils/dataBrasil';
 
 export const ListaAudiencias = () => {
   const { audiencias, isLoading } = useAudiencias();
@@ -137,7 +138,7 @@ export const ListaAudiencias = () => {
                       <div className="space-y-1">
                         <div className="flex items-center gap-1 text-sm">
                           <Calendar className="h-3 w-3" />
-                          {format(new Date(audiencia.data_audiencia), 'dd/MM/yyyy', { locale: ptBR })}
+                          {formatarDataBrasilComTimezone(new Date(audiencia.data_audiencia + 'T00:00:00'))}
                         </div>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Clock className="h-3 w-3" />

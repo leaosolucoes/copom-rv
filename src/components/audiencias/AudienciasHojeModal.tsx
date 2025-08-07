@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Clock, User, FileText, MessageSquare, Copy, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatarDataBrasilComTimezone } from '@/utils/dataBrasil';
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -34,7 +35,7 @@ export function AudienciasHojeModal({ isOpen, onClose, audiencias }: AudienciasH
   const formatDateTime = (date: string, time: string) => {
     const dateTime = new Date(`${date}T${time}`);
     return {
-      date: format(dateTime, 'dd/MM/yyyy', { locale: ptBR }),
+      date: formatarDataBrasilComTimezone(new Date(date + 'T00:00:00')),
       time: format(dateTime, 'HH:mm', { locale: ptBR })
     };
   };
@@ -42,7 +43,7 @@ export function AudienciasHojeModal({ isOpen, onClose, audiencias }: AudienciasH
   const generateWhatsAppText = () => {
     if (audiencias.length === 0) return;
 
-    const today = format(new Date(), 'dd/MM/yyyy', { locale: ptBR });
+    const today = formatarDataBrasilComTimezone(new Date());
     
     let text = `🏛️ *AUDIÊNCIAS JUDICIAIS - HOJE*\n📅 *Data:* ${today}\n\n`;
     
