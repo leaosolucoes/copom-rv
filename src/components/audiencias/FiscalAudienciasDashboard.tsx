@@ -179,18 +179,11 @@ export function FiscalAudienciasDashboard() {
                       <p className="font-medium text-sm">Processo: {audiencia.numero_processo}</p>
                       <p className="text-xs text-muted-foreground">{date} às {time} - {audiencia.vara}</p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownloadOficio(audiencia.arquivo_oficio_url, audiencia.numero_processo);
-                      }}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Baixar Ofício
-                    </Button>
+                    <div className="flex items-center justify-center py-2">
+                      <Badge variant="outline" className="text-orange-600 border-orange-300">
+                        Pendente de Assinatura
+                      </Badge>
+                    </div>
                   </div>
                 );
               })}
