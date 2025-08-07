@@ -2,9 +2,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, User, FileText, MessageSquare } from "lucide-react";
+import { Calendar, Clock, User, FileText, MessageSquare, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface AudienciaHoje {
   id: string;
@@ -31,6 +32,33 @@ export function AudienciasHojeModal({ isOpen, onClose, audiencias }: AudienciasH
       date: format(dateTime, 'dd/MM/yyyy', { locale: ptBR }),
       time: format(dateTime, 'HH:mm', { locale: ptBR })
     };
+  };
+
+  const generateWhatsAppText = () => {
+    if (audiencias.length === 0) return;
+
+    const today = format(new Date(), 'dd/MM/yyyy', { locale: ptBR });
+    
+    let whatsappText = `🏛️ *AUDIÊNCIAS JUDICIAIS - HOJE*\n📅 *Data:* ${today}\n\n`;
+    
+    audiencias.forEach((audiencia, index) => {
+      const { time } = formatDateTime(audiencia.data_audiencia, audiencia.horario_audiencia);
+      const fiscalName = audiencia.users?.full_name || 'Fiscal não informado';
+      
+      whatsappText += `${index + 1}. ⚖️ *${fiscalName}*\n`;
+      whatsappText += `   ⏰ *Horário:* ${time}\n`;
+      whatsappText += `   *Processo:* ${audiencia.numero_processo}\n`;
+      whatsappText += `   *Vara:* ${audiencia.vara}\n`;
+      if (index < audiencias.length - 1) {
+        whatsappText += `\n`;
+      }
+    });
+
+    navigator.clipboard.writeText(whatsappText).then(() => {
+      toast.success("Texto copiado para a área de transferência!");
+    }).catch(() => {
+      toast.error("Erro ao copiar texto");
+    });
   };
 
   return (
@@ -115,7 +143,10 @@ export function AudienciasHojeModal({ isOpen, onClose, audiencias }: AudienciasH
 
               {/* Botão para gerar WhatsApp */}
               <div className="flex justify-center mt-6">
-                <Button className="bg-green-500 hover:bg-green-600 text-white gap-2">
+                <Button 
+                  onClick={generateWhatsAppText}
+                  className="bg-green-500 hover:bg-green-600 text-white gap-2"
+                >
                   <MessageSquare className="h-4 w-4" />
                   Gerar texto para WhatsApp (todas as audiências)
                 </Button>
