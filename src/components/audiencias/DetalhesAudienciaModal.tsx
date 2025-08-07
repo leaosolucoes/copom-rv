@@ -30,6 +30,7 @@ interface DetalhesAudienciaModalProps {
   onClose: () => void;
   audiencia: Audiencia | null;
   isFiscal?: boolean;
+  currentUserProfile?: any;
 }
 
 export function DetalhesAudienciaModal({ isOpen, onClose, audiencia, isFiscal = false }: DetalhesAudienciaModalProps) {
