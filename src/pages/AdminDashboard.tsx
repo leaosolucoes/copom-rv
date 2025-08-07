@@ -12,9 +12,10 @@ import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
 import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
+import { ViaturasManagement } from '@/components/admin/ViaturasManagement';
 import { AdminAudienciasDashboard } from '@/components/audiencias/AdminAudienciasDashboard';
 import { AudienciasDashboard } from '@/components/audiencias/AudienciasDashboard';
-import { Users, FileText, Search, Clock, Scale } from 'lucide-react';
+import { Users, FileText, Search, Clock, Scale, Car } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
@@ -101,7 +102,7 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-4 md:py-8">
         <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-5 md:w-fit">
+          <TabsList className="grid w-full grid-cols-6 md:w-fit">
             <TabsTrigger value="complaints" className="flex items-center gap-2 text-xs md:text-sm">
               <FileText className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Denúncias</span>
@@ -111,6 +112,11 @@ const AdminDashboard = () => {
               <Users className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Atendentes/Fiscais</span>
               <span className="sm:hidden">Users</span>
+            </TabsTrigger>
+            <TabsTrigger value="viaturas" className="flex items-center gap-2 text-xs md:text-sm">
+              <Car className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Viaturas</span>
+              <span className="sm:hidden">Viat.</span>
             </TabsTrigger>
             <TabsTrigger value="attendance-time" className="flex items-center gap-2 text-xs md:text-sm">
               <Clock className="h-3 w-3 md:h-4 md:w-4" />
@@ -160,6 +166,20 @@ const AdminDashboard = () => {
                 ) : (
                   <UserManagement userRole="admin" />
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="viaturas" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gestão de Viaturas</CardTitle>
+                <CardDescription>
+                  Gerencie viaturas e visualize histórico de checklists
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ViaturasManagement />
               </CardContent>
             </Card>
           </TabsContent>
