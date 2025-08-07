@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Car } from 'lucide-react';
+import { Plus, Edit, Trash2, Car, Power, PowerOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -120,6 +120,30 @@ export const ViaturasManagement = () => {
       ativa: viatura.ativa
     });
     setDialogOpen(true);
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('viaturas')
+        .update({ ativa: !currentStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Sucesso",
+        description: `Viatura ${!currentStatus ? 'ativada' : 'desativada'} com sucesso`
+      });
+      fetchViaturas();
+    } catch (error: any) {
+      console.error('Erro ao alterar status da viatura:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao alterar status da viatura",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -301,9 +325,22 @@ export const ViaturasManagement = () => {
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">
                           <Button
+                            variant={viatura.ativa ? "outline" : "default"}
+                            size="sm"
+                            onClick={() => handleToggleStatus(viatura.id, viatura.ativa)}
+                            title={viatura.ativa ? "Desativar viatura" : "Ativar viatura"}
+                          >
+                            {viatura.ativa ? (
+                              <PowerOff className="h-4 w-4" />
+                            ) : (
+                              <Power className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleEdit(viatura)}
+                            title="Editar viatura"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -311,6 +348,7 @@ export const ViaturasManagement = () => {
                             variant="destructive"
                             size="sm"
                             onClick={() => handleDelete(viatura.id)}
+                            title="Excluir viatura"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
