@@ -720,36 +720,61 @@ export const ViaturasManagement = () => {
                   </CardHeader>
                   <CardContent>
                     {selectedChecklistDetail.checklist_pneus.map((pneu, index) => (
-                      <div key={index} className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        <div>
+                      <div key={index} className="grid grid-cols-2 md:grid-cols-5 gap-6">
+                        <div className="space-y-2">
                           <Label className="text-sm font-medium text-muted-foreground">Dianteiro Direito</Label>
-                          <Badge variant={pneu.dianteiro_direito === 'otimo' ? 'default' : pneu.dianteiro_direito === 'bom' ? 'secondary' : 'destructive'}>
-                            {pneu.dianteiro_direito}
-                          </Badge>
+                          <div className="flex justify-center">
+                            <Badge 
+                              variant={pneu.dianteiro_direito === 'otimo' ? 'default' : pneu.dianteiro_direito === 'bom' ? 'secondary' : 'destructive'}
+                              className="text-xs px-3 py-1 min-w-[60px] justify-center"
+                            >
+                              {pneu.dianteiro_direito}
+                            </Badge>
+                          </div>
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label className="text-sm font-medium text-muted-foreground">Dianteiro Esquerdo</Label>
-                          <Badge variant={pneu.dianteiro_esquerdo === 'otimo' ? 'default' : pneu.dianteiro_esquerdo === 'bom' ? 'secondary' : 'destructive'}>
-                            {pneu.dianteiro_esquerdo}
-                          </Badge>
+                          <div className="flex justify-center">
+                            <Badge 
+                              variant={pneu.dianteiro_esquerdo === 'otimo' ? 'default' : pneu.dianteiro_esquerdo === 'bom' ? 'secondary' : 'destructive'}
+                              className="text-xs px-3 py-1 min-w-[60px] justify-center"
+                            >
+                              {pneu.dianteiro_esquerdo}
+                            </Badge>
+                          </div>
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label className="text-sm font-medium text-muted-foreground">Traseiro Direito</Label>
-                          <Badge variant={pneu.traseiro_direito === 'otimo' ? 'default' : pneu.traseiro_direito === 'bom' ? 'secondary' : 'destructive'}>
-                            {pneu.traseiro_direito}
-                          </Badge>
+                          <div className="flex justify-center">
+                            <Badge 
+                              variant={pneu.traseiro_direito === 'otimo' ? 'default' : pneu.traseiro_direito === 'bom' ? 'secondary' : 'destructive'}
+                              className="text-xs px-3 py-1 min-w-[60px] justify-center"
+                            >
+                              {pneu.traseiro_direito}
+                            </Badge>
+                          </div>
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label className="text-sm font-medium text-muted-foreground">Traseiro Esquerdo</Label>
-                          <Badge variant={pneu.traseiro_esquerdo === 'otimo' ? 'default' : pneu.traseiro_esquerdo === 'bom' ? 'secondary' : 'destructive'}>
-                            {pneu.traseiro_esquerdo}
-                          </Badge>
+                          <div className="flex justify-center">
+                            <Badge 
+                              variant={pneu.traseiro_esquerdo === 'otimo' ? 'default' : pneu.traseiro_esquerdo === 'bom' ? 'secondary' : 'destructive'}
+                              className="text-xs px-3 py-1 min-w-[60px] justify-center"
+                            >
+                              {pneu.traseiro_esquerdo}
+                            </Badge>
+                          </div>
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label className="text-sm font-medium text-muted-foreground">Estepe</Label>
-                          <Badge variant={pneu.estepe === 'otimo' ? 'default' : pneu.estepe === 'bom' ? 'secondary' : 'destructive'}>
-                            {pneu.estepe}
-                          </Badge>
+                          <div className="flex justify-center">
+                            <Badge 
+                              variant={pneu.estepe === 'otimo' ? 'default' : pneu.estepe === 'bom' ? 'secondary' : 'destructive'}
+                              className="text-xs px-3 py-1 min-w-[60px] justify-center"
+                            >
+                              {pneu.estepe}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     ))}
