@@ -94,8 +94,12 @@ export const AudienciasDashboard = () => {
 
       {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <Card key={stat.title}>
+        {stats.map((stat, index) => (
+          <Card 
+            key={stat.title}
+            className={index === 1 ? "cursor-pointer hover:shadow-md transition-shadow" : ""}
+            onClick={index === 1 ? () => setIsHojeModalOpen(true) : undefined}
+          >
             <CardContent className="flex items-center p-6">
               <div className="flex items-center justify-between w-full">
                 <div>
@@ -124,8 +128,7 @@ export const AudienciasDashboard = () => {
           </TabsTrigger>
           <TabsTrigger 
             value="hoje"
-            className={audienciasHoje && audienciasHoje.length > 0 ? "pulse text-red-600 border-red-500 cursor-pointer" : "cursor-pointer"}
-            onClick={() => setIsHojeModalOpen(true)}
+            className={audienciasHoje && audienciasHoje.length > 0 ? "pulse text-red-600 border-red-500" : ""}
           >
             Hoje
             {audienciasHoje && audienciasHoje.length > 0 && (
