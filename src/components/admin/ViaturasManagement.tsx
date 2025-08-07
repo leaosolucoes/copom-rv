@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Car, Power, PowerOff } from 'lucide-react';
+import { Plus, Edit, Trash2, Car, Power, PowerOff, CheckCircle, AlertTriangle, XCircle, Fuel, Droplets, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,16 +37,33 @@ interface ChecklistViatura {
   created_at: string;
 }
 
+interface ChecklistDetalhado extends ChecklistViatura {
+  checklist_pneus?: {
+    dianteiro_direito: string;
+    dianteiro_esquerdo: string;
+    traseiro_direito: string;
+    traseiro_esquerdo: string;
+    estepe: string;
+  }[];
+  checklist_equipamentos?: {
+    equipamento_nome: string;
+    status: string;
+  }[];
+}
+
 export const ViaturasManagement = () => {
   const [viaturas, setViaturas] = useState<Viatura[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [checklistDialogOpen, setChecklistDialogOpen] = useState(false);
+  const [checklistDetailDialogOpen, setChecklistDetailDialogOpen] = useState(false);
   const [viatureToDelete, setViatureToDelete] = useState<Viatura | null>(null);
   const [selectedViatura, setSelectedViatura] = useState<Viatura | null>(null);
+  const [selectedChecklistDetail, setSelectedChecklistDetail] = useState<ChecklistDetalhado | null>(null);
   const [checklists, setChecklists] = useState<ChecklistViatura[]>([]);
   const [loadingChecklists, setLoadingChecklists] = useState(false);
+  const [loadingChecklistDetail, setLoadingChecklistDetail] = useState(false);
   const [editingViatura, setEditingViatura] = useState<Viatura | null>(null);
   const [formData, setFormData] = useState({
     prefixo: '',
@@ -77,6 +94,51 @@ export const ViaturasManagement = () => {
       });
     } finally {
       setLoadingChecklists(false);
+    }
+  };
+
+  const fetchChecklistDetails = async (checklistId: string) => {
+    setLoadingChecklistDetail(true);
+    try {
+      const { data: checklistData, error: checklistError } = await supabase
+        .from('checklist_viaturas')
+        .select('*')
+        .eq('id', checklistId)
+        .single();
+
+      if (checklistError) throw checklistError;
+
+      const { data: pneusData, error: pneusError } = await supabase
+        .from('checklist_pneus')
+        .select('*')
+        .eq('checklist_id', checklistId);
+
+      if (pneusError) throw pneusError;
+
+      const { data: equipamentosData, error: equipamentosError } = await supabase
+        .from('checklist_equipamentos')
+        .select('*')
+        .eq('checklist_id', checklistId);
+
+      if (equipamentosError) throw equipamentosError;
+
+      const detailedChecklist: ChecklistDetalhado = {
+        ...checklistData,
+        checklist_pneus: pneusData,
+        checklist_equipamentos: equipamentosData
+      };
+
+      setSelectedChecklistDetail(detailedChecklist);
+      setChecklistDetailDialogOpen(true);
+    } catch (error) {
+      console.error('Erro ao carregar detalhes do checklist:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar detalhes do checklist",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingChecklistDetail(false);
     }
   };
 
@@ -246,19 +308,40 @@ export const ViaturasManagement = () => {
     // Usar o status_aprovacao salvo no banco de dados
     if (checklist.status_aprovacao === 'aprovado') {
       return (
-        <Badge variant="default" className="bg-green-500">
+        <Badge 
+          variant="default" 
+          className="bg-green-500 cursor-pointer hover:bg-green-600"
+          onClick={(e) => {
+            e.stopPropagation();
+            fetchChecklistDetails(checklist.id);
+          }}
+        >
           Aprovado pelo Fiscal
         </Badge>
       );
     } else if (checklist.status_aprovacao === 'reprovado') {
       return (
-        <Badge variant="destructive">
+        <Badge 
+          variant="destructive"
+          className="cursor-pointer hover:bg-red-600"
+          onClick={(e) => {
+            e.stopPropagation();
+            fetchChecklistDetails(checklist.id);
+          }}
+        >
           Reprovado pelo Fiscal
         </Badge>
       );
     } else {
       return (
-        <Badge variant="outline">
+        <Badge 
+          variant="outline"
+          className="cursor-pointer hover:bg-gray-100"
+          onClick={(e) => {
+            e.stopPropagation();
+            fetchChecklistDetails(checklist.id);
+          }}
+        >
           Pendente
         </Badge>
       );
@@ -545,6 +628,199 @@ export const ViaturasManagement = () => {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalhes do Checklist */}
+      <Dialog open={checklistDetailDialogOpen} onOpenChange={setChecklistDetailDialogOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Car className="h-5 w-5" />
+              Detalhes do Checklist - {selectedChecklistDetail?.data_checklist ? 
+                new Date(selectedChecklistDetail.data_checklist).toLocaleDateString('pt-BR') : ''
+              }
+            </DialogTitle>
+          </DialogHeader>
+          
+          {loadingChecklistDetail ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : selectedChecklistDetail ? (
+            <div className="space-y-6">
+              {/* Informações Básicas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Informações Básicas</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Data</Label>
+                    <p className="font-medium">{new Date(selectedChecklistDetail.data_checklist).toLocaleDateString('pt-BR')}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Horário</Label>
+                    <p className="font-medium">{selectedChecklistDetail.horario_checklist}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Fiscal</Label>
+                    <p className="font-medium">{selectedChecklistDetail.nome_guerra}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">KM Inicial</Label>
+                    <p className="font-medium">{selectedChecklistDetail.km_inicial.toLocaleString()} km</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                    <div className="mt-1">
+                      {selectedChecklistDetail.status_aprovacao === 'aprovado' ? (
+                        <Badge variant="default" className="bg-green-500">Aprovado</Badge>
+                      ) : selectedChecklistDetail.status_aprovacao === 'reprovado' ? (
+                        <Badge variant="destructive">Reprovado</Badge>
+                      ) : (
+                        <Badge variant="outline">Pendente</Badge>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Combustível e Óleo */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Fuel className="h-5 w-5" />
+                    Combustível e Óleo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Nível de Combustível</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Fuel className="h-4 w-4" />
+                      <Badge variant="outline" className="capitalize">{selectedChecklistDetail.combustivel_nivel}</Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Nível de Óleo</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Droplets className="h-4 w-4" />
+                      <Badge variant="outline" className="capitalize">{selectedChecklistDetail.oleo_nivel}</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Avaliação dos Pneus */}
+              {selectedChecklistDetail.checklist_pneus && selectedChecklistDetail.checklist_pneus.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Avaliação dos Pneus</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedChecklistDetail.checklist_pneus.map((pneu, index) => (
+                      <div key={index} className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Dianteiro Direito</Label>
+                          <Badge variant={pneu.dianteiro_direito === 'otimo' ? 'default' : pneu.dianteiro_direito === 'bom' ? 'secondary' : 'destructive'}>
+                            {pneu.dianteiro_direito}
+                          </Badge>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Dianteiro Esquerdo</Label>
+                          <Badge variant={pneu.dianteiro_esquerdo === 'otimo' ? 'default' : pneu.dianteiro_esquerdo === 'bom' ? 'secondary' : 'destructive'}>
+                            {pneu.dianteiro_esquerdo}
+                          </Badge>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Traseiro Direito</Label>
+                          <Badge variant={pneu.traseiro_direito === 'otimo' ? 'default' : pneu.traseiro_direito === 'bom' ? 'secondary' : 'destructive'}>
+                            {pneu.traseiro_direito}
+                          </Badge>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Traseiro Esquerdo</Label>
+                          <Badge variant={pneu.traseiro_esquerdo === 'otimo' ? 'default' : pneu.traseiro_esquerdo === 'bom' ? 'secondary' : 'destructive'}>
+                            {pneu.traseiro_esquerdo}
+                          </Badge>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Estepe</Label>
+                          <Badge variant={pneu.estepe === 'otimo' ? 'default' : pneu.estepe === 'bom' ? 'secondary' : 'destructive'}>
+                            {pneu.estepe}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Equipamentos */}
+              {selectedChecklistDetail.checklist_equipamentos && selectedChecklistDetail.checklist_equipamentos.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Settings className="h-5 w-5" />
+                      Status dos Equipamentos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedChecklistDetail.checklist_equipamentos.map((equipamento, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-2">
+                            {equipamento.status === 'ok' ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : equipamento.status === 'defeituoso' ? (
+                              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-600" />
+                            )}
+                            <span className="font-medium">{equipamento.equipamento_nome}</span>
+                          </div>
+                          <Badge variant={
+                            equipamento.status === 'ok' ? 'default' : 
+                            equipamento.status === 'defeituoso' ? 'secondary' : 'destructive'
+                          }>
+                            {equipamento.status === 'ok' ? 'OK' : 
+                             equipamento.status === 'defeituoso' ? 'Defeituoso' : 'Não tem'}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Limpeza e Observações */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Limpeza e Observações</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Status da Limpeza</Label>
+                    <div className="mt-1">
+                      <Badge variant={selectedChecklistDetail.limpeza_ok ? 'default' : 'destructive'}>
+                        {selectedChecklistDetail.limpeza_ok ? 'Limpeza OK' : 'Limpeza Pendente'}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  {selectedChecklistDetail.observacoes_alteracoes && (
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Observações e Alterações</Label>
+                      <div className="mt-2 p-3 bg-muted rounded-lg">
+                        <p className="text-sm">{selectedChecklistDetail.observacoes_alteracoes}</p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>
