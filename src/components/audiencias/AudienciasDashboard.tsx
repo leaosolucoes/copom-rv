@@ -118,10 +118,13 @@ export const AudienciasDashboard = () => {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="hoje">
+          <TabsTrigger 
+            value="hoje"
+            className={audienciasHoje && audienciasHoje.length > 0 ? "pulse text-red-600 border-red-500" : ""}
+          >
             Hoje
             {audienciasHoje && audienciasHoje.length > 0 && (
-              <Badge variant="outline" className="ml-2">
+              <Badge variant="outline" className="ml-2 text-red-600 border-red-500 animate-pulse">
                 {audienciasHoje.length}
               </Badge>
             )}
