@@ -18,7 +18,10 @@ export const WhatsAppConfig = () => {
     phone_number: '',
     message_template: '',
     send_full_complaint: false,
-    auto_send_enabled: true
+    auto_send_enabled: true,
+    verify_auto_send_enabled: false,
+    verify_phone_numbers: '',
+    verify_message_template: 'Olá! Temos uma nova denúncia para verificar no sistema. Acesse agora e verifique ou arquive a denúncia.'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -37,7 +40,10 @@ export const WhatsAppConfig = () => {
           'whatsapp_phone_number',
           'whatsapp_message_template',
           'whatsapp_send_full_complaint',
-          'whatsapp_auto_send_enabled'
+          'whatsapp_auto_send_enabled',
+          'whatsapp_verify_auto_send_enabled',
+          'whatsapp_verify_phone_numbers',
+          'whatsapp_verify_message_template'
         ]);
 
       if (error) throw error;
@@ -92,7 +98,10 @@ export const WhatsAppConfig = () => {
 🏛️ *Secretaria Municipal de Posturas*
 _Acesse o sistema para mais detalhes e acompanhamento._`,
         send_full_complaint: settings.send_full_complaint || false,
-        auto_send_enabled: settings.auto_send_enabled !== false
+        auto_send_enabled: settings.auto_send_enabled !== false,
+        verify_auto_send_enabled: settings.verify_auto_send_enabled || false,
+        verify_phone_numbers: settings.verify_phone_numbers || '',
+        verify_message_template: settings.verify_message_template || 'Olá! Temos uma nova denúncia para verificar no sistema. Acesse agora e verifique ou arquive a denúncia.'
       });
     } catch (error) {
       toast({
@@ -160,7 +169,10 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
         { key: 'whatsapp_phone_number', value: config.phone_number, description: 'Número do WhatsApp para receber notificações' },
         { key: 'whatsapp_message_template', value: config.message_template, description: 'Template da mensagem automática' },
         { key: 'whatsapp_send_full_complaint', value: config.send_full_complaint, description: 'Enviar denúncia completa ou apenas resumo' },
-        { key: 'whatsapp_auto_send_enabled', value: config.auto_send_enabled, description: 'Envio automático habilitado' }
+        { key: 'whatsapp_auto_send_enabled', value: config.auto_send_enabled, description: 'Envio automático habilitado' },
+        { key: 'whatsapp_verify_auto_send_enabled', value: config.verify_auto_send_enabled, description: 'Envio automático de verificação habilitado' },
+        { key: 'whatsapp_verify_phone_numbers', value: config.verify_phone_numbers, description: 'Números do WhatsApp para notificações de verificação' },
+        { key: 'whatsapp_verify_message_template', value: config.verify_message_template, description: 'Template da mensagem de verificação' }
       ];
 
       for (const setting of settings) {
@@ -361,6 +373,52 @@ _Acesse o sistema para mais detalhes e acompanhamento._`,
             />
             <p className="text-sm text-gray-500 mt-1">
               Variáveis disponíveis: {'{complainant_name}'}, {'{complainant_phone}'}, {'{complainant_type}'}, {'{complainant_address}'}, {'{complainant_number}'}, {'{complainant_block}'}, {'{complainant_lot}'}, {'{complainant_neighborhood}'}, {'{occurrence_type}'}, {'{occurrence_address}'}, {'{occurrence_number}'}, {'{occurrence_block}'}, {'{occurrence_lot}'}, {'{occurrence_neighborhood}'}, {'{occurrence_reference}'}, {'{occurrence_date}'}, {'{occurrence_time}'}, {'{classification}'}, {'{assigned_to}'}, {'{narrative}'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Configurações para Verificação de Denúncias</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="verify_auto_send_enabled"
+              checked={config.verify_auto_send_enabled}
+              onCheckedChange={(checked) => 
+                setConfig(prev => ({ ...prev, verify_auto_send_enabled: checked }))
+              }
+            />
+            <Label htmlFor="verify_auto_send_enabled">Envio automático de verificação habilitado</Label>
+          </div>
+
+          <div>
+            <Label htmlFor="verify_phone_numbers">Números para Verificação</Label>
+            <Input
+              id="verify_phone_numbers"
+              value={config.verify_phone_numbers}
+              onChange={(e) => setConfig(prev => ({ ...prev, verify_phone_numbers: e.target.value }))}
+              placeholder="556299999999, 556288888888"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Números que receberão as notificações quando uma denúncia for enviada para verificação. 
+              Para múltiplos números, separe por vírgula.
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="verify_message_template">Template da Mensagem de Verificação</Label>
+            <Textarea
+              id="verify_message_template"
+              value={config.verify_message_template}
+              onChange={(e) => setConfig(prev => ({ ...prev, verify_message_template: e.target.value }))}
+              rows={4}
+              placeholder="Digite o template da mensagem de verificação..."
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Mensagem enviada quando uma denúncia é encaminhada para verificação do admin.
             </p>
           </div>
         </CardContent>
