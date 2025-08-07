@@ -13,6 +13,7 @@ import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
 import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
 import { AdminAudienciasDashboard } from '@/components/audiencias/AdminAudienciasDashboard';
+import { AudienciasDashboard } from '@/components/audiencias/AudienciasDashboard';
 import { Users, FileText, Search, Clock, Scale } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -179,6 +180,19 @@ const AdminDashboard = () => {
 
           <TabsContent value="audiencias" className="space-y-6">
             <AdminAudienciasDashboard />
+            
+            {/* Seção de Lançamentos de Ofícios */}
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold">Lançamentos de Ofícios</h2>
+                  <p className="text-muted-foreground">
+                    Gerenciamento completo de ofícios de audiência judicial
+                  </p>
+                </div>
+              </div>
+              <AudienciasDashboard />
+            </div>
           </TabsContent>
 
           <TabsContent value="consultas" className="space-y-6">
