@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { DetalhesAudienciaModal } from "./DetalhesAudienciaModal";
+import { DetalhesAudienciaAssinadaModal } from "./DetalhesAudienciaAssinadaModal";
 
 interface Audiencia {
   id: string;
@@ -42,6 +43,8 @@ export function AdminAudienciasDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAudiencia, setSelectedAudiencia] = useState<Audiencia | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [selectedAudienciaAssinada, setSelectedAudienciaAssinada] = useState<Audiencia | null>(null);
+  const [showAssinadaModal, setShowAssinadaModal] = useState(false);
 
   useEffect(() => {
     fetchTodasAudiencias();
@@ -247,7 +250,14 @@ export function AdminAudienciasDashboard() {
               {oficiosAssinados.slice(0, 3).map((audiencia) => {
                 const { date, time } = formatDateTime(audiencia.data_audiencia, audiencia.horario_audiencia);
                 return (
-                  <div key={audiencia.id} className="p-3 border rounded-lg bg-green-50 space-y-2">
+                  <div 
+                    key={audiencia.id} 
+                    className="p-3 border rounded-lg bg-green-50 space-y-2 cursor-pointer hover:bg-green-100 transition-colors"
+                    onClick={() => {
+                      setSelectedAudienciaAssinada(audiencia);
+                      setShowAssinadaModal(true);
+                    }}
+                  >
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-medium text-sm">Processo: {audiencia.numero_processo}</p>
@@ -299,6 +309,15 @@ export function AdminAudienciasDashboard() {
         }}
         audiencia={selectedAudiencia}
         isFiscal={true} // Admin pode assinar ofícios
+      />
+
+      <DetalhesAudienciaAssinadaModal
+        isOpen={showAssinadaModal}
+        onClose={() => {
+          setShowAssinadaModal(false);
+          setSelectedAudienciaAssinada(null);
+        }}
+        audiencia={selectedAudienciaAssinada}
       />
     </div>
   );
