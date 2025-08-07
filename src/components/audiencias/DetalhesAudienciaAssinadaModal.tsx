@@ -199,24 +199,19 @@ export function DetalhesAudienciaAssinadaModal({ isOpen, onClose, audiencia }: D
       if (audiencia.hash_assinatura) {
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(12);
-        pdf.text('HASH DE SEGURANÇA (64 CARACTERES)', 20, yPosition);
+        pdf.text('HASH DE SEGURANÇA', 20, yPosition);
         yPosition += 10;
 
         pdf.setFont('courier', 'normal');
         pdf.setFontSize(8);
         
-        // Quebrar hash em linhas de 32 caracteres
-        const hashParte1 = audiencia.hash_assinatura.substring(0, 32);
-        const hashParte2 = audiencia.hash_assinatura.substring(32, 64);
-        
-        pdf.text(hashParte1, 20, yPosition);
-        yPosition += 6;
-        pdf.text(hashParte2, 20, yPosition);
+        // Hash completo em uma linha única
+        pdf.text(audiencia.hash_assinatura, 20, yPosition);
         yPosition += 15;
 
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(8);
-        pdf.text('Este hash de 64 caracteres garante a integridade e autenticidade da assinatura digital.', 20, yPosition);
+        pdf.text('Este hash garante a integridade e autenticidade da assinatura digital.', 20, yPosition);
         yPosition += 6;
         pdf.text('Qualquer alteração no documento resultará em um hash diferente.', 20, yPosition);
         yPosition += 15;
