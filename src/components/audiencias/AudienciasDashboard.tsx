@@ -7,6 +7,7 @@ import { useAudiencias } from '@/hooks/useAudiencias';
 import { CriarOficioAudiencia } from './CriarOficioAudiencia';
 import { ListaAudiencias } from './ListaAudiencias';
 import { DetalhesAudienciaModal } from './DetalhesAudienciaModal';
+import { AudienciasHojeModal } from './AudienciasHojeModal';
 import { 
   FileText, 
   Plus, 
@@ -21,6 +22,7 @@ export const AudienciasDashboard = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedAudiencia, setSelectedAudiencia] = useState<any>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isHojeModalOpen, setIsHojeModalOpen] = useState(false);
   
   const { 
     audiencias, 
@@ -120,7 +122,8 @@ export const AudienciasDashboard = () => {
           </TabsTrigger>
           <TabsTrigger 
             value="hoje"
-            className={audienciasHoje && audienciasHoje.length > 0 ? "pulse text-red-600 border-red-500" : ""}
+            className={audienciasHoje && audienciasHoje.length > 0 ? "pulse text-red-600 border-red-500 cursor-pointer" : "cursor-pointer"}
+            onClick={() => setIsHojeModalOpen(true)}
           >
             Hoje
             {audienciasHoje && audienciasHoje.length > 0 && (
@@ -287,6 +290,13 @@ export const AudienciasDashboard = () => {
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
         audiencia={selectedAudiencia}
+      />
+
+      {/* Modal de audiências de hoje */}
+      <AudienciasHojeModal
+        isOpen={isHojeModalOpen}
+        onClose={() => setIsHojeModalOpen(false)}
+        audiencias={audienciasHoje || []}
       />
     </div>
   );
