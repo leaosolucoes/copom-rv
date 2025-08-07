@@ -4,6 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, FileText, Calendar, Clock, MapPin, PenTool } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface Audiencia {
   id: string;
@@ -29,6 +32,9 @@ interface DetalhesAudienciaModalProps {
 }
 
 export function DetalhesAudienciaModal({ isOpen, onClose, audiencia, isFiscal = false }: DetalhesAudienciaModalProps) {
+  const { toast } = useToast();
+  const [isAssigning, setIsAssigning] = useState(false);
+  
   if (!audiencia) return null;
 
   const formatDate = (date: string) => {
@@ -44,6 +50,48 @@ export function DetalhesAudienciaModal({ isOpen, onClose, audiencia, isFiscal = 
   const handleAcessarVideoconferencia = () => {
     if (audiencia.link_videoconferencia) {
       window.open(audiencia.link_videoconferencia, '_blank');
+    }
+  };
+
+  const handleAssinarDigitalmente = async () => {
+    setIsAssigning(true);
+    try {
+      const { error } = await supabase
+        .from('audiencias')
+        .update({
+          status: 'assinado',
+          data_assinatura: new Date().toISOString(),
+          dados_assinatura: {
+            assinado_em: new Date().toISOString(),
+            metodo: 'digital',
+            ip_assinatura: 'fiscal_dashboard'
+          }
+        })
+        .eq('id', audiencia.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso!",
+        description: "Ofício assinado digitalmente com sucesso.",
+        variant: "default",
+      });
+
+      // Fechar modal e atualizar dados
+      onClose();
+      
+      // Reload the page to show updated data
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Erro ao assinar ofício:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível assinar o ofício. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -141,13 +189,11 @@ export function DetalhesAudienciaModal({ isOpen, onClose, audiencia, isFiscal = 
                 <Button 
                   variant="default" 
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => {
-                    // Aqui seria implementada a funcionalidade de assinatura digital
-                    console.log('Assinar digitalmente:', audiencia.id);
-                  }}
+                  onClick={handleAssinarDigitalmente}
+                  disabled={isAssigning}
                 >
                   <PenTool className="h-4 w-4 mr-2" />
-                  Assinar Digitalmente
+                  {isAssigning ? "Assinando..." : "Assinar Digitalmente"}
                 </Button>
               ) : (
                 <Button 
