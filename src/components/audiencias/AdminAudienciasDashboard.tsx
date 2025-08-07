@@ -37,6 +37,8 @@ export function AdminAudienciasDashboard() {
   }, []);
 
   const fetchTodasAudiencias = async () => {
+    if (!profile?.id) return;
+    
     try {
       const { data, error } = await supabase
         .from('audiencias')
@@ -55,12 +57,13 @@ export function AdminAudienciasDashboard() {
             full_name
           )
         `)
+        .eq('user_id', profile.id)
         .order('data_audiencia', { ascending: true });
 
       if (error) throw error;
       setAudiencias((data || []) as any);
     } catch (error) {
-      console.error('Erro ao buscar todas as audiências:', error);
+      console.error('Erro ao buscar audiências do admin:', error);
     } finally {
       setIsLoading(false);
     }
