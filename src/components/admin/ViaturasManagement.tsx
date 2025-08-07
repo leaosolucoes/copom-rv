@@ -23,12 +23,29 @@ interface Viatura {
   updated_at: string;
 }
 
+interface ChecklistViatura {
+  id: string;
+  data_checklist: string;
+  horario_checklist: string;
+  nome_guerra: string;
+  km_inicial: number;
+  combustivel_nivel: string;
+  oleo_nivel: string;
+  limpeza_ok: boolean;
+  observacoes_alteracoes: string | null;
+  created_at: string;
+}
+
 export const ViaturasManagement = () => {
   const [viaturas, setViaturas] = useState<Viatura[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [checklistDialogOpen, setChecklistDialogOpen] = useState(false);
   const [viatureToDelete, setViatureToDelete] = useState<Viatura | null>(null);
+  const [selectedViatura, setSelectedViatura] = useState<Viatura | null>(null);
+  const [checklists, setChecklists] = useState<ChecklistViatura[]>([]);
+  const [loadingChecklists, setLoadingChecklists] = useState(false);
   const [editingViatura, setEditingViatura] = useState<Viatura | null>(null);
   const [formData, setFormData] = useState({
     prefixo: '',
@@ -38,6 +55,29 @@ export const ViaturasManagement = () => {
     ativa: true
   });
   const { toast } = useToast();
+
+  const fetchChecklists = async (viaturaId: string) => {
+    setLoadingChecklists(true);
+    try {
+      const { data, error } = await supabase
+        .from('checklist_viaturas')
+        .select('*')
+        .eq('viatura_id', viaturaId)
+        .order('data_checklist', { ascending: false });
+
+      if (error) throw error;
+      setChecklists(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar checklists:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar histórico de checklists",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingChecklists(false);
+    }
+  };
 
   useEffect(() => {
     fetchViaturas();
@@ -195,6 +235,23 @@ export const ViaturasManagement = () => {
     setDialogOpen(true);
   };
 
+  const handleViatureClick = (viatura: Viatura) => {
+    setSelectedViatura(viatura);
+    setChecklistDialogOpen(true);
+    fetchChecklists(viatura.id);
+  };
+
+  const getStatusBadge = (checklist: ChecklistViatura) => {
+    // Considera aprovado se não há observações de alterações e limpeza está ok
+    const isApproved = checklist.limpeza_ok && !checklist.observacoes_alteracoes;
+    
+    return (
+      <Badge variant={isApproved ? "default" : "destructive"}>
+        {isApproved ? "Aprovado" : "Reprovado pelo Fiscal"}
+      </Badge>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -323,7 +380,11 @@ export const ViaturasManagement = () => {
                 </TableHeader>
                 <TableBody>
                   {viaturas.map((viatura) => (
-                    <TableRow key={viatura.id}>
+                    <TableRow 
+                      key={viatura.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleViatureClick(viatura)}
+                    >
                       <TableCell className="font-medium">{viatura.prefixo}</TableCell>
                       <TableCell>{viatura.placa}</TableCell>
                       <TableCell>{viatura.modelo}</TableCell>
@@ -333,7 +394,7 @@ export const ViaturasManagement = () => {
                           {viatura.ativa ? "Ativa" : "Inativa"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-2 justify-end">
                           <Button
                             variant={viatura.ativa ? "outline" : "default"}
@@ -392,6 +453,87 @@ export const ViaturasManagement = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={checklistDialogOpen} onOpenChange={setChecklistDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Histórico de Checklists - {selectedViatura?.prefixo} ({selectedViatura?.placa})
+            </DialogTitle>
+          </DialogHeader>
+          
+          {loadingChecklists ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : checklists.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Car className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhum checklist realizado para esta viatura</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Hora</TableHead>
+                    <TableHead>Fiscal</TableHead>
+                    <TableHead>KM Inicial</TableHead>
+                    <TableHead>Combustível</TableHead>
+                    <TableHead>Óleo</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {checklists.map((checklist) => (
+                    <TableRow key={checklist.id}>
+                      <TableCell>
+                        {new Date(checklist.data_checklist).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      <TableCell>{checklist.horario_checklist}</TableCell>
+                      <TableCell className="font-medium">{checklist.nome_guerra}</TableCell>
+                      <TableCell>{checklist.km_inicial.toLocaleString()} km</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {checklist.combustivel_nivel}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {checklist.oleo_nivel}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(checklist)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {checklists.some(c => c.observacoes_alteracoes) && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">Observações dos Fiscais:</h4>
+                  {checklists
+                    .filter(c => c.observacoes_alteracoes)
+                    .map((checklist) => (
+                      <div key={checklist.id} className="bg-muted p-3 rounded-lg">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="font-medium text-sm">{checklist.nome_guerra}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(checklist.data_checklist).toLocaleDateString('pt-BR')} às {checklist.horario_checklist}
+                          </span>
+                        </div>
+                        <p className="text-sm">{checklist.observacoes_alteracoes}</p>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
