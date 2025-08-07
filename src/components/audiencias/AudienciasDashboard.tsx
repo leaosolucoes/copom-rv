@@ -7,6 +7,7 @@ import { useAudiencias } from '@/hooks/useAudiencias';
 import { CriarOficioAudiencia } from './CriarOficioAudiencia';
 import { ListaAudiencias } from './ListaAudiencias';
 import { DetalhesAudienciaModal } from './DetalhesAudienciaModal';
+import { DetalhesAudienciaAssinadaModal } from './DetalhesAudienciaAssinadaModal';
 import { AudienciasHojeModal } from './AudienciasHojeModal';
 import { 
   FileText, 
@@ -23,6 +24,7 @@ export const AudienciasDashboard = () => {
   const [selectedAudiencia, setSelectedAudiencia] = useState<any>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isHojeModalOpen, setIsHojeModalOpen] = useState(false);
+  const [isAssinadaModalOpen, setIsAssinadaModalOpen] = useState(false);
   
   const { 
     audiencias, 
@@ -255,7 +257,14 @@ export const AudienciasDashboard = () => {
               ) : (
                 <div className="space-y-4">
                   {audienciasAssinadas.map((audiencia) => (
-                    <div key={audiencia.id} className="border rounded-lg p-4 border-success/20">
+                    <div 
+                      key={audiencia.id} 
+                      className="border rounded-lg p-4 border-success/20 cursor-pointer hover:bg-success/5 transition-colors"
+                      onClick={() => {
+                        setSelectedAudiencia(audiencia);
+                        setIsAssinadaModalOpen(true);
+                      }}
+                    >
                       <div className="flex justify-between items-start">
                         <div>
                           <h3 className="font-medium">{audiencia.numero_processo}</h3>
@@ -297,6 +306,13 @@ export const AudienciasDashboard = () => {
         isOpen={isHojeModalOpen}
         onClose={() => setIsHojeModalOpen(false)}
         audiencias={audienciasHoje || []}
+      />
+
+      {/* Modal de detalhes da audiência assinada */}
+      <DetalhesAudienciaAssinadaModal
+        isOpen={isAssinadaModalOpen}
+        onClose={() => setIsAssinadaModalOpen(false)}
+        audiencia={selectedAudiencia}
       />
     </div>
   );
