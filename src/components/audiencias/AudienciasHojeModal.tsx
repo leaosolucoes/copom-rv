@@ -16,6 +16,7 @@ interface AudienciaHoje {
   data_audiencia: string;
   horario_audiencia: string;
   status: string;
+  eh_presencial?: boolean;
   users?: {
     full_name: string;
   } | null;
@@ -48,15 +49,19 @@ export function AudienciasHojeModal({ isOpen, onClose, audiencias }: AudienciasH
     audiencias.forEach((audiencia, index) => {
       const { time } = formatDateTime(audiencia.data_audiencia, audiencia.horario_audiencia);
       const fiscalName = audiencia.users?.full_name || 'Fiscal não informado';
+      const modalidade = audiencia.eh_presencial ? 'Presencial' : 'Videoconferência';
       
       text += `${index + 1}. ⚖️ *${fiscalName}*\n`;
       text += `   ⏰ *Horário:* ${time}\n`;
       text += `   *Processo:* ${audiencia.numero_processo}\n`;
       text += `   *Vara:* ${audiencia.vara}\n`;
+      text += `   📍 *Modalidade:* ${modalidade}\n`;
       if (index < audiencias.length - 1) {
         text += `\n`;
       }
     });
+    
+    text += `\n\n⚠️ *COMPAREÇAM NO HORÁRIO INDICADO*`;
 
     setWhatsappText(text);
     setShowText(true);
