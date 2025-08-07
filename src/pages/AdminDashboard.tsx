@@ -100,7 +100,7 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-4 md:py-8">
         <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
-          <TabsList className={`grid w-full ${profile?.role === 'super_admin' ? 'grid-cols-5' : 'grid-cols-4'} md:w-fit`}>
+          <TabsList className="grid w-full grid-cols-5 md:w-fit">
             <TabsTrigger value="complaints" className="flex items-center gap-2 text-xs md:text-sm">
               <FileText className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Denúncias</span>
@@ -116,13 +116,11 @@ const AdminDashboard = () => {
               <span className="hidden sm:inline">Tempos Atend.</span>
               <span className="sm:hidden">Tempos</span>
             </TabsTrigger>
-            {profile?.role === 'super_admin' && (
-              <TabsTrigger value="audiencias" className="flex items-center gap-2 text-xs md:text-sm">
-                <Scale className="h-3 w-3 md:h-4 md:w-4" />
-                <span className="hidden sm:inline">Audiências</span>
-                <span className="sm:hidden">Aud.</span>
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="audiencias" className="flex items-center gap-2 text-xs md:text-sm">
+              <Scale className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Audiências</span>
+              <span className="sm:hidden">Aud.</span>
+            </TabsTrigger>
             <TabsTrigger value="consultas" className="flex items-center gap-2 text-xs md:text-sm">
               <Search className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Consultas</span>
@@ -179,11 +177,9 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          {profile?.role === 'super_admin' && (
-            <TabsContent value="audiencias" className="space-y-6">
-              <AudienciasDashboard />
-            </TabsContent>
-          )}
+          <TabsContent value="audiencias" className="space-y-6">
+            <AudienciasDashboard />
+          </TabsContent>
 
           <TabsContent value="consultas" className="space-y-6">
             <div className="space-y-6">
