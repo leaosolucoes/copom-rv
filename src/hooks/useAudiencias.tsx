@@ -33,6 +33,8 @@ export const useAudiencias = () => {
           table: 'audiencias'
         },
         (payload) => {
+          console.log('Real-time update received:', payload);
+          
           // Invalidar todas as queries relacionadas às audiências
           queryClient.invalidateQueries({ queryKey: ['audiencias'] });
           queryClient.invalidateQueries({ queryKey: ['audiencias-hoje'] });
@@ -53,8 +55,8 @@ export const useAudiencias = () => {
               if (newRecord?.status === 'assinado') {
                 toast({
                   title: 'Ofício assinado digitalmente',
-                  description: 'O status foi atualizado automaticamente',
-                  duration: 3000,
+                  description: `Processo ${newRecord?.numero_processo} foi assinado`,
+                  duration: 5000,
                 });
               }
             }
@@ -116,6 +118,7 @@ export const useAudiencias = () => {
   const { data: audienciasPendentes } = useQuery({
     queryKey: ['audiencias-pendentes'],
     queryFn: async () => {
+      console.log('Fetching audiencias pendentes...');
       const { data, error } = await supabase
         .from('audiencias')
         .select(`
@@ -129,13 +132,17 @@ export const useAudiencias = () => {
         .eq('status', 'pendente');
 
       if (error) throw error;
+      console.log('Audiencias pendentes:', data);
       return data as AudienciaWithUser[];
-    }
+    },
+    staleTime: 0, // Always refetch
+    refetchInterval: 5000 // Refetch every 5 seconds
   });
 
   const { data: audienciasAssinadas } = useQuery({
     queryKey: ['audiencias-assinadas'],
     queryFn: async () => {
+      console.log('Fetching audiencias assinadas...');
       const { data, error } = await supabase
         .from('audiencias')
         .select(`
@@ -149,8 +156,11 @@ export const useAudiencias = () => {
         .eq('status', 'assinado');
 
       if (error) throw error;
+      console.log('Audiencias assinadas:', data);
       return data as AudienciaWithUser[];
-    }
+    },
+    staleTime: 0, // Always refetch
+    refetchInterval: 5000 // Refetch every 5 seconds
   });
 
   const criarAudiencia = useMutation({
