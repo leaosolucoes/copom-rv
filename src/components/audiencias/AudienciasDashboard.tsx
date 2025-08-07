@@ -110,8 +110,22 @@ export const AudienciasDashboard = () => {
       {/* Tabs com diferentes visualizações */}
       <Tabs defaultValue="todas" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="todas">Todas</TabsTrigger>
-          <TabsTrigger value="hoje">Hoje</TabsTrigger>
+          <TabsTrigger value="todas">
+            Todas
+            {audiencias && audiencias.length > 0 && (
+              <Badge variant="outline" className="ml-2">
+                {audiencias.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="hoje">
+            Hoje
+            {audienciasHoje && audienciasHoje.length > 0 && (
+              <Badge variant="outline" className="ml-2">
+                {audienciasHoje.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="pendentes">
             Pendentes
             {audienciasPendentes && audienciasPendentes.length > 0 && (
@@ -120,7 +134,14 @@ export const AudienciasDashboard = () => {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="assinadas">Assinadas</TabsTrigger>
+          <TabsTrigger value="assinadas">
+            Assinadas
+            {audienciasAssinadas && audienciasAssinadas.length > 0 && (
+              <Badge variant="outline" className="ml-2 text-success border-success">
+                {audienciasAssinadas.length}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="todas">
