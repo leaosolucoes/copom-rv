@@ -288,7 +288,7 @@ export function AdminAudienciasDashboard() {
           fetchTodasAudiencias();
         }}
         audiencia={selectedAudiencia}
-        isFiscal={false} // Admin pode assinar mas não é fiscal
+        isFiscal={true} // Admin pode assinar ofícios
       />
     </div>
   );
