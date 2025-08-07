@@ -135,22 +135,12 @@ export function DetalhesAudienciaAssinadaModal({ isOpen, onClose, audiencia }: D
             <CardContent className="p-4 space-y-3">
               <h3 className="font-semibold text-sm text-muted-foreground">Assinatura Digital</h3>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <User className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-muted-foreground">Assinador</span>
-                  </div>
-                  <p className="font-medium text-sm">{audiencia.users?.full_name || 'Não informado'}</p>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-muted-foreground">Assinador</span>
                 </div>
-                
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <FileText className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-muted-foreground">RG</span>
-                  </div>
-                  <p className="font-medium text-sm">{audiencia.dados_assinatura?.rg || 'Não informado'}</p>
-                </div>
+                <p className="font-medium text-sm">{audiencia.users?.full_name || 'Não informado'}</p>
               </div>
 
               <div className="space-y-1">
