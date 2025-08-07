@@ -495,6 +495,7 @@ export type Database = {
           nome_guerra: string
           observacoes_alteracoes: string | null
           oleo_nivel: string
+          status_aprovacao: string | null
           updated_at: string
           viatura_id: string
         }
@@ -512,6 +513,7 @@ export type Database = {
           nome_guerra: string
           observacoes_alteracoes?: string | null
           oleo_nivel: string
+          status_aprovacao?: string | null
           updated_at?: string
           viatura_id: string
         }
@@ -529,6 +531,7 @@ export type Database = {
           nome_guerra?: string
           observacoes_alteracoes?: string | null
           oleo_nivel?: string
+          status_aprovacao?: string | null
           updated_at?: string
           viatura_id?: string
         }

@@ -184,7 +184,8 @@ export const ChecklistViatura = () => {
         fiscal_id: profile.id,
         ...formData,
         data_proxima_troca_oleo: formData.data_proxima_troca_oleo || null,
-        km_proxima_troca_oleo: formData.km_proxima_troca_oleo || null
+        km_proxima_troca_oleo: formData.km_proxima_troca_oleo || null,
+        status_aprovacao: aprovado ? 'aprovado' : 'reprovado'
       };
 
       const { data: checklistData, error: checklistError } = await supabase
