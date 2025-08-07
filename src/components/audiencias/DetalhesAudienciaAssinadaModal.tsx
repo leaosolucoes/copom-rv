@@ -407,7 +407,7 @@ export function DetalhesAudienciaAssinadaModal({ isOpen, onClose, audiencia }: D
             </Button>
             <Button 
               onClick={generateComprovanteAssinatura}
-              className="flex-1 gap-2 bg-gray-800 hover:bg-gray-700"
+              className="flex-1 gap-2"
             >
               <FileText className="h-4 w-4" />
               Comprovantes
