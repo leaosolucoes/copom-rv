@@ -608,24 +608,6 @@ export const ViaturasManagement = () => {
                 </TableBody>
               </Table>
               
-              {checklists.some(c => c.observacoes_alteracoes) && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm">Observações dos Fiscais:</h4>
-                  {checklists
-                    .filter(c => c.observacoes_alteracoes)
-                    .map((checklist) => (
-                      <div key={checklist.id} className="bg-muted p-3 rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="font-medium text-sm">{checklist.nome_guerra}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(checklist.data_checklist).toLocaleDateString('pt-BR')} às {checklist.horario_checklist}
-                          </span>
-                        </div>
-                        <p className="text-sm">{checklist.observacoes_alteracoes}</p>
-                      </div>
-                    ))}
-                </div>
-              )}
             </div>
           )}
         </DialogContent>
