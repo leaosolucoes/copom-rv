@@ -2,10 +2,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, User, FileText, MessageSquare, Copy } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar, Clock, User, FileText, MessageSquare, Copy, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { useState } from "react";
 
 interface AudienciaHoje {
   id: string;
@@ -26,6 +28,8 @@ interface AudienciasHojeModalProps {
 }
 
 export function AudienciasHojeModal({ isOpen, onClose, audiencias }: AudienciasHojeModalProps) {
+  const [whatsappText, setWhatsappText] = useState<string>("");
+  const [showText, setShowText] = useState(false);
   const formatDateTime = (date: string, time: string) => {
     const dateTime = new Date(`${date}T${time}`);
     return {
@@ -39,21 +43,26 @@ export function AudienciasHojeModal({ isOpen, onClose, audiencias }: AudienciasH
 
     const today = format(new Date(), 'dd/MM/yyyy', { locale: ptBR });
     
-    let whatsappText = `🏛️ *AUDIÊNCIAS JUDICIAIS - HOJE*\n📅 *Data:* ${today}\n\n`;
+    let text = `🏛️ *AUDIÊNCIAS JUDICIAIS - HOJE*\n📅 *Data:* ${today}\n\n`;
     
     audiencias.forEach((audiencia, index) => {
       const { time } = formatDateTime(audiencia.data_audiencia, audiencia.horario_audiencia);
       const fiscalName = audiencia.users?.full_name || 'Fiscal não informado';
       
-      whatsappText += `${index + 1}. ⚖️ *${fiscalName}*\n`;
-      whatsappText += `   ⏰ *Horário:* ${time}\n`;
-      whatsappText += `   *Processo:* ${audiencia.numero_processo}\n`;
-      whatsappText += `   *Vara:* ${audiencia.vara}\n`;
+      text += `${index + 1}. ⚖️ *${fiscalName}*\n`;
+      text += `   ⏰ *Horário:* ${time}\n`;
+      text += `   *Processo:* ${audiencia.numero_processo}\n`;
+      text += `   *Vara:* ${audiencia.vara}\n`;
       if (index < audiencias.length - 1) {
-        whatsappText += `\n`;
+        text += `\n`;
       }
     });
 
+    setWhatsappText(text);
+    setShowText(true);
+  };
+
+  const copyTextToClipboard = () => {
     navigator.clipboard.writeText(whatsappText).then(() => {
       toast.success("Texto copiado para a área de transferência!");
     }).catch(() => {
@@ -61,96 +70,134 @@ export function AudienciasHojeModal({ isOpen, onClose, audiencias }: AudienciasH
     });
   };
 
+  const handleClose = () => {
+    setShowText(false);
+    setWhatsappText("");
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
+            {showText && (
+              <Button variant="ghost" size="sm" onClick={() => setShowText(false)}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
             <Calendar className="h-5 w-5 text-primary" />
-            Audiências de Hoje
-            <Badge variant="secondary" className="ml-2">
-              {audiencias.length}
-            </Badge>
+            {showText ? "Texto para WhatsApp" : "Audiências de Hoje"}
+            {!showText && (
+              <Badge variant="secondary" className="ml-2">
+                {audiencias.length}
+              </Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {audiencias.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium">Nenhuma audiência para hoje</p>
-              <p className="text-sm">Não há audiências agendadas para hoje</p>
+          {showText ? (
+            <div className="space-y-4">
+              <div className="text-center text-sm text-muted-foreground">
+                Copie o texto abaixo e cole no grupo da unidade
+              </div>
+              <Textarea
+                value={whatsappText}
+                readOnly
+                className="min-h-[300px] font-mono text-sm"
+                placeholder="Texto do WhatsApp será gerado aqui..."
+              />
+              <div className="flex justify-center gap-3">
+                <Button 
+                  onClick={copyTextToClipboard}
+                  className="bg-green-500 hover:bg-green-600 text-white gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  Copiar Texto
+                </Button>
+              </div>
             </div>
           ) : (
             <>
-              {audiencias.map((audiencia) => {
-                const { date, time } = formatDateTime(audiencia.data_audiencia, audiencia.horario_audiencia);
-                return (
-                  <Card key={audiencia.id} className="border-l-4 border-l-primary">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-3 flex-1">
-                          {/* Fiscal/Usuário */}
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium text-lg">
-                              {audiencia.users?.full_name || 'Fiscal não informado'}
-                            </span>
-                          </div>
+              {audiencias.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium">Nenhuma audiência para hoje</p>
+                  <p className="text-sm">Não há audiências agendadas para hoje</p>
+                </div>
+              ) : (
+                <>
+                  {audiencias.map((audiencia) => {
+                    const { date, time } = formatDateTime(audiencia.data_audiencia, audiencia.horario_audiencia);
+                    return (
+                      <Card key={audiencia.id} className="border-l-4 border-l-primary">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-3 flex-1">
+                              {/* Fiscal/Usuário */}
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium text-lg">
+                                  {audiencia.users?.full_name || 'Fiscal não informado'}
+                                </span>
+                              </div>
 
-                          {/* Processo */}
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Processo:</span>
-                            <span className="font-medium">{audiencia.numero_processo}</span>
-                          </div>
+                              {/* Processo */}
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">Processo:</span>
+                                <span className="font-medium">{audiencia.numero_processo}</span>
+                              </div>
 
-                          {/* Data e Horário */}
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">Data:</span>
-                              <span className="font-medium">{date}</span>
+                              {/* Data e Horário */}
+                              <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">Data:</span>
+                                  <span className="font-medium">{date}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">Horário:</span>
+                                  <span className="font-medium">{time}</span>
+                                </div>
+                              </div>
+
+                              {/* Vara */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground">Vara:</span>
+                                <span className="font-medium">{audiencia.vara}</span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">Horário:</span>
-                              <span className="font-medium">{time}</span>
+
+                            {/* Status */}
+                            <div className="flex flex-col items-end gap-2">
+                              <Badge 
+                                variant={audiencia.status === 'assinado' ? 'default' : 'secondary'}
+                                className={audiencia.status === 'assinado' ? 'bg-green-500 text-white' : 'bg-orange-500 text-white'}
+                              >
+                                {audiencia.status === 'assinado' ? 'Assinado' : 'Pendente'}
+                              </Badge>
                             </div>
                           </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
 
-                          {/* Vara */}
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">Vara:</span>
-                            <span className="font-medium">{audiencia.vara}</span>
-                          </div>
-                        </div>
-
-                        {/* Status */}
-                        <div className="flex flex-col items-end gap-2">
-                          <Badge 
-                            variant={audiencia.status === 'assinado' ? 'default' : 'secondary'}
-                            className={audiencia.status === 'assinado' ? 'bg-green-500 text-white' : 'bg-orange-500 text-white'}
-                          >
-                            {audiencia.status === 'assinado' ? 'Assinado' : 'Pendente'}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-
-              {/* Botão para gerar WhatsApp */}
-              <div className="flex justify-center mt-6">
-                <Button 
-                  onClick={generateWhatsAppText}
-                  className="bg-green-500 hover:bg-green-600 text-white gap-2"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  Gerar texto para WhatsApp (todas as audiências)
-                </Button>
-              </div>
+                  {/* Botão para gerar WhatsApp */}
+                  <div className="flex justify-center mt-6">
+                    <Button 
+                      onClick={generateWhatsAppText}
+                      className="bg-green-500 hover:bg-green-600 text-white gap-2"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Gerar texto para WhatsApp (todas as audiências)
+                    </Button>
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
