@@ -142,7 +142,14 @@ export function AdminAudienciasDashboard() {
             audienciasHoje.map((audiencia) => {
               const { date, time } = formatDateTime(audiencia.data_audiencia, audiencia.horario_audiencia);
               return (
-                <div key={audiencia.id} className="p-3 border-2 border-red-500 bg-red-50 rounded-lg space-y-2 pulse">
+                <div 
+                  key={audiencia.id} 
+                  className="p-3 border-2 border-red-500 bg-red-50 rounded-lg space-y-2 pulse cursor-pointer hover:bg-red-100 transition-colors"
+                  onClick={() => {
+                    setSelectedAudiencia(audiencia);
+                    setShowModal(true);
+                  }}
+                >
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
