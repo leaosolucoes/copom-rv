@@ -109,10 +109,52 @@ export const ChecklistViatura = () => {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    const camposFaltando: string[] = [];
+
+    // Validar campos básicos
     if (!selectedViatura) {
+      camposFaltando.push("Viatura");
+    }
+
+    if (!formData.nome_guerra.trim()) {
+      camposFaltando.push("Nome de Guerra");
+    }
+
+    if (!formData.km_inicial || formData.km_inicial <= 0) {
+      camposFaltando.push("KM Inicial");
+    }
+
+    if (!formData.combustivel_nivel) {
+      camposFaltando.push("Nível de Combustível");
+    }
+
+    if (!formData.oleo_nivel) {
+      camposFaltando.push("Nível de Óleo");
+    }
+
+    // Validar pneus
+    const pneusVazios = Object.entries(pneus)
+      .filter(([_, valor]) => !valor)
+      .map(([posicao, _]) => posicao.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()));
+
+    if (pneusVazios.length > 0) {
+      camposFaltando.push(`Pneus: ${pneusVazios.join(', ')}`);
+    }
+
+    // Validar equipamentos
+    const equipamentosNaoAvaliados = equipamentos
+      .filter(eq => !eq.status)
+      .map(eq => eq.nome);
+
+    if (equipamentosNaoAvaliados.length > 0) {
+      camposFaltando.push(`Equipamentos: ${equipamentosNaoAvaliados.join(', ')}`);
+    }
+
+    // Se há campos faltando, mostrar erro
+    if (camposFaltando.length > 0) {
       toast({
-        title: "Atenção",
-        description: "Selecione uma viatura",
+        title: "Campos obrigatórios não preenchidos",
+        description: `Por favor, preencha: ${camposFaltando.join('; ')}`,
         variant: "destructive"
       });
       return;
@@ -127,18 +169,7 @@ export const ChecklistViatura = () => {
       return;
     }
 
-    // Validar se todos os pneus foram avaliados
-    const pneusValues = Object.values(pneus);
-    if (pneusValues.some(value => !value)) {
-      toast({
-        title: "Atenção",
-        description: "Avalie todos os pneus",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Abrir modal de finalização
+    // Se tudo estiver preenchido, abrir modal de finalização
     setShowFinalizarModal(true);
   };
 
