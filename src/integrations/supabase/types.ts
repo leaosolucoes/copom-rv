@@ -407,6 +407,42 @@ export type Database = {
           },
         ]
       }
+      checklist_config_items: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          obrigatorio: boolean
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          obrigatorio?: boolean
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          obrigatorio?: boolean
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       checklist_equipamentos: {
         Row: {
           checklist_id: string

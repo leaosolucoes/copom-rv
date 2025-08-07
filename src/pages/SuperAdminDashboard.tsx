@@ -23,6 +23,7 @@ import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
 import { ViaturasManagement } from '@/components/admin/ViaturasManagement';
+import { ChecklistConfigManagement } from '@/components/admin/ChecklistConfigManagement';
 import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Clock, Scale, Car } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -338,6 +339,8 @@ const SuperAdminDashboard = () => {
                 <ViaturasManagement />
               </CardContent>
             </Card>
+            
+            <ChecklistConfigManagement />
           </TabsContent>
 
           <TabsContent value="attendance-time" className="space-y-6">
