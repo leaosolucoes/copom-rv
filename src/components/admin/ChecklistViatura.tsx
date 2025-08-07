@@ -59,11 +59,11 @@ export const ChecklistViatura = () => {
   });
   
   const [pneus, setPneus] = useState({
-    dianteiro_direito: '',
-    dianteiro_esquerdo: '',
-    traseiro_direito: '',
-    traseiro_esquerdo: '',
-    estepe: ''
+    dianteiro_direito: 'otimo',
+    dianteiro_esquerdo: 'otimo',
+    traseiro_direito: 'otimo',
+    traseiro_esquerdo: 'otimo',
+    estepe: 'otimo'
   });
   
   const [equipamentos, setEquipamentos] = useState<EquipamentoChecklist[]>(
@@ -194,11 +194,11 @@ export const ChecklistViatura = () => {
         observacoes_alteracoes: ''
       });
       setPneus({
-        dianteiro_direito: '',
-        dianteiro_esquerdo: '',
-        traseiro_direito: '',
-        traseiro_esquerdo: '',
-        estepe: ''
+        dianteiro_direito: 'otimo',
+        dianteiro_esquerdo: 'otimo',
+        traseiro_direito: 'otimo',
+        traseiro_esquerdo: 'otimo',
+        estepe: 'otimo'
       });
       setEquipamentos(equipamentosDefault.map(nome => ({ nome, status: 'ok' as const })));
       setSelectedViatura('');
