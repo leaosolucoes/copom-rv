@@ -179,13 +179,17 @@ export const ChecklistViatura = () => {
     
     try {
       // Criar checklist principal
+      const checklistPayload = {
+        viatura_id: selectedViatura,
+        fiscal_id: profile.id,
+        ...formData,
+        data_proxima_troca_oleo: formData.data_proxima_troca_oleo || null,
+        km_proxima_troca_oleo: formData.km_proxima_troca_oleo || null
+      };
+
       const { data: checklistData, error: checklistError } = await supabase
         .from('checklist_viaturas')
-        .insert([{
-          viatura_id: selectedViatura,
-          fiscal_id: profile.id,
-          ...formData
-        }])
+        .insert([checklistPayload])
         .select()
         .single();
 
