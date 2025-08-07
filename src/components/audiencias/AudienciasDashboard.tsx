@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAudiencias } from '@/hooks/useAudiencias';
 import { CriarOficioAudiencia } from './CriarOficioAudiencia';
 import { ListaAudiencias } from './ListaAudiencias';
+import { DetalhesAudienciaModal } from './DetalhesAudienciaModal';
 import { 
   FileText, 
   Plus, 
@@ -18,6 +19,8 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 export const AudienciasDashboard = () => {
   const { profile } = useSupabaseAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedAudiencia, setSelectedAudiencia] = useState<any>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   
   const { 
     audiencias, 
@@ -180,7 +183,14 @@ export const AudienciasDashboard = () => {
               ) : (
                 <div className="space-y-4">
                   {audienciasPendentes.map((audiencia) => (
-                    <div key={audiencia.id} className="border rounded-lg p-4 border-warning/20">
+                    <div 
+                      key={audiencia.id} 
+                      className="border rounded-lg p-4 border-warning/20 cursor-pointer hover:bg-warning/5 transition-colors"
+                      onClick={() => {
+                        setSelectedAudiencia(audiencia);
+                        setIsDetailsModalOpen(true);
+                      }}
+                    >
                       <div className="flex justify-between items-start">
                         <div>
                           <h3 className="font-medium">{audiencia.numero_processo}</h3>
@@ -246,6 +256,13 @@ export const AudienciasDashboard = () => {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         currentUserId={profile?.id || ''}
+      />
+
+      {/* Modal de detalhes da audiência */}
+      <DetalhesAudienciaModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        audiencia={selectedAudiencia}
       />
     </div>
   );
