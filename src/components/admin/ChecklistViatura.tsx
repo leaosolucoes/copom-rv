@@ -26,25 +26,21 @@ interface EquipamentoChecklist {
   status: 'ok' | 'defeituoso' | 'nao_tem';
 }
 
-const equipamentosDefault = [
-  'Extintor',
-  'Triângulo',
-  'Macaco',
-  'Chave de roda',
-  'Documentos',
-  'Kit primeiros socorros',
-  'Rádio comunicador',
-  'Sirene',
-  'Giroflex',
-  'GPS',
-  'Combustível reserva',
-  'Ferramentas básicas'
-];
+interface ChecklistConfigItem {
+  id: string;
+  nome: string;
+  categoria: string;
+  descricao?: string;
+  obrigatorio: boolean;
+  ativo: boolean;
+  ordem: number;
+}
 
 export const ChecklistViatura = () => {
   const { profile } = useSupabaseAuth();
   const [viaturas, setViaturas] = useState<Viatura[]>([]);
   const [selectedViatura, setSelectedViatura] = useState<string>('');
+  const [checklistConfig, setChecklistConfig] = useState<ChecklistConfigItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [showFinalizarModal, setShowFinalizarModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -68,14 +64,14 @@ export const ChecklistViatura = () => {
     estepe: 'otimo'
   });
   
-  const [equipamentos, setEquipamentos] = useState<EquipamentoChecklist[]>(
-    equipamentosDefault.map(nome => ({ nome, status: 'ok' as const }))
-  );
+  const [equipamentos, setEquipamentos] = useState<EquipamentoChecklist[]>([]);
+  const [outrosItens, setOutrosItens] = useState<EquipamentoChecklist[]>([]);
   
   const { toast } = useToast();
 
   useEffect(() => {
     fetchViaturas();
+    fetchChecklistConfig();
     
     // Preencher nome do fiscal automaticamente
     if (profile?.full_name) {
@@ -101,6 +97,41 @@ export const ChecklistViatura = () => {
       toast({
         title: "Erro",
         description: "Erro ao carregar viaturas",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchChecklistConfig = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('checklist_config_items')
+        .select('*')
+        .eq('ativo', true)
+        .order('ordem');
+
+      if (error) throw error;
+      
+      const configItems = data || [];
+      setChecklistConfig(configItems);
+      
+      // Configurar equipamentos baseado na configuração
+      const equipamentosConfig = configItems
+        .filter(item => item.categoria === 'equipamento')
+        .map(item => ({ nome: item.nome, status: 'ok' as const }));
+      
+      // Configurar outros itens (verificações gerais)
+      const outrosItensConfig = configItems
+        .filter(item => item.categoria !== 'equipamento')
+        .map(item => ({ nome: item.nome, status: 'ok' as const }));
+      
+      setEquipamentos(equipamentosConfig);
+      setOutrosItens(outrosItensConfig);
+    } catch (error) {
+      console.error('Erro ao carregar configuração do checklist:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar configuração do checklist",
         variant: "destructive"
       });
     }
@@ -141,13 +172,21 @@ export const ChecklistViatura = () => {
       camposFaltando.push(`Pneus: ${pneusVazios.join(', ')}`);
     }
 
-    // Validar equipamentos
+    // Validar equipamentos e outros itens
     const equipamentosNaoAvaliados = equipamentos
       .filter(eq => !eq.status)
       .map(eq => eq.nome);
 
+    const outrosItensNaoAvaliados = outrosItens
+      .filter(item => !item.status)
+      .map(item => item.nome);
+
     if (equipamentosNaoAvaliados.length > 0) {
       camposFaltando.push(`Equipamentos: ${equipamentosNaoAvaliados.join(', ')}`);
+    }
+
+    if (outrosItensNaoAvaliados.length > 0) {
+      camposFaltando.push(`Verificações: ${outrosItensNaoAvaliados.join(', ')}`);
     }
 
     // Se há campos faltando, mostrar erro
@@ -206,18 +245,20 @@ export const ChecklistViatura = () => {
 
       if (pneusError) throw pneusError;
 
-      // Inserir dados dos equipamentos
-      const equipamentosData = equipamentos.map(eq => ({
+      // Inserir dados dos equipamentos e outros itens
+      const todosItensData = [...equipamentos, ...outrosItens].map(item => ({
         checklist_id: checklistData.id,
-        equipamento_nome: eq.nome,
-        status: eq.status
+        equipamento_nome: item.nome,
+        status: item.status
       }));
 
-      const { error: equipamentosError } = await supabase
-        .from('checklist_equipamentos')
-        .insert(equipamentosData);
+      if (todosItensData.length > 0) {
+        const { error: equipamentosError } = await supabase
+          .from('checklist_equipamentos')
+          .insert(todosItensData);
 
-      if (equipamentosError) throw equipamentosError;
+        if (equipamentosError) throw equipamentosError;
+      }
 
       toast({
         title: "Sucesso",
@@ -244,7 +285,17 @@ export const ChecklistViatura = () => {
         traseiro_esquerdo: 'otimo',
         estepe: 'otimo'
       });
-      setEquipamentos(equipamentosDefault.map(nome => ({ nome, status: 'ok' as const })));
+      // Resetar equipamentos e outros itens baseado na configuração
+      const equipamentosConfig = checklistConfig
+        .filter(item => item.categoria === 'equipamento')
+        .map(item => ({ nome: item.nome, status: 'ok' as const }));
+      
+      const outrosItensConfig = checklistConfig
+        .filter(item => item.categoria !== 'equipamento')
+        .map(item => ({ nome: item.nome, status: 'ok' as const }));
+      
+      setEquipamentos(equipamentosConfig);
+      setOutrosItens(outrosItensConfig);
       setSelectedViatura('');
 
     } catch (error: any) {
@@ -524,6 +575,47 @@ export const ChecklistViatura = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Outros Itens de Verificação */}
+        {outrosItens.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                Verificações Adicionais
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {outrosItens.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      {renderStatusIcon(item.status)}
+                      <span className="font-medium">{item.nome}</span>
+                    </div>
+                    <Select 
+                      value={item.status} 
+                      onValueChange={(value: 'ok' | 'defeituoso' | 'nao_tem') => {
+                        const newOutrosItens = [...outrosItens];
+                        newOutrosItens[index].status = value;
+                        setOutrosItens(newOutrosItens);
+                      }}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ok">OK</SelectItem>
+                        <SelectItem value="defeituoso">Defeituoso</SelectItem>
+                        <SelectItem value="nao_tem">Não tem</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Limpeza e Observações */}
         <Card>
