@@ -57,10 +57,18 @@ export const useUploadOficio = () => {
       };
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error('Erro detalhado no upload:', error);
+      let errorMessage = 'Erro desconhecido';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        errorMessage = JSON.stringify(error);
+      }
+      
       toast({
-        title: 'Erro',
-        description: `Erro ao enviar arquivo: ${errorMessage}`,
+        title: 'Erro ao enviar arquivo',
+        description: errorMessage,
         variant: 'destructive',
       });
       throw error;
