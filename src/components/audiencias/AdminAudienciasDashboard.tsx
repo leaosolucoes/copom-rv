@@ -34,7 +34,7 @@ export function AdminAudienciasDashboard() {
 
   useEffect(() => {
     fetchTodasAudiencias();
-  }, []);
+  }, [profile?.id]);
 
   const fetchTodasAudiencias = async () => {
     if (!profile?.id) return;
