@@ -4,7 +4,7 @@ import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { CNPJLookup } from "@/components/cnpj/CNPJLookup";
-import { CPFLookup } from "@/components/cpf/CPFLookup";
+
 import { CEPLookup } from "@/components/cep/CEPLookup";
 import { FiscalAudienciasDashboard } from "@/components/audiencias/FiscalAudienciasDashboard";
 import { ChecklistViaturaCard } from "@/components/fiscal/ChecklistViaturaCard";
@@ -93,8 +93,7 @@ export default function FiscalDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CPFLookup />
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
             <CEPLookup />
           </div>
         </div>
