@@ -6,6 +6,8 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useToast } from "@/hooks/use-toast";
+import { MediaModal } from "@/components/ui/media-modal";
+import { useState } from "react";
 
 interface Imprevisto {
   id: string;
@@ -36,6 +38,8 @@ export const DetalhesImprevisto = ({
 }: DetalhesImprevistosProps) => {
   const { profile } = useSupabaseAuth();
   const { toast } = useToast();
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   if (!imprevisto) return null;
 
@@ -151,7 +155,10 @@ export const DetalhesImprevisto = ({
                       src={foto}
                       alt={`Foto ${index + 1} do imprevisto`}
                       className="w-full h-32 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => window.open(foto, '_blank')}
+                      onClick={() => {
+                        setSelectedImageIndex(index);
+                        setShowImageModal(true);
+                      }}
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-md transition-all duration-200 flex items-center justify-center">
                       <span className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">
@@ -201,6 +208,17 @@ export const DetalhesImprevisto = ({
           </div>
         </div>
       </DialogContent>
+
+      {/* Modal para ampliar imagens */}
+      {imprevisto.fotos && imprevisto.fotos.length > 0 && (
+        <MediaModal
+          isOpen={showImageModal}
+          onClose={() => setShowImageModal(false)}
+          media={imprevisto.fotos}
+          initialIndex={selectedImageIndex}
+          type="photo"
+        />
+      )}
     </Dialog>
   );
 };
