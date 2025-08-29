@@ -24,7 +24,8 @@ import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
 import { ViaturasManagement } from '@/components/admin/ViaturasManagement';
 import { ChecklistConfigManagement } from '@/components/admin/ChecklistConfigManagement';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Clock, Scale, Car } from 'lucide-react';
+import { EscalasManagement } from '@/components/admin/EscalasManagement';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Clock, Scale, Car, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -173,6 +174,11 @@ const SuperAdminDashboard = () => {
                 <Clock className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Tempos Atend.</span>
                 <span className="sm:hidden">Tempos</span>
+              </TabsTrigger>
+              <TabsTrigger value="escalas" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Calendar className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Escalas</span>
+                <span className="sm:hidden">Escala</span>
               </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Settings className="h-3 w-3 md:h-4 md:w-4" />
@@ -355,6 +361,10 @@ const SuperAdminDashboard = () => {
                 <AttendanceTimeDashboard />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="escalas" className="space-y-6">
+            <EscalasManagement />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">

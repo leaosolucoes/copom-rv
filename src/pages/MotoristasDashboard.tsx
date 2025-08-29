@@ -4,6 +4,8 @@ import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { ChecklistViaturaCard } from "@/components/fiscal/ChecklistViaturaCard";
+import { EscalaAtivaCard } from "@/components/motorista/EscalaAtivaCard";
+import { useEscalas } from "@/hooks/useEscalas";
 import { LogOut, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -11,6 +13,7 @@ export default function MotoristasDashboard() {
   const { profile, signOut, isLoading } = useSupabaseAuth();
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
+  const { escalaAtiva, loading: escalasLoading, refetch: refetchEscalas } = useEscalas();
 
   useEffect(() => {
     if (!isLoading && !profile) {
@@ -80,8 +83,17 @@ export default function MotoristasDashboard() {
             </p>
           </div>
 
-          <div className="max-w-2xl mx-auto">
-            <ChecklistViaturaCard />
+          <div className="max-w-4xl mx-auto">
+            <div className="grid gap-6 md:grid-cols-2">
+              <ChecklistViaturaCard />
+              
+              {!escalasLoading && escalaAtiva && (
+                <EscalaAtivaCard 
+                  escala={escalaAtiva} 
+                  onEscalaUpdated={refetchEscalas}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
