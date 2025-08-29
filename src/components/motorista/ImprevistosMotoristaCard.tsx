@@ -5,22 +5,29 @@ import { AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { format } from "date-fns";
+import { DetalhesImprevisto } from "@/components/admin/DetalhesImprevisto";
 
 interface Imprevisto {
   id: string;
   escala_id: string;
+  motorista_id: string;
   descricao_imprevisto: string;
+  fotos: string[] | null;
   created_at: string;
   admin_ciente: boolean;
+  admin_ciente_por: string | null;
   admin_ciente_em: string | null;
   escalas_viaturas: {
     viaturas: { prefixo: string } | null;
+    users: { full_name: string } | null;
   } | null;
 }
 
 export const ImprevistosMotoristaCard = () => {
   const [imprevistos, setImprevistos] = useState<Imprevisto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedImprevisto, setSelectedImprevisto] = useState<Imprevisto | null>(null);
+  const [showDetalhesModal, setShowDetalhesModal] = useState(false);
   const { profile } = useSupabaseAuth();
 
   useEffect(() => {
@@ -38,9 +45,12 @@ export const ImprevistosMotoristaCard = () => {
         .select(`
           id,
           escala_id,
+          motorista_id,
           descricao_imprevisto,
+          fotos,
           created_at,
           admin_ciente,
+          admin_ciente_por,
           admin_ciente_em
         `)
         .eq('motorista_id', profile.id)
@@ -49,26 +59,26 @@ export const ImprevistosMotoristaCard = () => {
 
       if (error) throw error;
 
-      // Buscar informações da viatura para cada imprevisto
+      // Buscar informações da viatura e motorista para cada imprevisto
       const imprevistosWithDetails = await Promise.all(
         (data || []).map(async (imprevisto) => {
           const escalaResult = await supabase
             .from('escalas_viaturas')
-            .select('viatura_id')
+            .select('viatura_id, motorista_id')
             .eq('id', imprevisto.escala_id)
             .single();
 
           if (escalaResult.data) {
-            const viaturaResult = await supabase
-              .from('viaturas')
-              .select('prefixo')
-              .eq('id', escalaResult.data.viatura_id)
-              .single();
+            const [viaturaResult, motoristaResult] = await Promise.all([
+              supabase.from('viaturas').select('prefixo').eq('id', escalaResult.data.viatura_id).single(),
+              supabase.from('users').select('full_name').eq('id', escalaResult.data.motorista_id).single()
+            ]);
 
             return {
               ...imprevisto,
               escalas_viaturas: {
-                viaturas: viaturaResult.data
+                viaturas: viaturaResult.data,
+                users: motoristaResult.data
               }
             };
           }
@@ -86,6 +96,11 @@ export const ImprevistosMotoristaCard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewImprevisto = (imprevisto: Imprevisto) => {
+    setSelectedImprevisto(imprevisto);
+    setShowDetalhesModal(true);
   };
 
   const imprevistosNaoCientes = imprevistos.filter(i => !i.admin_ciente).length;
@@ -135,7 +150,8 @@ export const ImprevistosMotoristaCard = () => {
             {imprevistos.map((imprevisto) => (
               <div 
                 key={imprevisto.id} 
-                className="border rounded-lg p-3 space-y-2"
+                className="border rounded-lg p-3 space-y-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleViewImprevisto(imprevisto)}
               >
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-medium">
@@ -173,6 +189,12 @@ export const ImprevistosMotoristaCard = () => {
           </div>
         )}
       </CardContent>
+      
+      <DetalhesImprevisto
+        open={showDetalhesModal}
+        onOpenChange={setShowDetalhesModal}
+        imprevisto={selectedImprevisto}
+      />
     </Card>
   );
 };
