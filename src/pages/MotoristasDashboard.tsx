@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { ChecklistViaturaCard } from "@/components/fiscal/ChecklistViaturaCard";
 import { EscalaAtivaCard } from "@/components/motorista/EscalaAtivaCard";
+import { ImprevistosMotoristaCard } from "@/components/motorista/ImprevistosMotoristaCard";
 import { useEscalas } from "@/hooks/useEscalas";
 import { LogOut, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,8 +84,8 @@ export default function MotoristasDashboard() {
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto">
-            <div className="grid gap-6 md:grid-cols-2">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid gap-6 lg:grid-cols-3 md:grid-cols-2">
               <ChecklistViaturaCard />
               
               {!escalasLoading && escalaAtiva && (
@@ -93,6 +94,8 @@ export default function MotoristasDashboard() {
                   onEscalaUpdated={refetchEscalas}
                 />
               )}
+              
+              <ImprevistosMotoristaCard />
             </div>
           </div>
         </div>
