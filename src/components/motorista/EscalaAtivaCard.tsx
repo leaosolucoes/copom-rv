@@ -84,18 +84,18 @@ export const EscalaAtivaCard = ({ escala, onEscalaUpdated }: EscalaAtivaCardProp
             )}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-3 pt-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowEncerrarModal(true)}
-              className="flex-1"
+              className="flex-1 justify-center"
             >
               <StopCircle className="h-4 w-4 mr-2" />
               Encerrar Escala
             </Button>
             <Button
-              className="bg-warning text-warning-foreground hover:bg-warning/90 flex-1"
+              className="bg-warning text-warning-foreground hover:bg-warning/90 flex-1 justify-center"
               size="sm"
               onClick={() => setShowImprevistosModal(true)}
             >
