@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -969,30 +969,30 @@ export type Database = {
       authenticate_user: {
         Args: { p_email: string; p_password: string }
         Returns: {
-          user_id: string
           email: string
           full_name: string
-          role: string
           is_active: boolean
           password_valid: boolean
+          role: string
+          user_id: string
         }[]
       }
       check_rate_limit: {
-        Args: { p_token_id: string; p_endpoint: string; p_limit: number }
+        Args: { p_endpoint: string; p_limit: number; p_token_id: string }
         Returns: boolean
       }
       check_user_permission: {
-        Args: { user_uuid: string; required_role: string }
+        Args: { required_role: string; user_uuid: string }
         Returns: boolean
       }
       create_user_secure: {
         Args: {
           p_email: string
           p_full_name: string
-          p_password: string
-          p_role?: string
           p_is_active?: boolean
+          p_password: string
           p_requester_id?: string
+          p_role?: string
         }
         Returns: Json
       }
@@ -1014,16 +1014,16 @@ export type Database = {
       }
       insert_api_log: {
         Args: {
-          p_token_id: string
           p_endpoint: string
-          p_method: string
-          p_status_code: number
+          p_error_message?: string
           p_execution_time_ms: number
           p_ip_address: string
-          p_user_agent: string
+          p_method: string
           p_request_body?: Json
           p_response_body?: Json
-          p_error_message?: string
+          p_status_code: number
+          p_token_id: string
+          p_user_agent: string
         }
         Returns: string
       }
@@ -1073,45 +1073,45 @@ export type Database = {
       }
       log_rls_issue: {
         Args: {
-          table_name: string
-          operation: string
           error_message: string
+          operation: string
+          table_name: string
           user_context?: Json
         }
         Returns: undefined
       }
       update_user_secure: {
         Args: {
-          p_user_id: string
           p_email: string
           p_full_name: string
-          p_password?: string
-          p_role?: string
           p_is_active?: boolean
+          p_password?: string
           p_requester_id?: string
+          p_role?: string
+          p_user_id: string
         }
         Returns: Json
       }
       user_has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
       validate_api_token: {
         Args: { token_string: string }
         Returns: {
-          token_id: string
-          user_id: string
-          token_type: string
-          scopes: string[]
           is_valid: boolean
           rate_limit_per_hour: number
+          scopes: string[]
+          token_id: string
+          token_type: string
+          user_id: string
         }[]
       }
       verify_password: {
-        Args: { password: string; hash: string }
+        Args: { hash: string; password: string }
         Returns: boolean
       }
     }
@@ -1125,7 +1125,7 @@ export type Database = {
         | "verificado"
         | "fiscal_solicitado"
       consultation_type: "CPF" | "CNPJ" | "CEP"
-      user_role: "super_admin" | "admin" | "atendente" | "fiscal"
+      user_role: "super_admin" | "admin" | "atendente" | "fiscal" | "motorista"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1263,7 +1263,7 @@ export const Constants = {
         "fiscal_solicitado",
       ],
       consultation_type: ["CPF", "CNPJ", "CEP"],
-      user_role: ["super_admin", "admin", "atendente", "fiscal"],
+      user_role: ["super_admin", "admin", "atendente", "fiscal", "motorista"],
     },
   },
 } as const

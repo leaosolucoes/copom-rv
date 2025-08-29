@@ -35,7 +35,8 @@ const Login = () => {
           'super_admin': '/super-admin',
           'admin': '/admin', 
           'atendente': '/atendente',
-          'fiscal': '/fiscal'
+          'fiscal': '/fiscal',
+          'motorista': '/motoristas'
         };
         
         const targetRoute = routes[profile.role as keyof typeof routes] || '/';
@@ -121,7 +122,8 @@ const Login = () => {
             'super_admin': '/super-admin',
             'admin': '/admin', 
             'atendente': '/atendente',
-            'fiscal': '/fiscal'
+            'fiscal': '/fiscal',
+            'motorista': '/motoristas'
           };
           
           const targetRoute = routes[profileData.role as keyof typeof routes] || '/';
@@ -154,7 +156,8 @@ const Login = () => {
             'super_admin': '/super-admin',
             'admin': '/admin', 
             'atendente': '/atendente',
-            'fiscal': '/fiscal'
+            'fiscal': '/fiscal',
+            'motorista': '/motoristas'
           };
           
           const targetRoute = routes[profileData.role as keyof typeof routes] || '/';

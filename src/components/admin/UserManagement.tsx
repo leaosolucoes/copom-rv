@@ -17,7 +17,7 @@ interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'super_admin' | 'admin' | 'atendente' | 'fiscal';
+  role: 'super_admin' | 'admin' | 'atendente' | 'fiscal' | 'motorista';
   is_active: boolean;
   created_at: string;
   last_login: string | null;
@@ -36,7 +36,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
     email: '',
     full_name: '',
     password: '',
-    role: 'atendente' as 'admin' | 'atendente' | 'fiscal',
+    role: 'atendente' as 'admin' | 'atendente' | 'fiscal' | 'motorista',
     is_active: true
   });
   const { toast } = useToast();
@@ -71,7 +71,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
       // Filter users based on role permissions
       const filteredUsers = userRole === 'admin' 
         ? allUsers.filter((user: any) => 
-            (user.role === 'atendente' || user.role === 'fiscal') &&
+            (user.role === 'atendente' || user.role === 'fiscal' || user.role === 'motorista') &&
             user.email !== 'fiscal@conectarioverde.com.br' &&
             user.email !== 'atendente@conectarioverde.com.br'
           )
@@ -168,13 +168,13 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
-    setFormData({
-      email: user.email,
-      full_name: user.full_name,
-      password: '',
-      role: user.role as 'admin' | 'atendente' | 'fiscal',
-      is_active: user.is_active
-    });
+      setFormData({
+        email: user.email,
+        full_name: user.full_name,
+        password: '',
+        role: user.role as 'admin' | 'atendente' | 'fiscal' | 'motorista',
+        is_active: user.is_active
+      });
     setDialogOpen(true);
   };
 
@@ -221,14 +221,16 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
       super_admin: 'bg-red-500',
       admin: 'bg-blue-500',
       atendente: 'bg-green-500',
-      fiscal: 'bg-orange-500'
+      fiscal: 'bg-orange-500',
+      motorista: 'bg-purple-500'
     };
     
     const labels = {
       super_admin: 'Super Admin',
       admin: 'Admin',
       atendente: 'Atendente',
-      fiscal: 'Fiscal'
+      fiscal: 'Fiscal',
+      motorista: 'Motorista'
     };
 
     return (
@@ -246,7 +248,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold">
-          {userRole === 'admin' ? 'Atendentes e Fiscais' : 'Todos os Usuários'}
+          {userRole === 'admin' ? 'Atendentes, Fiscais e Motoristas' : 'Todos os Usuários'}
         </h2>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -307,7 +309,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                   <Label htmlFor="role">Perfil</Label>
                   <Select 
                     value={formData.role} 
-                    onValueChange={(value: 'admin' | 'atendente' | 'fiscal') => 
+                    onValueChange={(value: 'admin' | 'atendente' | 'fiscal' | 'motorista') => 
                       setFormData(prev => ({ ...prev, role: value }))
                     }
                   >
@@ -318,6 +320,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                       {userRole === 'super_admin' && <SelectItem value="admin">Admin</SelectItem>}
                       <SelectItem value="atendente">Atendente</SelectItem>
                       <SelectItem value="fiscal">Fiscal</SelectItem>
+                      <SelectItem value="motorista">Motorista</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -363,7 +366,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     Nenhum usuário encontrado. 
-                    {userRole === 'admin' ? ' Crie o primeiro atendente ou fiscal clicando em "Novo Usuário".' : ' Todos os usuários do sistema aparecerão aqui.'}
+                    {userRole === 'admin' ? ' Crie o primeiro atendente, fiscal ou motorista clicando em "Novo Usuário".' : ' Todos os usuários do sistema aparecerão aqui.'}
                   </TableCell>
                 </TableRow>
               ) : (
