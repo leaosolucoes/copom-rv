@@ -61,6 +61,19 @@ export const ImprevistosModal = ({
 
     setLoading(true);
     try {
+      // Verificar se o usuário está autenticado
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        toast({
+          title: "Erro",
+          description: "Usuário não autenticado",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       let fotoUrls: string[] = [];
 
       // Upload das fotos se houver
@@ -86,7 +99,7 @@ export const ImprevistosModal = ({
         .from('escala_imprevistos')
         .insert([{
           escala_id: escalaId,
-          motorista_id: (await supabase.auth.getUser()).data.user?.id,
+          motorista_id: user.id,
           descricao_imprevisto: descricao.trim(),
           fotos: fotoUrls.length > 0 ? fotoUrls : null
         }]);
