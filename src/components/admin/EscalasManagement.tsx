@@ -8,6 +8,7 @@ import { Calendar, Clock, Car, User, Phone, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { DetalhesImprevisto } from "./DetalhesImprevisto";
 
 interface Escala {
   id: string;
@@ -46,6 +47,8 @@ export const EscalasManagement = () => {
   const [imprevistos, setImprevistos] = useState<Imprevisto[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedImprevisto, setSelectedImprevisto] = useState<Imprevisto | null>(null);
+  const [showDetalhesModal, setShowDetalhesModal] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -155,6 +158,11 @@ export const EscalasManagement = () => {
       default:
         return <Badge>{status}</Badge>;
     }
+  };
+
+  const handleViewImprevisto = (imprevisto: Imprevisto) => {
+    setSelectedImprevisto(imprevisto);
+    setShowDetalhesModal(true);
   };
 
   const filteredEscalas = escalas.filter((escala) =>
@@ -320,7 +328,11 @@ export const EscalasManagement = () => {
           <CardContent>
             <div className="space-y-4">
               {imprevistos.map((imprevisto) => (
-                <div key={imprevisto.id} className="border rounded-lg p-4">
+                <div 
+                  key={imprevisto.id} 
+                  className="border rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleViewImprevisto(imprevisto)}
+                >
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="font-medium">
@@ -348,6 +360,12 @@ export const EscalasManagement = () => {
           </CardContent>
         </Card>
       )}
+
+      <DetalhesImprevisto
+        open={showDetalhesModal}
+        onOpenChange={setShowDetalhesModal}
+        imprevisto={selectedImprevisto}
+      />
     </div>
   );
 };
