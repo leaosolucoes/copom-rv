@@ -126,6 +126,28 @@ export const EscalaViaturaModal = ({
     setShowConfirmation(true);
   };
 
+  const formatPhoneNumber = (value: string) => {
+    // Remove tudo que não é dígito
+    const digits = value.replace(/\D/g, '');
+    
+    // Limita a 11 dígitos (2 DDD + 9 número)
+    const limitedDigits = digits.slice(0, 11);
+    
+    // Aplica a máscara (00) 99999-9999
+    if (limitedDigits.length <= 2) {
+      return limitedDigits;
+    } else if (limitedDigits.length <= 7) {
+      return `(${limitedDigits.slice(0, 2)}) ${limitedDigits.slice(2)}`;
+    } else {
+      return `(${limitedDigits.slice(0, 2)}) ${limitedDigits.slice(2, 7)}-${limitedDigits.slice(7)}`;
+    }
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatPhoneNumber(e.target.value);
+    setEscalaData(prev => ({ ...prev, celular_funcional: formattedValue }));
+  };
+
   const confirmarEscala = async () => {
     setLoading(true);
     try {
@@ -321,9 +343,9 @@ export const EscalaViaturaModal = ({
             <Input
               id="celular_funcional"
               type="tel"
-              placeholder="(62) 99999-9999"
+              placeholder="(00) 99999-9999"
               value={escalaData.celular_funcional}
-              onChange={(e) => setEscalaData(prev => ({ ...prev, celular_funcional: e.target.value }))}
+              onChange={handlePhoneChange}
               required
             />
           </div>
