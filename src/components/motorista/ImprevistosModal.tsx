@@ -61,18 +61,24 @@ export const ImprevistosModal = ({
 
     setLoading(true);
     try {
-      // Verificar se o usuário está autenticado
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
+      // Buscar motorista diretamente da escala
+      const { data: escalaData, error: escalaError } = await supabase
+        .from('escalas_viaturas')
+        .select('motorista_id')
+        .eq('id', escalaId)
+        .single();
+
+      if (escalaError || !escalaData?.motorista_id) {
         toast({
           title: "Erro",
-          description: "Usuário não autenticado",
+          description: "Não foi possível identificar o motorista da escala",
           variant: "destructive",
         });
         setLoading(false);
         return;
       }
+
+      const motoristaId = escalaData.motorista_id;
 
       let fotoUrls: string[] = [];
 
@@ -99,7 +105,7 @@ export const ImprevistosModal = ({
         .from('escala_imprevistos')
         .insert([{
           escala_id: escalaId,
-          motorista_id: user.id,
+          motorista_id: motoristaId,
           descricao_imprevisto: descricao.trim(),
           fotos: fotoUrls.length > 0 ? fotoUrls : null
         }]);
