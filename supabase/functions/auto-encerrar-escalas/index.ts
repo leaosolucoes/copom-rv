@@ -66,6 +66,8 @@ interface Database {
 
 serve(async (req) => {
   try {
+    console.log('=== INICIANDO VERIFICAÇÃO DE ESCALAS ===')
+    
     const supabaseClient = createClient<Database>(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -73,34 +75,41 @@ serve(async (req) => {
 
     // Obter data e hora atual no timezone do Brasil
     const agora = new Date()
-    const brasiliaTime = new Intl.DateTimeFormat('sv-SE', {
+    console.log('Data/Hora UTC atual:', agora.toISOString())
+    
+    // Converter para timezone do Brasil usando Intl.DateTimeFormat
+    const brasiliaFormatter = new Intl.DateTimeFormat('sv-SE', {
       timeZone: 'America/Sao_Paulo',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
-    }).format(agora)
-
+      second: '2-digit',
+      hour12: false
+    })
+    
+    const brasiliaTime = brasiliaFormatter.format(agora)
     const [dataBrasilia, horaBrasilia] = brasiliaTime.split(' ')
     const horaAtualMinutos = horaBrasilia.split(':').slice(0, 2).join(':')
 
-    console.log(`Verificando escalas vencidas em: ${dataBrasilia} ${horaAtualMinutos}`)
+    console.log(`Data Brasília: ${dataBrasilia}`)
+    console.log(`Hora Brasília: ${horaAtualMinutos}`)
 
-    // Buscar escalas ativas que já passaram do horário de saída
-    const { data: escalasVencidas, error: fetchError } = await supabaseClient
+    // Buscar escalas ativas
+    const { data: escalasAtivas, error: fetchError } = await supabaseClient
       .from('escalas_viaturas')
       .select('*')
       .eq('status', 'ativa')
-      .lte('data_servico', dataBrasilia)
 
     if (fetchError) {
       console.error('Erro ao buscar escalas:', fetchError)
       throw fetchError
     }
 
-    if (!escalasVencidas || escalasVencidas.length === 0) {
+    console.log(`Escalas ativas encontradas: ${escalasAtivas?.length || 0}`)
+
+    if (!escalasAtivas || escalasAtivas.length === 0) {
       console.log('Nenhuma escala ativa encontrada')
       return new Response(
         JSON.stringify({ 
@@ -116,7 +125,18 @@ serve(async (req) => {
 
     const escalasParaEncerrar = []
 
-    for (const escala of escalasVencidas) {
+    for (const escala of escalasAtivas) {
+      console.log(`Verificando escala ${escala.id}:`)
+      console.log(`  - Data serviço: ${escala.data_servico}`)
+      console.log(`  - Hora saída: ${escala.hora_saida}`)
+      
+      // Verificar se a data de serviço é anterior à data atual
+      if (escala.data_servico < dataBrasilia) {
+        console.log(`  - Data anterior: ${escala.data_servico} < ${dataBrasilia} - ENCERRA`)
+        escalasParaEncerrar.push(escala)
+        continue
+      }
+      
       // Para escalas de hoje, verificar se passou do horário
       if (escala.data_servico === dataBrasilia) {
         const [horasSaida, minutosSaida] = escala.hora_saida.split(':').map(Number)
@@ -125,13 +145,19 @@ serve(async (req) => {
         const minutosSaidaTotal = horasSaida * 60 + minutosSaida
         const minutosAtualTotal = horasAtual * 60 + minutosAtual
         
+        console.log(`  - Comparação de horário:`)
+        console.log(`    Saída programada: ${horasSaida}:${minutosSaida.toString().padStart(2, '0')} (${minutosSaidaTotal} minutos)`)
+        console.log(`    Hora atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')} (${minutosAtualTotal} minutos)`)
+        
         // Se a hora de saída já passou, marcar para encerramento
         if (minutosAtualTotal >= minutosSaidaTotal) {
+          console.log(`  - Passou do horário: ${minutosAtualTotal} >= ${minutosSaidaTotal} - ENCERRA`)
           escalasParaEncerrar.push(escala)
+        } else {
+          console.log(`  - Ainda no horário: ${minutosAtualTotal} < ${minutosSaidaTotal} - MANTÉM`)
         }
       } else {
-        // Para escalas de dias anteriores, encerrar automaticamente
-        escalasParaEncerrar.push(escala)
+        console.log(`  - Data futura: ${escala.data_servico} > ${dataBrasilia} - MANTÉM`)
       }
     }
 
@@ -141,7 +167,9 @@ serve(async (req) => {
         JSON.stringify({ 
           message: 'Nenhuma escala vencida encontrada',
           processedAt: brasiliaTime,
-          totalEscalasAtivas: escalasVencidas.length
+          totalEscalasAtivas: escalasAtivas.length,
+          dataAtual: dataBrasilia,
+          horaAtual: horaAtualMinutos
         }),
         { 
           headers: { 'Content-Type': 'application/json' }, 
@@ -150,7 +178,7 @@ serve(async (req) => {
       )
     }
 
-    console.log(`Encontradas ${escalasParaEncerrar.length} escalas para encerrar`)
+    console.log(`=== ENCERRANDO ${escalasParaEncerrar.length} ESCALAS ===`)
 
     // Encerrar as escalas vencidas
     const idsParaEncerrar = escalasParaEncerrar.map(e => e.id)
@@ -175,13 +203,16 @@ serve(async (req) => {
 
     // Log detalhado das escalas encerradas
     for (const escala of escalasParaEncerrar) {
-      console.log(`Escala encerrada: Viatura ${escala.viatura_id}, Data: ${escala.data_servico}, Saída: ${escala.hora_saida}`)
+      console.log(`Escala encerrada: ID ${escala.id}, Viatura ${escala.viatura_id}, Data: ${escala.data_servico}, Saída: ${escala.hora_saida}`)
     }
 
     return new Response(
       JSON.stringify({ 
+        success: true,
         message: `${escalasEncerradas?.length || 0} escalas encerradas automaticamente`,
         processedAt: brasiliaTime,
+        dataAtual: dataBrasilia,
+        horaAtual: horaAtualMinutos,
         escalasEncerradas: escalasEncerradas?.map(e => ({
           id: e.id,
           viatura_id: e.viatura_id,
@@ -196,9 +227,10 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Erro no processamento:', error)
+    console.error('=== ERRO NO PROCESSAMENTO ===', error)
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: 'Erro interno do servidor',
         details: error.message,
         timestamp: new Date().toISOString()
