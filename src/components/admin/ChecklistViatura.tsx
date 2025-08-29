@@ -12,6 +12,7 @@ import { CheckCircle, AlertTriangle, XCircle, Fuel, Droplets, Car, Settings, Plu
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { EscalaViaturaModal } from '@/components/motorista/EscalaViaturaModal';
 
 interface Viatura {
   id: string;
@@ -43,6 +44,9 @@ export const ChecklistViatura = () => {
   const [checklistConfig, setChecklistConfig] = useState<ChecklistConfigItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [showFinalizarModal, setShowFinalizarModal] = useState(false);
+  const [showEscalaModal, setShowEscalaModal] = useState(false);
+  const [showPerguntaEscala, setShowPerguntaEscala] = useState(false);
+  const [dadosChecklistSalvo, setDadosChecklistSalvo] = useState<any>(null);
   const [formData, setFormData] = useState({
     data_checklist: new Date().toISOString().split('T')[0],
     horario_checklist: new Date().toTimeString().slice(0, 5),
@@ -265,7 +269,30 @@ export const ChecklistViatura = () => {
         description: aprovado ? "Checklist aprovado com sucesso" : "Checklist reprovado com sucesso"
       });
 
-      // Reset form
+      // Verificar se é motorista e perguntar sobre escala
+      if (profile?.role === 'motorista') {
+        // Buscar dados da viatura para mostrar na pergunta
+        const { data: viaturaData } = await supabase
+          .from('viaturas')
+          .select('prefixo, modelo')
+          .eq('id', selectedViatura)
+          .single();
+
+        setDadosChecklistSalvo({
+          checklistId: checklistData.id,
+          viaturaId: selectedViatura,
+          viaturaPrefixo: viaturaData?.prefixo || '',
+          viaturaModelo: viaturaData?.modelo || '',
+          kmInicial: formData.km_inicial,
+          motoristaId: profile.id,
+          motoristaNome: profile.full_name
+        });
+        
+        setShowPerguntaEscala(true);
+        return; // Não resetar form ainda
+      }
+
+      // Reset form apenas se não for motorista
       setFormData({
         data_checklist: new Date().toISOString().split('T')[0],
         horario_checklist: new Date().toTimeString().slice(0, 5),
@@ -308,6 +335,53 @@ export const ChecklistViatura = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      data_checklist: new Date().toISOString().split('T')[0],
+      horario_checklist: new Date().toTimeString().slice(0, 5),
+      nome_guerra: profile?.full_name || '',
+      km_inicial: 0,
+      combustivel_nivel: '',
+      oleo_nivel: '',
+      data_proxima_troca_oleo: '',
+      km_proxima_troca_oleo: 0,
+      limpeza_ok: false,
+      observacoes_alteracoes: ''
+    });
+    setPneus({
+      dianteiro_direito: 'otimo',
+      dianteiro_esquerdo: 'otimo',
+      traseiro_direito: 'otimo',
+      traseiro_esquerdo: 'otimo',
+      estepe: 'otimo'
+    });
+    // Resetar equipamentos e outros itens baseado na configuração
+    const equipamentosConfig = checklistConfig
+      .filter(item => item.categoria === 'equipamento')
+      .map(item => ({ nome: item.nome, status: 'ok' as const }));
+    
+    const outrosItensConfig = checklistConfig
+      .filter(item => item.categoria !== 'equipamento')
+      .map(item => ({ nome: item.nome, status: 'ok' as const }));
+    
+    setEquipamentos(equipamentosConfig);
+    setOutrosItens(outrosItensConfig);
+    setSelectedViatura('');
+  };
+
+  const handleEscalaSuccess = () => {
+    setShowEscalaModal(false);
+    setShowPerguntaEscala(false);
+    setDadosChecklistSalvo(null);
+    resetForm();
+  };
+
+  const handlePularEscala = () => {
+    setShowPerguntaEscala(false);
+    setDadosChecklistSalvo(null);
+    resetForm();
   };
 
   const renderStatusIcon = (status: string) => {
@@ -700,6 +774,59 @@ export const ChecklistViatura = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de pergunta sobre escala */}
+      <Dialog open={showPerguntaEscala} onOpenChange={() => {}}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Escala de Serviço</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Checklist da viatura <strong>{dadosChecklistSalvo?.viaturaPrefixo}</strong> foi salvo com sucesso!
+            </p>
+            
+            <p className="text-sm">
+              Deseja registrar sua escala de serviço nesta viatura agora?
+            </p>
+            
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={handlePularEscala}
+                className="flex-1"
+              >
+                Não, pular
+              </Button>
+              <Button 
+                onClick={() => {
+                  setShowPerguntaEscala(false);
+                  setShowEscalaModal(true);
+                }}
+                className="flex-1"
+              >
+                Sim, registrar escala
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de escala */}
+      {dadosChecklistSalvo && (
+        <EscalaViaturaModal
+          open={showEscalaModal}
+          onOpenChange={setShowEscalaModal}
+          viaturaId={dadosChecklistSalvo.viaturaId}
+          viaturaPrefixo={dadosChecklistSalvo.viaturaPrefixo}
+          viaturaModelo={dadosChecklistSalvo.viaturaModelo}
+          kmInicial={dadosChecklistSalvo.kmInicial}
+          motoristaId={dadosChecklistSalvo.motoristaId}
+          motoristaNome={dadosChecklistSalvo.motoristaNome}
+          onSuccess={handleEscalaSuccess}
+        />
+      )}
     </div>
   );
 };
