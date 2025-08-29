@@ -151,15 +151,17 @@ export const DetalhesImprevisto = ({
               <div className="grid grid-cols-2 gap-3">
                 {imprevisto.fotos.map((foto, index) => (
                   <div key={index} className="relative group">
-                    <img
-                      src={foto}
-                      alt={`Foto ${index + 1} do imprevisto`}
-                      className="w-full h-32 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => {
-                        setSelectedImageIndex(index);
-                        setShowImageModal(true);
-                      }}
-                    />
+                     <img
+                       src={foto}
+                       alt={`Foto ${index + 1} do imprevisto`}
+                       className="w-full h-32 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                       onClick={() => {
+                         console.log('Clicou na imagem:', index, foto);
+                         setSelectedImageIndex(index);
+                         setShowImageModal(true);
+                         console.log('Estado atualizado - showImageModal:', true, 'selectedImageIndex:', index);
+                       }}
+                     />
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-md transition-all duration-200 flex items-center justify-center">
                       <span className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">
                         Clique para ampliar
