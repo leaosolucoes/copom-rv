@@ -790,6 +790,90 @@ export type Database = {
         }
         Relationships: []
       }
+      escala_imprevistos: {
+        Row: {
+          created_at: string
+          descricao_imprevisto: string
+          escala_id: string
+          fotos: string[] | null
+          id: string
+          motorista_id: string
+        }
+        Insert: {
+          created_at?: string
+          descricao_imprevisto: string
+          escala_id: string
+          fotos?: string[] | null
+          id?: string
+          motorista_id: string
+        }
+        Update: {
+          created_at?: string
+          descricao_imprevisto?: string
+          escala_id?: string
+          fotos?: string[] | null
+          id?: string
+          motorista_id?: string
+        }
+        Relationships: []
+      }
+      escalas_viaturas: {
+        Row: {
+          celular_funcional: string | null
+          created_at: string
+          data_servico: string
+          encerrado_em: string | null
+          encerrado_por: string | null
+          fiscal_id: string | null
+          hora_entrada: string
+          hora_saida: string
+          id: string
+          km_final: number | null
+          km_inicial: number
+          motorista_id: string
+          observacoes: string | null
+          status: Database["public"]["Enums"]["escala_status"]
+          updated_at: string
+          viatura_id: string
+        }
+        Insert: {
+          celular_funcional?: string | null
+          created_at?: string
+          data_servico: string
+          encerrado_em?: string | null
+          encerrado_por?: string | null
+          fiscal_id?: string | null
+          hora_entrada: string
+          hora_saida: string
+          id?: string
+          km_final?: number | null
+          km_inicial: number
+          motorista_id: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["escala_status"]
+          updated_at?: string
+          viatura_id: string
+        }
+        Update: {
+          celular_funcional?: string | null
+          created_at?: string
+          data_servico?: string
+          encerrado_em?: string | null
+          encerrado_por?: string | null
+          fiscal_id?: string | null
+          hora_entrada?: string
+          hora_saida?: string
+          id?: string
+          km_final?: number | null
+          km_inicial?: number
+          motorista_id?: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["escala_status"]
+          updated_at?: string
+          viatura_id?: string
+        }
+        Relationships: []
+      }
       rate_limits: {
         Row: {
           attempts: number | null
@@ -1051,6 +1135,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_current_user_motorista: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_current_user_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1125,6 +1213,7 @@ export type Database = {
         | "verificado"
         | "fiscal_solicitado"
       consultation_type: "CPF" | "CNPJ" | "CEP"
+      escala_status: "ativa" | "encerrada" | "cancelada"
       user_role: "super_admin" | "admin" | "atendente" | "fiscal" | "motorista"
     }
     CompositeTypes: {
@@ -1263,6 +1352,7 @@ export const Constants = {
         "fiscal_solicitado",
       ],
       consultation_type: ["CPF", "CNPJ", "CEP"],
+      escala_status: ["ativa", "encerrada", "cancelada"],
       user_role: ["super_admin", "admin", "atendente", "fiscal", "motorista"],
     },
   },
