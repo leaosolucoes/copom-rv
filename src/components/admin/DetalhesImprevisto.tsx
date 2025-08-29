@@ -1,7 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, Car, Camera } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, User, Car, Camera, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface Imprevisto {
   id: string;
@@ -10,6 +14,9 @@ interface Imprevisto {
   descricao_imprevisto: string;
   fotos: string[] | null;
   created_at: string;
+  admin_ciente: boolean;
+  admin_ciente_por: string | null;
+  admin_ciente_em: string | null;
   escalas_viaturas: {
     viaturas: { prefixo: string } | null;
     users: { full_name: string } | null;
@@ -27,7 +34,54 @@ export const DetalhesImprevisto = ({
   onOpenChange,
   imprevisto
 }: DetalhesImprevistosProps) => {
+  const { profile } = useSupabaseAuth();
+  const { toast } = useToast();
+
   if (!imprevisto) return null;
+
+  const isAdminOrSuperAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+
+  const handleMarcarCiente = async () => {
+    if (!profile?.id) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('escala_imprevistos')
+        .update({
+          admin_ciente: true,
+          admin_ciente_por: profile.id,
+          admin_ciente_em: new Date().toISOString()
+        })
+        .eq('id', imprevisto.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Imprevisto marcado como ciente",
+      });
+
+      // Fechar modal após sucesso
+      onOpenChange(false);
+      
+      // Recarregar a página para atualizar os dados
+      window.location.reload();
+    } catch (error) {
+      console.error('Erro ao marcar como ciente:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao marcar imprevisto como ciente",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,12 +164,40 @@ export const DetalhesImprevisto = ({
             </div>
           )}
 
-          {/* Status */}
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Status:</span>
-              <Badge variant="destructive">Imprevisto Relatado</Badge>
+          {/* Status da Ciência do Admin */}
+          <div className="space-y-3 pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Status da Ciência:</span>
+                {imprevisto.admin_ciente ? (
+                  <Badge className="bg-success text-success-foreground">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Admin Ciente
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">
+                    Aguardando Ciência do Admin
+                  </Badge>
+                )}
+              </div>
+              
+              {!imprevisto.admin_ciente && isAdminOrSuperAdmin && (
+                <Button 
+                  onClick={handleMarcarCiente}
+                  size="sm"
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Marcar como Ciente
+                </Button>
+              )}
             </div>
+            
+            {imprevisto.admin_ciente && imprevisto.admin_ciente_em && (
+              <div className="text-sm text-muted-foreground">
+                Marcado como ciente em {format(new Date(imprevisto.admin_ciente_em), 'dd/MM/yyyy HH:mm')}
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>

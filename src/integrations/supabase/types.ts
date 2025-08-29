@@ -792,6 +792,9 @@ export type Database = {
       }
       escala_imprevistos: {
         Row: {
+          admin_ciente: boolean | null
+          admin_ciente_em: string | null
+          admin_ciente_por: string | null
           created_at: string
           descricao_imprevisto: string
           escala_id: string
@@ -800,6 +803,9 @@ export type Database = {
           motorista_id: string
         }
         Insert: {
+          admin_ciente?: boolean | null
+          admin_ciente_em?: string | null
+          admin_ciente_por?: string | null
           created_at?: string
           descricao_imprevisto: string
           escala_id: string
@@ -808,6 +814,9 @@ export type Database = {
           motorista_id: string
         }
         Update: {
+          admin_ciente?: boolean | null
+          admin_ciente_em?: string | null
+          admin_ciente_por?: string | null
           created_at?: string
           descricao_imprevisto?: string
           escala_id?: string
@@ -815,7 +824,15 @@ export type Database = {
           id?: string
           motorista_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "escala_imprevistos_admin_ciente_por_fkey"
+            columns: ["admin_ciente_por"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       escalas_viaturas: {
         Row: {

@@ -36,6 +36,9 @@ interface Imprevisto {
   descricao_imprevisto: string;
   fotos: string[] | null;
   created_at: string;
+  admin_ciente: boolean;
+  admin_ciente_por: string | null;
+  admin_ciente_em: string | null;
   escalas_viaturas: {
     viaturas: { prefixo: string } | null;
     users: { full_name: string } | null;
@@ -98,7 +101,7 @@ export const EscalasManagement = () => {
     try {
       const { data, error } = await supabase
         .from('escala_imprevistos')
-        .select('*')
+        .select('*, admin_ciente, admin_ciente_por, admin_ciente_em')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -333,19 +336,30 @@ export const EscalasManagement = () => {
                   className="border rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => handleViewImprevisto(imprevisto)}
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <div className="font-medium">
-                        Viatura: {imprevisto.escalas_viaturas?.viaturas?.prefixo}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Motorista: {imprevisto.escalas_viaturas?.users?.full_name}
-                      </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {format(new Date(imprevisto.created_at), 'dd/MM/yyyy HH:mm')}
-                    </div>
-                  </div>
+                   <div className="flex items-start justify-between mb-2">
+                     <div className="flex items-center gap-2">
+                       <div>
+                         <div className="font-medium">
+                           Viatura: {imprevisto.escalas_viaturas?.viaturas?.prefixo}
+                         </div>
+                         <div className="text-sm text-muted-foreground">
+                           Motorista: {imprevisto.escalas_viaturas?.users?.full_name}
+                         </div>
+                       </div>
+                       {imprevisto.admin_ciente ? (
+                         <Badge className="bg-success text-success-foreground text-xs">
+                           Admin Ciente
+                         </Badge>
+                       ) : (
+                         <Badge variant="secondary" className="text-xs">
+                           Pendente
+                         </Badge>
+                       )}
+                     </div>
+                     <div className="text-sm text-muted-foreground">
+                       {format(new Date(imprevisto.created_at), 'dd/MM/yyyy HH:mm')}
+                     </div>
+                   </div>
                   <p className="text-sm">{imprevisto.descricao_imprevisto}</p>
                   {imprevisto.fotos && imprevisto.fotos.length > 0 && (
                     <div className="mt-2">
