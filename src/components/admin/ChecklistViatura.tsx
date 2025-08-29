@@ -20,6 +20,7 @@ interface Viatura {
   placa: string;
   modelo: string;
   km_atual: number;
+  em_servico?: boolean;
 }
 
 interface EquipamentoChecklist {
@@ -95,7 +96,23 @@ export const ChecklistViatura = () => {
         .order('prefixo');
 
       if (error) throw error;
-      setViaturas(data || []);
+      
+      // Verificar quais viaturas estão em serviço (escalas ativas)
+      const { data: escalasAtivas, error: escalasError } = await supabase
+        .from('escalas_viaturas')
+        .select('viatura_id')
+        .eq('status', 'ativa');
+
+      if (escalasError) throw escalasError;
+
+      const viaturasEmServico = new Set(escalasAtivas?.map(escala => escala.viatura_id) || []);
+      
+      const viaturasComStatus = (data || []).map(viatura => ({
+        ...viatura,
+        em_servico: viaturasEmServico.has(viatura.id)
+      }));
+
+      setViaturas(viaturasComStatus);
     } catch (error) {
       console.error('Erro ao carregar viaturas:', error);
       toast({
@@ -443,8 +460,22 @@ export const ChecklistViatura = () => {
               </SelectTrigger>
               <SelectContent>
                 {viaturas.map((viatura) => (
-                  <SelectItem key={viatura.id} value={viatura.id}>
-                    {viatura.prefixo} - {viatura.placa} ({viatura.modelo})
+                  <SelectItem 
+                    key={viatura.id} 
+                    value={viatura.id}
+                    disabled={viatura.em_servico}
+                    className={viatura.em_servico ? "text-red-600 bg-red-50" : ""}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className={viatura.em_servico ? "text-red-600" : ""}>
+                        {viatura.prefixo} - {viatura.placa} ({viatura.modelo})
+                      </span>
+                      {viatura.em_servico && (
+                        <Badge className="bg-red-600 text-white ml-2">
+                          EM SERVIÇO
+                        </Badge>
+                      )}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
