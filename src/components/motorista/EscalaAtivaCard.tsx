@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Car, Clock, User, Phone, AlertTriangle, StopCircle } from "lucide-react";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { ImprevistosModal } from "./ImprevistosModal";
 import { EncerrarEscalaModal } from "./EncerrarEscalaModal";
 
@@ -54,7 +54,7 @@ export const EscalaAtivaCard = ({ escala, onEscalaUpdated }: EscalaAtivaCardProp
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>Data: {format(new Date(escala.data_servico), 'dd/MM/yyyy')}</span>
+                  <span>Data: {formatInTimeZone(new Date(escala.data_servico), 'America/Sao_Paulo', 'dd/MM/yyyy')}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Clock className="h-4 w-4 text-muted-foreground" />

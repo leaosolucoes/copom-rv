@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { DetalhesImprevisto } from "@/components/admin/DetalhesImprevisto";
 
 interface Imprevisto {
@@ -176,11 +176,11 @@ export const ImprevistosMotoristaCard = () => {
                 
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>
-                    {format(new Date(imprevisto.created_at), 'dd/MM/yyyy HH:mm')}
+                    {formatInTimeZone(new Date(imprevisto.created_at), 'America/Sao_Paulo', 'dd/MM/yyyy HH:mm')}
                   </span>
                   {imprevisto.admin_ciente && imprevisto.admin_ciente_em && (
                     <span>
-                      Ciente em {format(new Date(imprevisto.admin_ciente_em), 'dd/MM HH:mm')}
+                      Ciente em {formatInTimeZone(new Date(imprevisto.admin_ciente_em), 'America/Sao_Paulo', 'dd/MM HH:mm')}
                     </span>
                   )}
                 </div>
