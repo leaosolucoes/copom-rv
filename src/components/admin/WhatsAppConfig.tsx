@@ -24,7 +24,10 @@ export const WhatsAppConfig = () => {
     verify_message_template: 'Olá! Temos uma nova denúncia para verificar no sistema. Acesse agora e verifique ou arquive a denúncia.',
     checklist_auto_send_enabled: false,
     checklist_phone_numbers: '',
-    checklist_message_template: ''
+    checklist_message_template: '',
+    imprevisto_auto_send_enabled: false,
+    imprevisto_phone_numbers: '',
+    imprevisto_message_template: ''
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,7 +52,10 @@ export const WhatsAppConfig = () => {
           'whatsapp_verify_message_template',
           'whatsapp_checklist_auto_send_enabled',
           'whatsapp_checklist_phone_numbers',
-          'whatsapp_checklist_message_template'
+          'whatsapp_checklist_message_template',
+          'whatsapp_imprevisto_auto_send_enabled',
+          'whatsapp_imprevisto_phone_numbers',
+          'whatsapp_imprevisto_message_template'
         ]);
 
       if (error) throw error;
@@ -135,6 +141,31 @@ REPROVADO
 Viatura requer atenção imediata. Acesse o sistema para mais detalhes.
 
 🏛️ *Secretaria Municipal de Posturas*
+_Acesse o sistema para acompanhamento._`,
+        imprevisto_auto_send_enabled: settings.imprevisto_auto_send_enabled || false,
+        imprevisto_phone_numbers: settings.imprevisto_phone_numbers || '',
+        imprevisto_message_template: settings.imprevisto_message_template || `🚨 *IMPREVISTO NA VIATURA*
+
+📋 *Sistema de Posturas - Rio Verde*
+
+🚗 *DADOS DA VIATURA:*
+• Prefixo: {viatura_prefixo}
+• Modelo: {viatura_modelo}
+• Placa: {viatura_placa}
+
+👤 *MOTORISTA RESPONSÁVEL:*
+{motorista_nome}
+
+📅 *DATA/HORÁRIO DO IMPREVISTO:*
+{data_imprevisto}
+
+⚠️ *DESCRIÇÃO DO IMPREVISTO:*
+{descricao_imprevisto}
+
+🔧 *AÇÃO NECESSÁRIA:*
+Imprevisto reportado. Verifique imediatamente o status da viatura.
+
+🏛️ *Secretaria Municipal de Posturas*
 _Acesse o sistema para acompanhamento._`
       });
     } catch (error) {
@@ -209,7 +240,10 @@ _Acesse o sistema para acompanhamento._`
         { key: 'whatsapp_verify_message_template', value: config.verify_message_template, description: 'Template da mensagem de verificação' },
         { key: 'whatsapp_checklist_auto_send_enabled', value: config.checklist_auto_send_enabled, description: 'Envio automático habilitado para checklist reprovado' },
         { key: 'whatsapp_checklist_phone_numbers', value: config.checklist_phone_numbers, description: 'Números do WhatsApp para notificações de checklist reprovado' },
-        { key: 'whatsapp_checklist_message_template', value: config.checklist_message_template, description: 'Template da mensagem para checklist reprovado' }
+        { key: 'whatsapp_checklist_message_template', value: config.checklist_message_template, description: 'Template da mensagem para checklist reprovado' },
+        { key: 'whatsapp_imprevisto_auto_send_enabled', value: config.imprevisto_auto_send_enabled, description: 'Envio automático habilitado para imprevistos na viatura' },
+        { key: 'whatsapp_imprevisto_phone_numbers', value: config.imprevisto_phone_numbers, description: 'Números do WhatsApp para notificações de imprevistos na viatura' },
+        { key: 'whatsapp_imprevisto_message_template', value: config.imprevisto_message_template, description: 'Template da mensagem para imprevistos na viatura' }
       ];
 
       for (const setting of settings) {
@@ -502,6 +536,52 @@ _Acesse o sistema para acompanhamento._`
             />
             <p className="text-sm text-gray-500 mt-1">
               Variáveis disponíveis: {'{viatura_prefixo}'}, {'{viatura_modelo}'}, {'{viatura_placa}'}, {'{fiscal_nome}'}, {'{data_checklist}'}, {'{horario_checklist}'}, {'{observacoes_alteracoes}'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Configurações para Imprevisto na Viatura</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="imprevisto_auto_send_enabled"
+              checked={config.imprevisto_auto_send_enabled}
+              onCheckedChange={(checked) => 
+                setConfig(prev => ({ ...prev, imprevisto_auto_send_enabled: checked }))
+              }
+            />
+            <Label htmlFor="imprevisto_auto_send_enabled">Envio automático para imprevisto na viatura</Label>
+          </div>
+
+          <div>
+            <Label htmlFor="imprevisto_phone_numbers">Números para Imprevisto na Viatura</Label>
+            <Input
+              id="imprevisto_phone_numbers"
+              value={config.imprevisto_phone_numbers}
+              onChange={(e) => setConfig(prev => ({ ...prev, imprevisto_phone_numbers: e.target.value }))}
+              placeholder="556299999999, 556288888888"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Números que receberão as notificações quando um imprevisto na viatura for reportado. 
+              Para múltiplos números, separe por vírgula.
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="imprevisto_message_template">Template da Mensagem de Imprevisto</Label>
+            <Textarea
+              id="imprevisto_message_template"
+              value={config.imprevisto_message_template}
+              onChange={(e) => setConfig(prev => ({ ...prev, imprevisto_message_template: e.target.value }))}
+              rows={6}
+              placeholder="Digite o template da mensagem para imprevisto na viatura..."
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Variáveis disponíveis: {'{viatura_prefixo}'}, {'{viatura_modelo}'}, {'{viatura_placa}'}, {'{motorista_nome}'}, {'{data_imprevisto}'}, {'{descricao_imprevisto}'}
             </p>
           </div>
         </CardContent>
