@@ -13,9 +13,10 @@ import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
 import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
 import { ViaturasManagement } from '@/components/admin/ViaturasManagement';
+import { EscalasManagement } from '@/components/admin/EscalasManagement';
 import { AdminAudienciasDashboard } from '@/components/audiencias/AdminAudienciasDashboard';
 import { AudienciasDashboard } from '@/components/audiencias/AudienciasDashboard';
-import { Users, FileText, Search, Clock, Scale, Car } from 'lucide-react';
+import { Users, FileText, Search, Clock, Scale, Car, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
@@ -102,7 +103,7 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-4 md:py-8">
         <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-6 md:w-fit">
+          <TabsList className="grid w-full grid-cols-7 md:w-fit">
             <TabsTrigger value="complaints" className="flex items-center gap-2 text-xs md:text-sm">
               <FileText className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Denúncias</span>
@@ -122,6 +123,11 @@ const AdminDashboard = () => {
               <Clock className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Tempos Atend.</span>
               <span className="sm:hidden">Tempos</span>
+            </TabsTrigger>
+            <TabsTrigger value="escalas" className="flex items-center gap-2 text-xs md:text-sm">
+              <Calendar className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Escalas</span>
+              <span className="sm:hidden">Escala</span>
             </TabsTrigger>
             <TabsTrigger value="audiencias" className="flex items-center gap-2 text-xs md:text-sm">
               <Scale className="h-3 w-3 md:h-4 md:w-4" />
@@ -196,6 +202,10 @@ const AdminDashboard = () => {
                 <AttendanceTimeDashboard />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="escalas" className="space-y-6">
+            <EscalasManagement />
           </TabsContent>
 
           <TabsContent value="audiencias" className="space-y-6">
