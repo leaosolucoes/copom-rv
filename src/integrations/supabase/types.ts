@@ -1168,6 +1168,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_current_user_transporte: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1231,7 +1235,13 @@ export type Database = {
         | "fiscal_solicitado"
       consultation_type: "CPF" | "CNPJ" | "CEP"
       escala_status: "ativa" | "encerrada" | "cancelada"
-      user_role: "super_admin" | "admin" | "atendente" | "fiscal" | "motorista"
+      user_role:
+        | "super_admin"
+        | "admin"
+        | "atendente"
+        | "fiscal"
+        | "motorista"
+        | "transporte"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1370,7 +1380,14 @@ export const Constants = {
       ],
       consultation_type: ["CPF", "CNPJ", "CEP"],
       escala_status: ["ativa", "encerrada", "cancelada"],
-      user_role: ["super_admin", "admin", "atendente", "fiscal", "motorista"],
+      user_role: [
+        "super_admin",
+        "admin",
+        "atendente",
+        "fiscal",
+        "motorista",
+        "transporte",
+      ],
     },
   },
 } as const

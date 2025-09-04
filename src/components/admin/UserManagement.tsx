@@ -17,7 +17,7 @@ interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'super_admin' | 'admin' | 'atendente' | 'fiscal' | 'motorista';
+  role: 'super_admin' | 'admin' | 'atendente' | 'fiscal' | 'motorista' | 'transporte';
   is_active: boolean;
   created_at: string;
   last_login: string | null;
@@ -36,7 +36,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
     email: '',
     full_name: '',
     password: '',
-    role: 'atendente' as 'admin' | 'atendente' | 'fiscal' | 'motorista',
+    role: 'atendente' as 'admin' | 'atendente' | 'fiscal' | 'motorista' | 'transporte',
     is_active: true
   });
   const { toast } = useToast();
@@ -172,7 +172,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
         email: user.email,
         full_name: user.full_name,
         password: '',
-        role: user.role as 'admin' | 'atendente' | 'fiscal' | 'motorista',
+        role: user.role as 'admin' | 'atendente' | 'fiscal' | 'motorista' | 'transporte',
         is_active: user.is_active
       });
     setDialogOpen(true);
@@ -222,7 +222,8 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
       admin: 'bg-blue-500',
       atendente: 'bg-green-500',
       fiscal: 'bg-orange-500',
-      motorista: 'bg-purple-500'
+      motorista: 'bg-purple-500',
+      transporte: 'bg-cyan-500'
     };
     
     const labels = {
@@ -230,7 +231,8 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
       admin: 'Admin',
       atendente: 'Atendente',
       fiscal: 'Fiscal',
-      motorista: 'Motorista'
+      motorista: 'Motorista',
+      transporte: 'Transporte'
     };
 
     return (
@@ -307,9 +309,9 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
               {(userRole === 'super_admin' || userRole === 'admin') && (
                 <div>
                   <Label htmlFor="role">Perfil</Label>
-                  <Select 
+                   <Select 
                     value={formData.role} 
-                    onValueChange={(value: 'admin' | 'atendente' | 'fiscal' | 'motorista') => 
+                    onValueChange={(value: 'admin' | 'atendente' | 'fiscal' | 'motorista' | 'transporte') => 
                       setFormData(prev => ({ ...prev, role: value }))
                     }
                   >
@@ -321,6 +323,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                       <SelectItem value="atendente">Atendente</SelectItem>
                       <SelectItem value="fiscal">Fiscal</SelectItem>
                       <SelectItem value="motorista">Motorista</SelectItem>
+                      <SelectItem value="transporte">Transporte</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import FiscalDashboard from "./pages/FiscalDashboard";
 import MotoristasDashboard from "./pages/MotoristasDashboard";
+import TransporteDashboard from "./pages/TransporteDashboard";
 import ChecklistViatura from "./pages/ChecklistViatura";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
@@ -100,9 +101,17 @@ const App = () => {
             } 
           />
           <Route 
+            path="/transporte" 
+            element={
+              <ProtectedRoute allowedRoles={['transporte', 'admin', 'super_admin']}>
+                <TransporteDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/checklist-viatura" 
             element={
-              <ProtectedRoute allowedRoles={['fiscal', 'motorista', 'admin', 'super_admin']}>
+              <ProtectedRoute allowedRoles={['fiscal', 'motorista', 'transporte', 'admin', 'super_admin']}>
                 <ChecklistViatura />
               </ProtectedRoute>
             } 
