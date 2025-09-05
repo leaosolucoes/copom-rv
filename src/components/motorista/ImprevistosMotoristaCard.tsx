@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { formatInTimeZone } from "date-fns-tz";
 import { DetalhesImprevisto } from "@/components/admin/DetalhesImprevisto";
+import { obterDataBrasilFormatada } from "@/utils/dataBrasil";
 
 interface Imprevisto {
   id: string;
@@ -40,6 +41,13 @@ export const ImprevistosMotoristaCard = () => {
     if (!profile?.id) return;
 
     try {
+      // Obter data atual no timezone do Brasil (YYYY-MM-DD)
+      const dataBrasil = obterDataBrasilFormatada();
+      
+      // Calcular início e fim do dia no timezone do Brasil
+      const inicioDia = `${dataBrasil}T00:00:00-03:00`;
+      const fimDia = `${dataBrasil}T23:59:59-03:00`;
+
       const { data, error } = await supabase
         .from('escala_imprevistos')
         .select(`
@@ -53,9 +61,9 @@ export const ImprevistosMotoristaCard = () => {
           admin_ciente_por,
           admin_ciente_em
         `)
-        .eq('motorista_id', profile.id)
-        .order('created_at', { ascending: false })
-        .limit(3);
+        .gte('created_at', inicioDia)
+        .lte('created_at', fimDia)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
