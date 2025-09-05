@@ -35,6 +35,13 @@ interface ChartData {
   km: number;
 }
 
+interface RegistroDetalhado {
+  data_checklist: string;
+  km_inicial: number;
+  viatura_prefixo: string;
+  fiscal_nome: string;
+}
+
 export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) => {
   const [viaturas, setViaturas] = useState<Viatura[]>([]);
   const [selectedViatura, setSelectedViatura] = useState<string>('todas');
@@ -50,6 +57,7 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
   const [loading, setLoading] = useState(false);
   const [kmData, setKmData] = useState<KmData[]>([]);
   const [chartData, setChartData] = useState<ChartData[]>([]);
+  const [registrosDetalhados, setRegistrosDetalhados] = useState<RegistroDetalhado[]>([]);
   const [totalKmPeriodo, setTotalKmPeriodo] = useState(0);
   const [registrosPeriodo, setRegistrosPeriodo] = useState(0);
   const { toast } = useToast();
@@ -113,6 +121,7 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
       // Processar dados para a tabela de resumo por viatura
       const viaturaKmMap = new Map<string, KmData>();
       const chartDataMap = new Map<string, number>();
+      const registrosDetalhados: RegistroDetalhado[] = [];
       let totalRegistros = 0;
 
       checklists?.forEach(checklist => {
@@ -124,6 +133,14 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
         const kmInicial = checklist.km_inicial;
         
         totalRegistros++;
+
+        // Adicionar aos registros detalhados
+        registrosDetalhados.push({
+          data_checklist: checklist.data_checklist,
+          km_inicial: kmInicial,
+          viatura_prefixo: prefixo,
+          fiscal_nome: 'N/A'
+        });
 
         // Para o resumo por viatura, acumular km_inicial de todos os registros
         if (viaturaKmMap.has(viaturaId)) {
@@ -156,6 +173,7 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
 
       setKmData(kmDataArray);
       setChartData(chartDataArray);
+      setRegistrosDetalhados(registrosDetalhados.sort((a, b) => new Date(b.data_checklist).getTime() - new Date(a.data_checklist).getTime()));
       setTotalKmPeriodo(totalKmPeriodo);
       setRegistrosPeriodo(totalRegistros);
 
@@ -191,6 +209,14 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
     }
 
     fetchKmData();
+  };
+
+  const handleViaturaClick = (viaturaId: string) => {
+    const viatura = viaturas.find(v => v.prefixo === viaturaId);
+    if (viatura) {
+      setSelectedViatura(viatura.id);
+      fetchKmData();
+    }
   };
 
   const viaturasSelecionadas = selectedViatura === 'todas' 
@@ -372,15 +398,65 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
                     </TableHeader>
                     <TableBody>
                       {kmData.map((item, index) => (
-                        <TableRow key={index} className="hover:bg-muted/30">
-                          <TableCell className="font-medium text-blue-600">
-                            {item.viatura}
-                          </TableCell>
+                         <TableRow key={index} className="hover:bg-muted/30">
+                           <TableCell 
+                             className="font-medium text-blue-600 cursor-pointer hover:text-blue-800 underline"
+                             onClick={() => handleViaturaClick(item.viatura)}
+                           >
+                             {item.viatura}
+                           </TableCell>
                           <TableCell className="font-semibold">
                             {item.km_atual.toLocaleString()} km
                           </TableCell>
                           <TableCell className="font-semibold text-green-600">
                             {item.total_km_periodo.toLocaleString()} km
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Tabela de Registros de Quilometragem */}
+          {registrosDetalhados.length > 0 && selectedViatura !== 'todas' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Registros de Quilometragem</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="font-semibold">Data do Serviço</TableHead>
+                        <TableHead className="font-semibold">Quilometragem</TableHead>
+                        <TableHead className="font-semibold">Tipo</TableHead>
+                        <TableHead className="font-semibold">Militar</TableHead>
+                        <TableHead className="font-semibold">Registrado em</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {registrosDetalhados.map((registro, index) => (
+                        <TableRow key={index} className="hover:bg-muted/30">
+                          <TableCell className="font-medium">
+                            {new Date(registro.data_checklist).toLocaleDateString('pt-BR')}
+                          </TableCell>
+                          <TableCell className="font-semibold text-blue-600">
+                            {registro.km_inicial.toLocaleString()} km
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              INICIAL
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {registro.fiscal_nome}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(registro.data_checklist).toLocaleDateString('pt-BR')} {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                           </TableCell>
                         </TableRow>
                       ))}
