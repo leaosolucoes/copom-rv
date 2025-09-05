@@ -23,6 +23,7 @@ interface Escala {
   celular_funcional: string | null;
   status: 'ativa' | 'encerrada' | 'cancelada';
   created_at: string;
+  encerrado_em: string | null;
   observacoes: string | null;
   viaturas: { prefixo: string; modelo: string; placa: string } | null;
   motorista: { full_name: string } | null;
@@ -282,17 +283,22 @@ export const EscalasManagement = () => {
                         <span className="text-sm text-muted-foreground">-</span>
                       )}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <div className="text-sm">
-                          <div>{format(new Date(escala.data_servico), 'dd/MM/yyyy')}</div>
-                          <div className="text-muted-foreground">
-                            {escala.hora_entrada} - {escala.hora_saida}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
+                     <TableCell>
+                       <div className="flex items-center gap-2">
+                         <Clock className="h-4 w-4 text-muted-foreground" />
+                         <div className="text-sm">
+                           <div>{format(new Date(escala.data_servico), 'dd/MM/yyyy')}</div>
+                           <div className="text-muted-foreground">
+                             {escala.hora_entrada} - {escala.hora_saida}
+                           </div>
+                           {escala.encerrado_em && (
+                             <div className="text-red-600 font-medium">
+                               Encerrado: {format(new Date(escala.encerrado_em), 'HH:mm')}
+                             </div>
+                           )}
+                         </div>
+                       </div>
+                     </TableCell>
                     <TableCell>{getStatusBadge(escala.status)}</TableCell>
                     <TableCell>
                       <div className="text-sm">
