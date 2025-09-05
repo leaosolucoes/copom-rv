@@ -12,6 +12,7 @@ import { ImprevistosMotoristaCard } from '@/components/motorista/ImprevistosMoto
 import { ViaturasManagement } from '@/components/admin/ViaturasManagement';
 import { EscalasManagement } from '@/components/admin/EscalasManagement';
 import { ChecklistConfigManagement } from '@/components/admin/ChecklistConfigManagement';
+import { ChecklistHistoryModal } from '@/components/admin/ChecklistHistoryModal';
 import { LogOut, Car, Calendar, Settings, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,6 +20,7 @@ const TransporteDashboard = () => {
   const { profile, signOut, isLoading } = useSupabaseAuth();
   const { escalaAtiva, loading: escalasLoading, refetch } = useEscalas();
   const [showEscalaModal, setShowEscalaModal] = useState(false);
+  const [showChecklistHistoryModal, setShowChecklistHistoryModal] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>('');
   const navigate = useNavigate();
 
@@ -164,7 +166,7 @@ const TransporteDashboard = () => {
                   <Button 
                     variant="outline" 
                     className="h-20 flex flex-col gap-2"
-                    onClick={() => navigate('/checklist-viatura')}
+                    onClick={() => setShowChecklistHistoryModal(true)}
                   >
                     <Settings className="h-6 w-6" />
                     <span className="text-xs">Checklist</span>
@@ -230,6 +232,11 @@ const TransporteDashboard = () => {
           onSuccess={handleEscalaUpdate}
         />
       )}
+
+      <ChecklistHistoryModal
+        open={showChecklistHistoryModal}
+        onOpenChange={setShowChecklistHistoryModal}
+      />
     </div>
   );
 };
