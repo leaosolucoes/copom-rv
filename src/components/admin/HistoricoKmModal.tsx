@@ -108,7 +108,7 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
 
       if (error) throw error;
 
-      // Processar dados para a tabela de resumo
+      // Processar dados para a tabela de resumo por viatura
       const viaturaKmMap = new Map<string, KmData>();
       const chartDataMap = new Map<string, number>();
       let totalRegistros = 0;
@@ -122,36 +122,65 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
         
         totalRegistros++;
 
-        // Acumular dados por viatura
-        if (viaturaKmMap.has(viaturaId)) {
-          const existing = viaturaKmMap.get(viaturaId)!;
-          existing.total_km_periodo += checklist.km_inicial;
-        } else {
+        // Para o resumo por viatura, acumular apenas a quilometragem rodada no período
+        if (!viaturaKmMap.has(viaturaId)) {
           viaturaKmMap.set(viaturaId, {
             viatura: prefixo,
             km_atual: kmAtual,
-            total_km_periodo: checklist.km_inicial
+            total_km_periodo: 0
           });
         }
 
-        // Dados para o gráfico
+        // Para o gráfico, mostrar a evolução do KM por data
         const dataKey = checklist.data_checklist;
-        chartDataMap.set(dataKey, (chartDataMap.get(dataKey) || 0) + checklist.km_inicial);
+        if (!chartDataMap.has(dataKey)) {
+          chartDataMap.set(dataKey, 0);
+        }
+        chartDataMap.set(dataKey, chartDataMap.get(dataKey)! + checklist.km_inicial);
+      });
+
+      // Calcular KM rodado no período por viatura (diferença entre o maior e menor KM)
+      const viaturaKmRanges = new Map<string, { min: number, max: number }>();
+      
+      checklists?.forEach(checklist => {
+        if (!checklist.viaturas) return;
+        
+        const viaturaId = checklist.viatura_id;
+        const kmInicial = checklist.km_inicial;
+        
+        if (!viaturaKmRanges.has(viaturaId)) {
+          viaturaKmRanges.set(viaturaId, { min: kmInicial, max: kmInicial });
+        } else {
+          const range = viaturaKmRanges.get(viaturaId)!;
+          range.min = Math.min(range.min, kmInicial);
+          range.max = Math.max(range.max, kmInicial);
+        }
+      });
+
+      // Atualizar os dados de KM rodado no período
+      viaturaKmRanges.forEach((range, viaturaId) => {
+        const viaturaData = viaturaKmMap.get(viaturaId);
+        if (viaturaData) {
+          viaturaData.total_km_periodo = range.max - range.min;
+        }
       });
 
       // Converter para arrays
       const kmDataArray = Array.from(viaturaKmMap.values());
-      const chartDataArray = Array.from(chartDataMap.entries()).map(([data, km]) => ({
-        data: new Date(data).toLocaleDateString('pt-BR'),
-        km
-      }));
+      const chartDataArray = Array.from(chartDataMap.entries())
+        .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+        .map(([data, km]) => ({
+          data: new Date(data).toLocaleDateString('pt-BR'),
+          km
+        }));
 
-      // Calcular KM total no período
-      const totalKm = checklists?.reduce((sum, checklist) => sum + checklist.km_inicial, 0) || 0;
+      // Calcular KM total rodado no período (soma das diferenças por viatura)
+      const totalKmRodado = Array.from(viaturaKmRanges.values())
+        .reduce((sum, range) => sum + (range.max - range.min), 0);
 
       setKmData(kmDataArray);
       setChartData(chartDataArray);
-      setTotalKmPeriodo(totalKm);
+      setTotalKmPeriodo(totalKmRodado);
       setRegistrosPeriodo(totalRegistros);
 
     } catch (error) {
