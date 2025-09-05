@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ChecklistDetailModal } from './ChecklistDetailModal';
 
 interface ChecklistHistoryModalProps {
   open: boolean;
@@ -34,6 +35,8 @@ interface ChecklistItem {
 export const ChecklistHistoryModal = ({ open, onOpenChange }: ChecklistHistoryModalProps) => {
   const [checklists, setChecklists] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedChecklistId, setSelectedChecklistId] = useState<string | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -200,11 +203,8 @@ export const ChecklistHistoryModal = ({ open, onOpenChange }: ChecklistHistoryMo
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              // TODO: Implementar modal de detalhes do checklist
-                              toast({
-                                title: "Em breve",
-                                description: "Funcionalidade de detalhes será implementada em breve"
-                              });
+                              setSelectedChecklistId(checklist.id);
+                              setShowDetailModal(true);
                             }}
                           >
                             <Eye className="h-4 w-4" />
@@ -219,6 +219,12 @@ export const ChecklistHistoryModal = ({ open, onOpenChange }: ChecklistHistoryMo
           )}
         </div>
       </DialogContent>
+      
+      <ChecklistDetailModal
+        open={showDetailModal}
+        onOpenChange={setShowDetailModal}
+        checklistId={selectedChecklistId}
+      />
     </Dialog>
   );
 };
