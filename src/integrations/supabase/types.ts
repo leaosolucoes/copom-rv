@@ -841,7 +841,7 @@ export type Database = {
           data_servico: string
           encerrado_em: string | null
           encerrado_por: string | null
-          fiscal_id: string | null
+          fiscal_ids: string[] | null
           hora_entrada: string
           hora_saida: string
           id: string
@@ -859,7 +859,7 @@ export type Database = {
           data_servico: string
           encerrado_em?: string | null
           encerrado_por?: string | null
-          fiscal_id?: string | null
+          fiscal_ids?: string[] | null
           hora_entrada: string
           hora_saida: string
           id?: string
@@ -877,7 +877,7 @@ export type Database = {
           data_servico?: string
           encerrado_em?: string | null
           encerrado_por?: string | null
-          fiscal_id?: string | null
+          fiscal_ids?: string[] | null
           hora_entrada?: string
           hora_saida?: string
           id?: string

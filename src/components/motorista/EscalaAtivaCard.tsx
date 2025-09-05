@@ -17,7 +17,7 @@ interface EscalaAtivaCardProps {
     km_inicial: number;
     celular_funcional: string | null;
     viaturas: { prefixo: string; modelo: string; placa: string } | null;
-    fiscal: { full_name: string } | null;
+    fiscal: { full_name: string }[] | null;
   };
   onEscalaUpdated: () => void;
 }
@@ -67,10 +67,15 @@ export const EscalaAtivaCard = ({ escala, onEscalaUpdated }: EscalaAtivaCardProp
                   <span className="font-medium">KM Inicial: </span>
                   <span>{escala.km_inicial.toLocaleString()}</span>
                 </div>
-                {escala.fiscal && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>Fiscal: {escala.fiscal.full_name}</span>
+                {escala.fiscal && escala.fiscal.length > 0 && (
+                  <div className="flex items-start gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div>
+                      <span className="font-medium">Fiscais: </span>
+                      {escala.fiscal.map((f, index) => (
+                        <div key={index}>{f.full_name}</div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

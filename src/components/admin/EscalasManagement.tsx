@@ -14,7 +14,7 @@ interface Escala {
   id: string;
   viatura_id: string;
   motorista_id: string;
-  fiscal_id: string | null;
+  fiscal_ids: string[];
   data_servico: string;
   hora_entrada: string;
   hora_saida: string;
@@ -27,7 +27,7 @@ interface Escala {
   observacoes: string | null;
   viaturas: { prefixo: string; modelo: string; placa: string } | null;
   motorista: { full_name: string } | null;
-  fiscal: { full_name: string } | null;
+  fiscal: { full_name: string }[] | null;
 }
 
 interface Imprevisto {
@@ -75,7 +75,9 @@ export const EscalasManagement = () => {
           const [viaturaResult, motoristaResult, fiscalResult] = await Promise.all([
             supabase.from('viaturas').select('prefixo, modelo, placa').eq('id', escala.viatura_id).single(),
             supabase.from('users').select('full_name').eq('id', escala.motorista_id).single(),
-            escala.fiscal_id ? supabase.from('users').select('full_name').eq('id', escala.fiscal_id).single() : Promise.resolve({ data: null })
+            escala.fiscal_ids && escala.fiscal_ids.length > 0 ? 
+              supabase.from('users').select('full_name').in('id', escala.fiscal_ids) : 
+              Promise.resolve({ data: [] })
           ]);
 
           return {
@@ -172,7 +174,9 @@ export const EscalasManagement = () => {
   const filteredEscalas = escalas.filter((escala) =>
     escala.viaturas?.prefixo.toLowerCase().includes(searchTerm.toLowerCase()) ||
     escala.motorista?.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    escala.fiscal?.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+    (escala.fiscal && escala.fiscal.some(f => 
+      f.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+    ))
   );
 
   if (loading) {
@@ -274,10 +278,14 @@ export const EscalasManagement = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {escala.fiscal ? (
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{escala.fiscal.full_name}</span>
+                      {escala.fiscal && escala.fiscal.length > 0 ? (
+                        <div className="flex items-start gap-2">
+                          <User className="h-4 w-4 text-muted-foreground mt-0.5" />
+                          <div className="text-sm">
+                            {escala.fiscal.map((f, index) => (
+                              <div key={index}>{f.full_name}</div>
+                            ))}
+                          </div>
                         </div>
                       ) : (
                         <span className="text-sm text-muted-foreground">-</span>

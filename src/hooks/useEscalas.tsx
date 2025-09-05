@@ -11,7 +11,7 @@ interface EscalaAtiva {
   km_inicial: number;
   celular_funcional: string | null;
   viaturas: { prefixo: string; modelo: string; placa: string } | null;
-  fiscal: { full_name: string } | null;
+  fiscal: { full_name: string }[] | null;
 }
 
 export const useEscalas = () => {
@@ -39,7 +39,9 @@ export const useEscalas = () => {
         // Fetch related data
         const [viaturaResult, fiscalResult] = await Promise.all([
           supabase.from('viaturas').select('prefixo, modelo, placa').eq('id', escala.viatura_id).single(),
-          escala.fiscal_id ? supabase.from('users').select('full_name').eq('id', escala.fiscal_id).single() : Promise.resolve({ data: null })
+          escala.fiscal_ids && escala.fiscal_ids.length > 0 ? 
+            supabase.from('users').select('full_name').in('id', escala.fiscal_ids) : 
+            Promise.resolve({ data: [] })
         ]);
 
         setEscalaAtiva({

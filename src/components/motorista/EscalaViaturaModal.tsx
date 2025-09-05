@@ -3,8 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Car, Clock, User, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -30,7 +30,7 @@ interface Fiscal {
 interface EscalaData {
   viatura_id: string;
   motorista_id: string;
-  fiscal_id: string | null;
+  fiscal_ids: string[];
   data_servico: string;
   hora_entrada: string;
   hora_saida: string;
@@ -55,7 +55,7 @@ export const EscalaViaturaModal = ({
   const [escalaData, setEscalaData] = useState<EscalaData>({
     viatura_id: viaturaId,
     motorista_id: motoristaId,
-    fiscal_id: null,
+    fiscal_ids: [],
     data_servico: format(new Date(), 'yyyy-MM-dd'),
     hora_entrada: format(new Date(), 'HH:mm'),
     hora_saida: '',
@@ -70,7 +70,7 @@ export const EscalaViaturaModal = ({
       setEscalaData({
         viatura_id: viaturaId,
         motorista_id: motoristaId,
-        fiscal_id: null,
+        fiscal_ids: [],
         data_servico: format(new Date(), 'yyyy-MM-dd'),
         hora_entrada: format(new Date(), 'HH:mm'),
         hora_saida: '',
@@ -148,6 +148,15 @@ export const EscalaViaturaModal = ({
     setEscalaData(prev => ({ ...prev, celular_funcional: formattedValue }));
   };
 
+  const handleFiscalToggle = (fiscalId: string, checked: boolean) => {
+    setEscalaData(prev => ({
+      ...prev,
+      fiscal_ids: checked
+        ? [...prev.fiscal_ids, fiscalId]
+        : prev.fiscal_ids.filter(id => id !== fiscalId)
+    }));
+  };
+
   const confirmarEscala = async () => {
     setLoading(true);
     try {
@@ -202,10 +211,17 @@ export const EscalaViaturaModal = ({
                 <span>Motorista: {motoristaNome}</span>
               </div>
               
-              {escalaData.fiscal_id && (
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-primary" />
-                  <span>Fiscal: {fiscais.find(f => f.id === escalaData.fiscal_id)?.full_name}</span>
+              {escalaData.fiscal_ids.length > 0 && (
+                <div className="flex items-start gap-2">
+                  <User className="h-4 w-4 text-primary mt-1" />
+                  <div>
+                    <span className="font-medium">Fiscais: </span>
+                    <div className="text-sm">
+                      {escalaData.fiscal_ids.map(fiscalId => 
+                        fiscais.find(f => f.id === fiscalId)?.full_name
+                      ).join(', ')}
+                    </div>
+                  </div>
                 </div>
               )}
               
@@ -319,23 +335,29 @@ export const EscalaViaturaModal = ({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="fiscal_id">Fiscal (Opcional)</Label>
-            <Select
-              value={escalaData.fiscal_id || ""}
-              onValueChange={(value) => setEscalaData(prev => ({ ...prev, fiscal_id: value || null }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um fiscal" />
-              </SelectTrigger>
-              <SelectContent>
-                {fiscais.map((fiscal) => (
-                  <SelectItem key={fiscal.id} value={fiscal.id}>
-                    {fiscal.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-3">
+            <Label>Fiscais (Opcional)</Label>
+            <div className="max-h-32 overflow-y-auto space-y-2 border rounded-md p-2">
+              {fiscais.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum fiscal disponível</p>
+              ) : (
+                fiscais.map((fiscal) => (
+                  <div key={fiscal.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={fiscal.id}
+                      checked={escalaData.fiscal_ids.includes(fiscal.id)}
+                      onCheckedChange={(checked) => handleFiscalToggle(fiscal.id, !!checked)}
+                    />
+                    <Label 
+                      htmlFor={fiscal.id} 
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      {fiscal.full_name}
+                    </Label>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
