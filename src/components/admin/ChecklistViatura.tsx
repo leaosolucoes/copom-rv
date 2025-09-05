@@ -158,7 +158,7 @@ export const ChecklistViatura = () => {
     }
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const camposFaltando: string[] = [];
@@ -229,7 +229,63 @@ export const ChecklistViatura = () => {
       return;
     }
 
-    // Se tudo estiver preenchido, abrir modal de finalização
+    // Validar KM inicial da viatura
+    if (selectedViatura && formData.km_inicial) {
+      try {
+        // Buscar o último KM registrado da viatura
+        const { data: ultimoChecklist, error: kmError } = await supabase
+          .from('checklist_viaturas')
+          .select('km_inicial')
+          .eq('viatura_id', selectedViatura)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (kmError) {
+          console.error('Erro ao buscar último KM:', kmError);
+        }
+
+        // Se existe um checklist anterior, validar KM
+        if (ultimoChecklist && ultimoChecklist.km_inicial >= formData.km_inicial) {
+          toast({
+            title: "KM Inválido",
+            description: `O KM atual (${formData.km_inicial.toLocaleString()}) não pode ser menor ou igual ao último KM registrado (${ultimoChecklist.km_inicial.toLocaleString()}). Verifique o KM atual da viatura e registre corretamente.`,
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Também validar com o km_atual da tabela viaturas como backup
+        const { data: viaturaData, error: viaturaError } = await supabase
+          .from('viaturas')
+          .select('km_atual, prefixo')
+          .eq('id', selectedViatura)
+          .single();
+
+        if (viaturaError) {
+          console.error('Erro ao buscar dados da viatura:', viaturaError);
+        }
+
+        if (viaturaData && viaturaData.km_atual >= formData.km_inicial) {
+          toast({
+            title: "KM Inválido",
+            description: `O KM atual (${formData.km_inicial.toLocaleString()}) não pode ser menor ou igual ao KM atual da viatura ${viaturaData.prefixo} (${viaturaData.km_atual.toLocaleString()}). Verifique o KM atual da viatura e registre corretamente.`,
+            variant: "destructive"
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Erro na validação de KM:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao validar KM da viatura. Tente novamente.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    // Se tudo estiver preenchido e validado, abrir modal de finalização
     setShowFinalizarModal(true);
   };
 
