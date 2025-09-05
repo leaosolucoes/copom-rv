@@ -13,6 +13,7 @@ import { ViaturasManagement } from '@/components/admin/ViaturasManagement';
 import { EscalasManagement } from '@/components/admin/EscalasManagement';
 import { ChecklistConfigManagement } from '@/components/admin/ChecklistConfigManagement';
 import { ChecklistHistoryModal } from '@/components/admin/ChecklistHistoryModal';
+import { HistoricoKmModal } from '@/components/admin/HistoricoKmModal';
 import { LogOut, Car, Calendar, Settings, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -21,6 +22,7 @@ const TransporteDashboard = () => {
   const { escalaAtiva, loading: escalasLoading, refetch } = useEscalas();
   const [showEscalaModal, setShowEscalaModal] = useState(false);
   const [showChecklistHistoryModal, setShowChecklistHistoryModal] = useState(false);
+  const [showHistoricoKmModal, setShowHistoricoKmModal] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>('');
   const navigate = useNavigate();
 
@@ -158,10 +160,10 @@ const TransporteDashboard = () => {
                   <Button 
                     variant="outline" 
                     className="h-20 flex flex-col gap-2"
-                    onClick={() => setShowEscalaModal(true)}
+                    onClick={() => setShowHistoricoKmModal(true)}
                   >
                     <Calendar className="h-6 w-6" />
-                    <span className="text-xs">Nova Escala</span>
+                    <span className="text-xs">Histórico de KM</span>
                   </Button>
                   <Button 
                     variant="outline" 
@@ -236,6 +238,11 @@ const TransporteDashboard = () => {
       <ChecklistHistoryModal
         open={showChecklistHistoryModal}
         onOpenChange={setShowChecklistHistoryModal}
+      />
+
+      <HistoricoKmModal
+        open={showHistoricoKmModal}
+        onOpenChange={setShowHistoricoKmModal}
       />
     </div>
   );
