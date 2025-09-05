@@ -97,6 +97,7 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
           km_inicial,
           data_checklist,
           viatura_id,
+          fiscal_id,
           viaturas (
             prefixo,
             modelo,
@@ -124,6 +125,21 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
       const registrosDetalhados: RegistroDetalhado[] = [];
       let totalRegistros = 0;
 
+      // Buscar nomes dos fiscais
+      const fiscalIds = [...new Set(checklists?.map(c => c.fiscal_id).filter(Boolean) || [])];
+      let fiscaisMap = new Map<string, string>();
+      
+      if (fiscalIds.length > 0) {
+        const { data: fiscais } = await supabase
+          .from('users')
+          .select('id, full_name')
+          .in('id', fiscalIds);
+        
+        fiscais?.forEach(fiscal => {
+          fiscaisMap.set(fiscal.id, fiscal.full_name);
+        });
+      }
+
       checklists?.forEach(checklist => {
         if (!checklist.viaturas) return;
         
@@ -131,6 +147,7 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
         const prefixo = checklist.viaturas.prefixo;
         const kmAtual = checklist.viaturas.km_atual;
         const kmInicial = checklist.km_inicial;
+        const fiscalNome = fiscaisMap.get(checklist.fiscal_id) || 'N/A';
         
         totalRegistros++;
 
@@ -139,7 +156,7 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
           data_checklist: checklist.data_checklist,
           km_inicial: kmInicial,
           viatura_prefixo: prefixo,
-          fiscal_nome: 'N/A'
+          fiscal_nome: fiscalNome
         });
 
         // Para o resumo por viatura, acumular km_inicial de todos os registros
@@ -434,7 +451,7 @@ export const HistoricoKmModal = ({ open, onOpenChange }: HistoricoKmModalProps) 
                         <TableHead className="font-semibold">Data do Serviço</TableHead>
                         <TableHead className="font-semibold">Quilometragem</TableHead>
                         <TableHead className="font-semibold">Tipo</TableHead>
-                        <TableHead className="font-semibold">Militar</TableHead>
+                        <TableHead className="font-semibold">Usuario</TableHead>
                         <TableHead className="font-semibold">Registrado em</TableHead>
                       </TableRow>
                     </TableHeader>
