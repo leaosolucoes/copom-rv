@@ -223,6 +223,7 @@ export const ComplaintsList = () => {
     response: null,
     isSuccess: false
   });
+  const [sendingToSystem, setSendingToSystem] = useState(false);
   const { toast } = useToast();
   const { user, profile } = useSupabaseAuth();
   
@@ -2100,46 +2101,52 @@ export const ComplaintsList = () => {
                                              Enviar WhatsApp
                                            </Button>
                                            
-                            <Button 
-                              onClick={async () => {
-                                try {
-                                  setLoading(true);
-                                  
-                                  const { data, error } = await supabase.functions.invoke('posturas-bridge', {
-                                    body: { 
-                                      action: 'send',
-                                      complaint_id: selectedComplaint.id 
-                                    }
-                                  });
+                             <Button 
+                               onClick={async () => {
+                                 try {
+                                   setSendingToSystem(true);
+                                   
+                                   const { data, error } = await supabase.functions.invoke('posturas-bridge', {
+                                     body: { 
+                                       action: 'send',
+                                       complaint_id: selectedComplaint.id 
+                                     }
+                                   });
 
-                                  // Mostrar modal com resposta da API
-                                  setApiResponseModal({
-                                    isOpen: true,
-                                    response: data || error,
-                                    isSuccess: !error && data?.success
-                                  });
+                                   // Fechar o modal de detalhes ANTES de mostrar a resposta da API
+                                   setSelectedComplaint(null);
 
-// Removido fetchComplaints para evitar recarregamento duplo; realtime (quando aplicável) cuidará da atualização da lista
-// if (!error && data?.success) {
-//   fetchComplaints();
-// }
-                                } catch (error) {
-                                  console.error('Error sending to system:', error);
-                                  setApiResponseModal({
-                                    isOpen: true,
-                                    response: { error: 'Erro de conexão', details: error },
-                                    isSuccess: false
-                                  });
-                                } finally {
-                                  setLoading(false);
-                                }
-                              }}
-                              variant="outline"
-                              disabled={loading}
-                            >
-                              <Send className="h-4 w-4 mr-2" />
-                              {loading ? "ENVIANDO..." : "ENVIAR PARA O SISTEMA"}
-                            </Button>
+                                   // Mostrar modal com resposta da API
+                                   setApiResponseModal({
+                                     isOpen: true,
+                                     response: data || error,
+                                     isSuccess: !error && data?.success
+                                   });
+
+                                   // Removido fetchComplaints para evitar recarregamento duplo; realtime (quando aplicável) cuidará da atualização da lista
+                                   // if (!error && data?.success) {
+                                   //   fetchComplaints();
+                                   // }
+                                 } catch (error) {
+                                   console.error('Error sending to system:', error);
+                                   // Fechar o modal de detalhes ANTES de mostrar o erro
+                                   setSelectedComplaint(null);
+                                   
+                                   setApiResponseModal({
+                                     isOpen: true,
+                                     response: { error: 'Erro de conexão', details: error },
+                                     isSuccess: false
+                                   });
+                                 } finally {
+                                   setSendingToSystem(false);
+                                 }
+                               }}
+                               variant="outline"
+                               disabled={sendingToSystem}
+                             >
+                               <Send className="h-4 w-4 mr-2" />
+                               {sendingToSystem ? "ENVIANDO..." : "ENVIAR PARA O SISTEMA"}
+                             </Button>
                                          </>
                                        )}
                                      </div>
