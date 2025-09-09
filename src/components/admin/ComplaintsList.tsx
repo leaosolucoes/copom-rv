@@ -214,6 +214,15 @@ export const ComplaintsList = () => {
   });
   const [cnpjModalOpen, setCnpjModalOpen] = useState(false);
   const [cnpjLoading, setCnpjLoading] = useState(false);
+  const [apiResponseModal, setApiResponseModal] = useState<{
+    isOpen: boolean;
+    response: any;
+    isSuccess: boolean;
+  }>({
+    isOpen: false,
+    response: null,
+    isSuccess: false
+  });
   const { toast } = useToast();
   const { user, profile } = useSupabaseAuth();
   
@@ -2091,52 +2100,46 @@ export const ComplaintsList = () => {
                                              Enviar WhatsApp
                                            </Button>
                                            
-                                           <Button 
-                                             onClick={async () => {
-                                               try {
-                                                 setLoading(true);
-                                                 
-                                                 const { data, error } = await supabase.functions.invoke('posturas-bridge', {
-                                                   body: { 
-                                                     action: 'send',
-                                                     complaint_id: selectedComplaint.id 
-                                                   }
-                                                 });
+                            <Button 
+                              onClick={async () => {
+                                try {
+                                  setLoading(true);
+                                  
+                                  const { data, error } = await supabase.functions.invoke('posturas-bridge', {
+                                    body: { 
+                                      action: 'send',
+                                      complaint_id: selectedComplaint.id 
+                                    }
+                                  });
 
-                                                 if (error) throw error;
+                                  // Mostrar modal com resposta da API
+                                  setApiResponseModal({
+                                    isOpen: true,
+                                    response: data || error,
+                                    isSuccess: !error && data?.success
+                                  });
 
-                                                 if (data.success) {
-                                                   toast({
-                                                     title: "Sucesso",
-                                                     description: `Denúncia enviada com sucesso! ID: ${data.id_reclamacao}`,
-                                                   });
-                                                   
-                                                   // Atualizar a lista de denúncias
-                                                   fetchComplaints();
-                                                 } else {
-                                                   toast({
-                                                     title: "Erro",
-                                                     description: data.message || "Erro ao enviar denúncia",
-                                                     variant: "destructive"
-                                                   });
-                                                 }
-                                               } catch (error) {
-                                                 console.error('Error sending to system:', error);
-                                                 toast({
-                                                   title: "Erro",
-                                                   description: "Erro ao enviar denúncia para o sistema",
-                                                   variant: "destructive"
-                                                 });
-                                               } finally {
-                                                 setLoading(false);
-                                               }
-                                             }}
-                                             variant="outline"
-                                             disabled={loading}
-                                           >
-                                             <Send className="h-4 w-4 mr-2" />
-                                             {loading ? "ENVIANDO..." : "ENVIAR PARA O SISTEMA"}
-                                           </Button>
+                                  if (!error && data?.success) {
+                                    // Atualizar a lista de denúncias apenas em caso de sucesso
+                                    fetchComplaints();
+                                  }
+                                } catch (error) {
+                                  console.error('Error sending to system:', error);
+                                  setApiResponseModal({
+                                    isOpen: true,
+                                    response: { error: 'Erro de conexão', details: error },
+                                    isSuccess: false
+                                  });
+                                } finally {
+                                  setLoading(false);
+                                }
+                              }}
+                              variant="outline"
+                              disabled={loading}
+                            >
+                              <Send className="h-4 w-4 mr-2" />
+                              {loading ? "ENVIANDO..." : "ENVIAR PARA O SISTEMA"}
+                            </Button>
                                          </>
                                        )}
                                      </div>
@@ -2602,6 +2605,69 @@ export const ComplaintsList = () => {
         initialIndex={mediaModal.initialIndex}
         type={mediaModal.type}
       />
+
+      {/* Modal de resposta da API */}
+      <Dialog open={apiResponseModal.isOpen} onOpenChange={(open) => setApiResponseModal(prev => ({ ...prev, isOpen: open }))}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {apiResponseModal.isSuccess ? (
+                <>
+                  <Check className="h-5 w-5 text-green-600" />
+                  Denúncia Enviada com Sucesso
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  Erro no Envio da Denúncia
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {apiResponseModal.isSuccess ? (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-green-800 font-medium">
+                  ✅ A denúncia foi enviada com sucesso para o sistema Posturas!
+                </p>
+                {apiResponseModal.response?.id_reclamacao && (
+                  <p className="text-green-700 mt-2">
+                    <strong>ID da Reclamação:</strong> {apiResponseModal.response.id_reclamacao}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 font-medium">
+                  ❌ Ocorreu um erro ao enviar a denúncia para o sistema.
+                </p>
+                {apiResponseModal.response?.message && (
+                  <p className="text-red-700 mt-2">
+                    <strong>Mensagem:</strong> {apiResponseModal.response.message}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Resposta Completa da API</h3>
+              <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto max-h-96 border">
+                {JSON.stringify(apiResponseModal.response, null, 2)}
+              </pre>
+            </div>
+
+            <div className="flex justify-end pt-4 border-t">
+              <Button 
+                onClick={() => setApiResponseModal(prev => ({ ...prev, isOpen: false }))}
+                variant="default"
+              >
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
