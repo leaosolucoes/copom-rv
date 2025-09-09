@@ -121,6 +121,9 @@ export const PosturasApiSettings = () => {
 
   const saveSettings = async () => {
     setLoading(true);
+    console.log('=== Iniciando salvamento das configurações ===');
+    console.log('Config atual:', config);
+    
     try {
       const settingsToSave = [
         { key: 'posturas_api_test_endpoint', value: [config.test_endpoint] },
@@ -132,26 +135,40 @@ export const PosturasApiSettings = () => {
         { key: 'posturas_api_field_mapping', value: config.field_mapping }
       ];
 
+      console.log('Settings que serão salvos:', settingsToSave);
+
       for (const setting of settingsToSave) {
-        await supabase
+        console.log('Salvando setting:', setting);
+        const { data, error } = await supabase
           .from('system_settings')
           .upsert({
             key: setting.key,
             value: setting.value,
             description: `Configuração Posturas API - ${setting.key}`
           });
+        
+        if (error) {
+          console.error('Erro ao salvar setting:', setting.key, error);
+          throw error;
+        } else {
+          console.log('Setting salvo com sucesso:', setting.key, data);
+        }
       }
 
+      console.log('=== Todas as configurações salvas com sucesso ===');
       toast({
         title: "Sucesso",
         description: "Configurações salvas com sucesso!"
       });
 
+      // Recarregar as configurações para confirmar que foram salvas
+      await loadSettings();
+
     } catch (error) {
       console.error('Error saving settings:', error);
       toast({
         title: "Erro",
-        description: "Erro ao salvar configurações",
+        description: `Erro ao salvar configurações: ${error.message}`,
         variant: "destructive"
       });
     } finally {
