@@ -2083,13 +2083,29 @@ export const ComplaintsList = () => {
                                         </>
                                       )}
                                      
-                                      {/* Botão para SUPER_ADMIN */}
-                                      {userRole === 'super_admin' && (
-                                        <Button onClick={() => sendWhatsAppMessage(selectedComplaint)}>
-                                          <MessageSquare className="h-4 w-4 mr-2" />
-                                          Enviar WhatsApp
-                                        </Button>
-                                      )}
+                                       {/* Botões para SUPER_ADMIN */}
+                                       {userRole === 'super_admin' && (
+                                         <>
+                                           <Button onClick={() => sendWhatsAppMessage(selectedComplaint)}>
+                                             <MessageSquare className="h-4 w-4 mr-2" />
+                                             Enviar WhatsApp
+                                           </Button>
+                                           
+                                           <Button 
+                                             onClick={() => {
+                                               // TODO: Implementar lógica de envio para o sistema
+                                               toast({
+                                                 title: "Sistema",
+                                                 description: "Enviando denúncia para o sistema...",
+                                               });
+                                             }}
+                                             variant="outline"
+                                           >
+                                             <Send className="h-4 w-4 mr-2" />
+                                             ENVIAR PARA O SISTEMA
+                                           </Button>
+                                         </>
+                                       )}
                                      </div>
                                  </div>
                                )}
