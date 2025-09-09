@@ -145,6 +145,8 @@ export const PosturasApiSettings = () => {
             key: setting.key,
             value: setting.value,
             description: `Configuração Posturas API - ${setting.key}`
+          }, {
+            onConflict: 'key'
           });
         
         if (error) {
