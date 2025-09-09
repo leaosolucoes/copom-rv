@@ -257,6 +257,13 @@ export const PosturasApiSettings = () => {
               <Label htmlFor="test_active">Ativar Ambiente de Teste</Label>
             </div>
           </div>
+          <Separator />
+          <div className="flex justify-end">
+            <Button onClick={saveSettings} disabled={loading} variant="outline">
+              <Save className="h-4 w-4 mr-2" />
+              {loading ? 'Salvando...' : 'Salvar Teste'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -300,6 +307,13 @@ export const PosturasApiSettings = () => {
               />
               <Label htmlFor="prod_active">Ativar Ambiente de Produção</Label>
             </div>
+          </div>
+          <Separator />
+          <div className="flex justify-end">
+            <Button onClick={saveSettings} disabled={loading} variant="outline">
+              <Save className="h-4 w-4 mr-2" />
+              {loading ? 'Salvando...' : 'Salvar Produção'}
+            </Button>
           </div>
         </CardContent>
       </Card>
