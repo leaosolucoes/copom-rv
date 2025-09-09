@@ -21,7 +21,7 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
         const cspAllowedAncestors = (isLovableEnv && isIframed)
           ? "frame-ancestors 'self' https://*.lovableproject.com https://*.lovable.app;"
           : "frame-ancestors 'none';";
-        meta.content = "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; " + cspAllowedAncestors;
+        meta.content = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.gpteng.co https://*.lovableproject.com https://*.lovable.app; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.gpteng.co https://*.lovableproject.com https://*.lovable.app; object-src 'none'; base-uri 'self'; form-action 'self'; " + cspAllowedAncestors;
         document.head.appendChild(meta);
       }
 
