@@ -28,22 +28,22 @@ const App = () => {
   // Carregar e aplicar cores do sistema
   useSystemColors();
   
-  // Proteções ativadas para produção
+  // Proteções básicas
   useDevToolsProtection();
   
   useEffect(() => {
-    // Production security initialization - simplified for stability
+    // Inicialização simplificada
     const initSecurity = async () => {
       try {
-        logger.info("Sistema iniciado com proteções básicas");
+        logger.info("Sistema iniciado");
         
-        // Only initialize anti-tamper without aggressive checks
+        // Apenas verificações básicas
         const cleanup = initAntiTamper();
         
         return cleanup;
       } catch (error) {
-        logger.error("Erro não crítico na inicialização");
-        // Don't redirect on errors - let the app continue
+        logger.error("Erro na inicialização:", error);
+        // Continua mesmo com erro
       }
     };
     
