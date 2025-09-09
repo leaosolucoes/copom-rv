@@ -8,6 +8,8 @@ interface SecurityProviderProps {
 export const SecurityProvider = ({ children }: SecurityProviderProps) => {
   useEffect(() => {
     // PROTEÇÃO MÁXIMA CONTRA EXPOSIÇÃO DE CÓDIGO
+    const isLovableEnv = location.hostname.includes('lovableproject.com') || location.hostname.includes('lovable.app');
+    const isIframed = window.top !== window.self;
     
     // 1. Headers de segurança ULTRA restritivos
     const addMaxSecurityHeaders = () => {
@@ -16,13 +18,16 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
       if (!cspMeta) {
         const meta = document.createElement('meta');
         meta.httpEquiv = 'Content-Security-Policy';
-        meta.content = "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';";
+        const cspAllowedAncestors = (isLovableEnv && isIframed)
+          ? "frame-ancestors 'self' https://*.lovableproject.com https://*.lovable.app;"
+          : "frame-ancestors 'none';";
+        meta.content = "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; " + cspAllowedAncestors;
         document.head.appendChild(meta);
       }
 
       // X-Frame-Options ULTRA restritivo
       const frameMeta = document.querySelector('meta[http-equiv="X-Frame-Options"]');
-      if (!frameMeta) {
+      if (!frameMeta && !(isLovableEnv && isIframed)) {
         const meta = document.createElement('meta');
         meta.httpEquiv = 'X-Frame-Options';
         meta.content = 'DENY';
@@ -121,6 +126,10 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
 
     // 5. PROTEÇÃO CONTRA IFRAME/CLICKJACKING ULTRA
     const setupUltraClickjackingProtection = () => {
+      // Permitir embed no preview do Lovable
+      if (isLovableEnv && (window.top !== window.self)) {
+        return; // não bloquear quando em iframe do Lovable
+      }
       // Verificação contínua
       const checkFraming = () => {
         if (window.top !== window.self) {
