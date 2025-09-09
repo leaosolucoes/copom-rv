@@ -25,7 +25,7 @@ import { CEPLookup } from '@/components/cep/CEPLookup';
 import { ViaturasManagement } from '@/components/admin/ViaturasManagement';
 import { ChecklistConfigManagement } from '@/components/admin/ChecklistConfigManagement';
 import { EscalasManagement } from '@/components/admin/EscalasManagement';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Clock, Scale, Car, Calendar } from 'lucide-react';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Clock, Scale, Car, Calendar, Server } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -149,6 +149,11 @@ const SuperAdminDashboard = () => {
                 <Code className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">API</span>
                 <span className="sm:hidden">API</span>
+              </TabsTrigger>
+              <TabsTrigger value="posturas-api" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Server className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Posturas-API</span>
+                <span className="sm:hidden">P-API</span>
               </TabsTrigger>
               <TabsTrigger value="consultas" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Search className="h-3 w-3 md:h-4 md:w-4" />
@@ -289,6 +294,22 @@ const SuperAdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <ApiManagement />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="posturas-api" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Posturas-API</CardTitle>
+                <CardDescription>
+                  Configurações e gerenciamento específico da API de Posturas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center py-8 text-muted-foreground">
+                  <p>Configuração da Posturas-API será implementada aqui...</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
