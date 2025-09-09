@@ -91,24 +91,28 @@ export const clearSensitiveData = () => {
 // Anti-tamper básico
 export const initAntiTamper = () => {
   if (process.env.NODE_ENV !== 'production') {
-    return () => {}; // No-op in development
+    return;
   }
 
-  // Proteção mínima - apenas observação básica
+  // Protege contra modificação do console
+  const originalConsole = { ...console };
+  
+  // Monitora mudanças suspeitas no DOM
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       if (mutation.type === 'childList') {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             const element = node as Element;
-            // Apenas alertar sobre scripts suspeitos, não remover
+            // Permitir elementos de mídia (vídeo/áudio) mas bloquear scripts suspeitos
             if (element.tagName === 'SCRIPT') {
               const scriptElement = element as HTMLScriptElement;
-              if (scriptElement.src && 
+              if (!element.getAttribute('data-app-script') &&
+                  scriptElement.src &&
                   !scriptElement.src.includes('lovable') &&
-                  !scriptElement.src.includes('supabase') &&
-                  !element.getAttribute('data-app-script')) {
-                console.warn('Script externo detectado:', scriptElement.src);
+                  !scriptElement.src.includes('supabase')) {
+                // Script suspeito injetado
+                element.remove();
               }
             }
           }
@@ -117,21 +121,14 @@ export const initAntiTamper = () => {
     });
   });
 
-  try {
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-  } catch (error) {
-    console.warn('Erro ao inicializar observer:', error);
-  }
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 
-  // Cleanup function
+  // Limpar quando necessário
   return () => {
-    try {
-      observer.disconnect();
-    } catch (error) {
-      // Silent fail
-    }
+    observer.disconnect();
+    Object.assign(console, originalConsole);
   };
 };
