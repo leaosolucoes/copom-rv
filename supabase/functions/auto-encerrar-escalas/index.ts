@@ -9,7 +9,7 @@ interface Database {
           id: string
           viatura_id: string
           motorista_id: string
-          fiscal_id: string | null
+          fiscal_ids: string[] | null
           data_servico: string
           hora_entrada: string
           hora_saida: string
@@ -17,7 +17,7 @@ interface Database {
           km_final: number | null
           celular_funcional: string | null
           observacoes: string | null
-          status: 'ativa' | 'encerrada'
+          status: 'ativa' | 'encerrada'  
           created_at: string
           updated_at: string
           encerrado_em: string | null
@@ -27,7 +27,7 @@ interface Database {
           id?: string
           viatura_id: string
           motorista_id: string
-          fiscal_id?: string | null
+          fiscal_ids?: string[] | null
           data_servico: string
           hora_entrada: string
           hora_saida: string
@@ -45,7 +45,7 @@ interface Database {
           id?: string
           viatura_id?: string
           motorista_id?: string
-          fiscal_id?: string | null
+          fiscal_ids?: string[] | null
           data_servico?: string
           hora_entrada?: string
           hora_saida?: string
@@ -149,12 +149,13 @@ serve(async (req) => {
         console.log(`    Saída programada: ${horasSaida}:${minutosSaida.toString().padStart(2, '0')} (${minutosSaidaTotal} minutos)`)
         console.log(`    Hora atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')} (${minutosAtualTotal} minutos)`)
         
-        // Se a hora de saída já passou, marcar para encerramento
-        if (minutosAtualTotal >= minutosSaidaTotal) {
-          console.log(`  - Passou do horário: ${minutosAtualTotal} >= ${minutosSaidaTotal} - ENCERRA`)
+        // CORREÇÃO: Só encerra se a hora atual for MAIOR que a hora de saída (não igual)
+        // Adiciona margem de 5 minutos para evitar encerramento precoce
+        if (minutosAtualTotal > minutosSaidaTotal + 5) {
+          console.log(`  - Passou do horário com margem: ${minutosAtualTotal} > ${minutosSaidaTotal + 5} - ENCERRA`)
           escalasParaEncerrar.push(escala)
         } else {
-          console.log(`  - Ainda no horário: ${minutosAtualTotal} < ${minutosSaidaTotal} - MANTÉM`)
+          console.log(`  - Ainda no horário ou dentro da margem: ${minutosAtualTotal} <= ${minutosSaidaTotal + 5} - MANTÉM`)
         }
       } else {
         console.log(`  - Data futura: ${escala.data_servico} > ${dataBrasilia} - MANTÉM`)
