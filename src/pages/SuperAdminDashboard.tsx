@@ -25,6 +25,7 @@ import { CEPLookup } from '@/components/cep/CEPLookup';
 import { ViaturasManagement } from '@/components/admin/ViaturasManagement';
 import { ChecklistConfigManagement } from '@/components/admin/ChecklistConfigManagement';
 import { EscalasManagement } from '@/components/admin/EscalasManagement';
+import { PosturasApiSettings } from '@/components/admin/PosturasApiSettings';
 import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Clock, Scale, Car, Calendar, Server } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -307,9 +308,7 @@ const SuperAdminDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-center py-8 text-muted-foreground">
-                  <p>Configuração da Posturas-API será implementada aqui...</p>
-                </div>
+                <PosturasApiSettings />
               </CardContent>
             </Card>
           </TabsContent>

@@ -2092,17 +2092,50 @@ export const ComplaintsList = () => {
                                            </Button>
                                            
                                            <Button 
-                                             onClick={() => {
-                                               // TODO: Implementar lógica de envio para o sistema
-                                               toast({
-                                                 title: "Sistema",
-                                                 description: "Enviando denúncia para o sistema...",
-                                               });
+                                             onClick={async () => {
+                                               try {
+                                                 setLoading(true);
+                                                 
+                                                 const { data, error } = await supabase.functions.invoke('posturas-bridge', {
+                                                   body: { 
+                                                     action: 'send',
+                                                     complaint_id: selectedComplaint.id 
+                                                   }
+                                                 });
+
+                                                 if (error) throw error;
+
+                                                 if (data.success) {
+                                                   toast({
+                                                     title: "Sucesso",
+                                                     description: `Denúncia enviada com sucesso! ID: ${data.id_reclamacao}`,
+                                                   });
+                                                   
+                                                   // Atualizar a lista de denúncias
+                                                   fetchComplaints();
+                                                 } else {
+                                                   toast({
+                                                     title: "Erro",
+                                                     description: data.message || "Erro ao enviar denúncia",
+                                                     variant: "destructive"
+                                                   });
+                                                 }
+                                               } catch (error) {
+                                                 console.error('Error sending to system:', error);
+                                                 toast({
+                                                   title: "Erro",
+                                                   description: "Erro ao enviar denúncia para o sistema",
+                                                   variant: "destructive"
+                                                 });
+                                               } finally {
+                                                 setLoading(false);
+                                               }
                                              }}
                                              variant="outline"
+                                             disabled={loading}
                                            >
                                              <Send className="h-4 w-4 mr-2" />
-                                             ENVIAR PARA O SISTEMA
+                                             {loading ? "ENVIANDO..." : "ENVIAR PARA O SISTEMA"}
                                            </Button>
                                          </>
                                        )}
