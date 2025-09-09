@@ -32,6 +32,28 @@ interface PosturasApiConfig {
   };
 }
 
+// Helper: detect TLS name/certificate errors
+function isTlsNameError(err: any): boolean {
+  const msg = String(err?.message || err || '');
+  return /invalid peer certificate|NotValidForName|certificate/i.test(msg);
+}
+
+// Helper: POST with TLS fallback (only in test env)
+async function postWithTlsFallback(endpoint: string, formData: FormData, isProduction: boolean) {
+  try {
+    const response = await fetch(endpoint, { method: 'POST', body: formData });
+    return { response, usedFallback: false, usedEndpoint: endpoint };
+  } catch (err) {
+    if (!isProduction && endpoint.startsWith('https://') && isTlsNameError(err)) {
+      const insecureEndpoint = endpoint.replace(/^https:/, 'http:');
+      console.warn('TLS error detected, retrying over HTTP (test env only)', { original: endpoint, insecureEndpoint });
+      const response = await fetch(insecureEndpoint, { method: 'POST', body: formData });
+      return { response, usedFallback: true, usedEndpoint: insecureEndpoint };
+    }
+    throw err;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -187,15 +209,12 @@ async function handleSendComplaint(supabaseClient: any, complaintId: string) {
   });
 
   try {
-    // Enviar para API da Posturas
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      body: formData
-    });
+    // Enviar para API da Posturas (com fallback de TLS em ambiente de teste)
+    const { response, usedFallback, usedEndpoint } = await postWithTlsFallback(endpoint, formData, isProduction);
 
-    const result = await response.json();
+    const result = await response.json().catch(() => ({ raw: 'non-JSON response' }));
     
-    // Atualizar denúncia com resultado
+    // Atualizar denúncia com resultado quando sucesso
     if (result.success && result.id_reclamacao) {
       await supabaseClient
         .from('complaints')
@@ -213,15 +232,15 @@ async function handleSendComplaint(supabaseClient: any, complaintId: string) {
         endpoint: 'posturas-bridge-send',
         method: 'POST',
         status_code: response.status,
-        request_body: { complaint_id: complaintId, environment: isProduction ? 'production' : 'test' },
+        request_body: { complaint_id: complaintId, environment: isProduction ? 'production' : 'test', used_fallback_http: usedFallback },
         response_body: result,
         ip_address: '127.0.0.1',
         user_agent: 'posturas-bridge'
       });
 
     return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ ...result, used_fallback_http: usedFallback, endpoint: usedEndpoint }),
+      { status: response.ok ? 200 : 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
@@ -231,7 +250,7 @@ async function handleSendComplaint(supabaseClient: any, complaintId: string) {
         success: false,
         error: 'Erro ao conectar com a API Posturas',
         message: `Falha na comunicação com o sistema: ${error.message}`,
-        details: { environment: isProduction ? 'production' : 'test' }
+        details: { environment: isProduction ? 'production' : 'test', hint: isTlsNameError(error) ? 'Problema de certificado TLS do servidor. Verifique o domínio e o certificado do endpoint.' : undefined }
       }),
       { 
         status: 500,
@@ -271,16 +290,13 @@ async function handleFetchBairros(supabaseClient: any) {
   formData.append('service', 'bairros');
 
   try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      body: formData
-    });
+    const { response, usedFallback } = await postWithTlsFallback(endpoint, formData, isProduction);
 
-    const result = await response.json();
+    const result = await response.json().catch(() => ({ raw: 'non-JSON response' }));
 
     return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ ...result, used_fallback_http: usedFallback }),
+      { status: response.ok ? 200 : 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
