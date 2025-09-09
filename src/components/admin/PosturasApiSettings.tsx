@@ -93,7 +93,10 @@ export const PosturasApiSettings = () => {
           'posturas_api_field_mapping'
         ]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading settings:', error);
+        return;
+      }
 
       const configData: any = {};
       settings?.forEach((setting) => {
@@ -113,11 +116,6 @@ export const PosturasApiSettings = () => {
 
     } catch (error) {
       console.error('Error loading settings:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar configurações",
-        variant: "destructive"
-      });
     }
   };
 
@@ -331,10 +329,10 @@ export const PosturasApiSettings = () => {
                   value={config.field_mapping[apiField.key] || ''}
                   onValueChange={(value) => updateFieldMapping(apiField.key, value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background border-input">
                     <SelectValue placeholder="Selecione o campo do sistema..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border-input shadow-lg z-50">
                     <SelectItem value="">Não mapear</SelectItem>
                     {COMPLAINT_FIELDS.map((field) => (
                       <SelectItem key={field.key} value={field.key}>
