@@ -2119,10 +2119,10 @@ export const ComplaintsList = () => {
                                     isSuccess: !error && data?.success
                                   });
 
-                                  if (!error && data?.success) {
-                                    // Atualizar a lista de denúncias apenas em caso de sucesso
-                                    fetchComplaints();
-                                  }
+// Removido fetchComplaints para evitar recarregamento duplo; realtime (quando aplicável) cuidará da atualização da lista
+// if (!error && data?.success) {
+//   fetchComplaints();
+// }
                                 } catch (error) {
                                   console.error('Error sending to system:', error);
                                   setApiResponseModal({
