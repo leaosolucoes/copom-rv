@@ -88,39 +88,89 @@ async function getApiConfig(supabaseClient: any): Promise<PosturasApiConfig> {
   });
 
   return {
-    test_endpoint: config.test_endpoint?.[0] || '',
-    test_key: config.test_key?.[0] || '',
+    test_endpoint: Array.isArray(config.test_endpoint) && config.test_endpoint.length > 0 ? config.test_endpoint[0] : '',
+    test_key: Array.isArray(config.test_key) && config.test_key.length > 0 ? config.test_key[0] : '',
     test_active: config.test_active || false,
-    prod_endpoint: config.prod_endpoint?.[0] || '',
-    prod_key: config.prod_key?.[0] || '',
+    prod_endpoint: Array.isArray(config.prod_endpoint) && config.prod_endpoint.length > 0 ? config.prod_endpoint[0] : '',
+    prod_key: Array.isArray(config.prod_key) && config.prod_key.length > 0 ? config.prod_key[0] : '',
     prod_active: config.prod_active || false,
     field_mapping: config.field_mapping || {}
   };
 }
 
 async function handleSendComplaint(supabaseClient: any, complaintId: string) {
-  // Buscar configurações
-  const apiConfig = await getApiConfig(supabaseClient);
-  
-  // Determinar qual ambiente usar
-  const isProduction = apiConfig.prod_active;
-  const endpoint = isProduction ? apiConfig.prod_endpoint : apiConfig.test_endpoint;
-  const key = isProduction ? apiConfig.prod_key : apiConfig.test_key;
+  try {
+    // Buscar configurações
+    const apiConfig = await getApiConfig(supabaseClient);
+    
+    // Determinar qual ambiente usar
+    const isProduction = apiConfig.prod_active;
+    const endpoint = isProduction ? apiConfig.prod_endpoint : apiConfig.test_endpoint;
+    const key = isProduction ? apiConfig.prod_key : apiConfig.test_key;
+    
+    console.log('API Config:', { 
+      isProduction, 
+      endpoint: endpoint ? 'SET' : 'NOT SET', 
+      key: key ? 'SET' : 'NOT SET',
+      test_active: apiConfig.test_active,
+      prod_active: apiConfig.prod_active
+    });
 
-  if (!endpoint || !key) {
-    throw new Error('Configurações da API não encontradas ou incompletas');
-  }
+    if (!endpoint || endpoint === '' || !key || key === '') {
+      const environment = isProduction ? 'produção' : 'teste';
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: `Configurações da API Posturas não encontradas para ambiente de ${environment}`,
+          message: `Por favor, configure o endpoint e chave da API para o ambiente de ${environment} na seção Posturas-API.`,
+          details: {
+            environment,
+            endpoint_set: !!endpoint && endpoint !== '',
+            key_set: !!key && key !== ''
+          }
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
-  // Buscar dados da denúncia
-  const { data: complaint, error: complaintError } = await supabaseClient
-    .from('complaints')
-    .select('*')
-    .eq('id', complaintId)
-    .single();
+    // Buscar dados da denúncia
+    const { data: complaint, error: complaintError } = await supabaseClient
+      .from('complaints')
+      .select('*')
+      .eq('id', complaintId)
+      .maybeSingle();
 
-  if (complaintError || !complaint) {
-    throw new Error('Denúncia não encontrada');
-  }
+    if (complaintError) {
+      console.error('Database error:', complaintError);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Erro ao buscar denúncia no banco de dados',
+          message: complaintError.message
+        }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    if (!complaint) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Denúncia não encontrada',
+          message: `Não foi possível encontrar a denúncia com ID: ${complaintId}` 
+        }),
+        { 
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
   // Preparar dados para envio usando o mapeamento
   const formData = new FormData();
@@ -176,8 +226,33 @@ async function handleSendComplaint(supabaseClient: any, complaintId: string) {
 
   } catch (error) {
     console.error('Error calling Posturas API:', error);
-    throw new Error(`Erro ao enviar para API: ${error.message}`);
+    return new Response(
+      JSON.stringify({ 
+        success: false,
+        error: 'Erro ao conectar com a API Posturas',
+        message: `Falha na comunicação com o sistema: ${error.message}`,
+        details: { environment: isProduction ? 'production' : 'test' }
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
+} catch (error) {
+  console.error('Error in handleSendComplaint:', error);
+  return new Response(
+    JSON.stringify({ 
+      success: false,
+      error: 'Erro interno do servidor',
+      message: error.message
+    }),
+    { 
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    }
+  );
+}
 }
 
 async function handleFetchBairros(supabaseClient: any) {
