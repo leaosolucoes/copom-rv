@@ -188,6 +188,7 @@ interface DuplicateInfo {
 export const ComplaintsList = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [deviceFilter, setDeviceFilter] = useState('todos');
@@ -214,18 +215,32 @@ export const ComplaintsList = () => {
   });
   const [cnpjModalOpen, setCnpjModalOpen] = useState(false);
   const [cnpjLoading, setCnpjLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
   const { toast } = useToast();
   const { user, profile } = useSupabaseAuth();
+  
+  // Configurações de paginação
+  const PAGE_SIZE = 50; // Aumentado para melhor experiência
   
   // Get user role from the profile object
   const userRole = profile?.role || 'atendente';
 
   useEffect(() => {
-    fetchComplaints();
+    fetchComplaints(true); // Reset na primeira carga
     fetchClassifications();
     fetchSoundSettings();
     fetchLogo();
-  }, [userRole]);
+  }, [userRole, activeTab, statusFilter]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(0);
+    setComplaints([]);
+    setHasMore(true);
+    fetchComplaints(true);
+  }, [searchTerm, deviceFilter, startDate, endDate]);
 
   useEffect(() => {
     // Detecção mais robusta de tablets e dispositivos móveis
@@ -415,27 +430,79 @@ export const ComplaintsList = () => {
       title: "Atualizando",
       description: "Atualizando lista de denúncias...",
     });
-    await fetchComplaints();
+    await fetchComplaints(true);
   };
 
-  const fetchComplaints = async () => {
+  const fetchComplaints = async (reset = false) => {
     try {
-      setLoading(true);
-      console.log('🔍 FETCH COMPLAINTS - Iniciando...', { userRole: profile?.role });
+      if (reset) {
+        setLoading(true);
+        setCurrentPage(0);
+        setComplaints([]);
+        setHasMore(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const page = reset ? 0 : currentPage;
+      const offset = page * PAGE_SIZE;
+
+      console.log('🔍 FETCH COMPLAINTS - Página:', page, 'Offset:', offset);
       
-      // Clear any cached data and force fresh query
-      const { data, error } = await supabase
+      // Build query with filters
+      let query = supabase
         .from('complaints')
         .select(`
           *,
           attendant:users!complaints_attendant_id_fkey(full_name),
           archived_by_user:users!complaints_archived_by_fkey(full_name)
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' });
 
-      console.log('🔍 DEBUG fetchComplaints - Dados brutos:', data?.slice(0, 2));
+      // Apply role-based filters
+      if (profile?.role === 'atendente') {
+        query = query.not('status', 'in', '("finalizada","a_verificar")');
+      }
 
-      console.log('📊 Query result:', { error, dataLength: data?.length });
+      // Apply tab filter
+      if (activeTab === 'novas') {
+        query = query.eq('status', 'nova');
+      } else if (activeTab === 'historico') {
+        query = query.neq('status', 'nova');
+      }
+
+      // Apply status filter
+      if (statusFilter !== 'todos') {
+        query = query.eq('status', statusFilter as ComplaintStatus);
+      }
+
+      // Apply device filter
+      if (deviceFilter !== 'todos') {
+        if (deviceFilter === 'mobile') {
+          query = query.in('user_device_type', ['mobile', 'Mobile', 'smartphone', 'Smartphone']);
+        } else if (deviceFilter === 'desktop') {
+          query = query.not('user_device_type', 'in', '("mobile","Mobile","smartphone","Smartphone")');
+        }
+      }
+
+      // Apply search filter
+      if (searchTerm.trim()) {
+        query = query.or(`complainant_name.ilike.%${searchTerm}%,occurrence_address.ilike.%${searchTerm}%,narrative.ilike.%${searchTerm}%`);
+      }
+
+      // Apply date filters
+      if (startDate) {
+        query = query.gte('created_at', startDate.toISOString());
+      }
+      if (endDate) {
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        query = query.lte('created_at', endOfDay.toISOString());
+      }
+
+      // Apply pagination and ordering
+      const { data, error, count } = await query
+        .order('created_at', { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1);
 
       if (error) {
         console.error('❌ Erro na query:', error);
@@ -447,29 +514,29 @@ export const ComplaintsList = () => {
         throw error;
       }
       
-      // Filter complaints based on user role for attendants
-      let filteredData = data || [];
+      const newComplaints = data || [];
       
-      if (profile?.role === 'atendente') {
-        // Atendentes não podem ver denúncias com status 'finalizada' ou 'a_verificar'
-        filteredData = data?.filter(complaint => 
-          complaint.status !== 'finalizada' && complaint.status !== 'a_verificar'
-        ) || [];
-        console.log('🔍 Filtered for atendente:', { 
-          originalLength: data?.length, 
-          filteredLength: filteredData.length 
-        });
+      if (reset) {
+        setComplaints(newComplaints as Complaint[]);
+      } else {
+        setComplaints(prev => [...prev, ...newComplaints] as Complaint[]);
       }
+
+      setTotalCount(count || 0);
+      setHasMore(newComplaints.length === PAGE_SIZE);
       
-      console.log('📝 Final complaints set:', {
-        total: filteredData.length,
-        byStatus: filteredData.reduce((acc: any, complaint) => {
-          acc[complaint.status] = (acc[complaint.status] || 0) + 1;
-          return acc;
-        }, {})
+      if (!reset) {
+        setCurrentPage(page + 1);
+      }
+
+      console.log('📝 Complaints loaded:', {
+        page,
+        newCount: newComplaints.length,
+        totalLoaded: reset ? newComplaints.length : complaints.length + newComplaints.length,
+        totalInDB: count,
+        hasMore: newComplaints.length === PAGE_SIZE
       });
       
-      setComplaints(filteredData as Complaint[]);
     } catch (error) {
       console.error('❌ Erro ao carregar denúncias:', error);
       toast({
@@ -479,6 +546,13 @@ export const ComplaintsList = () => {
       });
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchComplaints(false);
     }
   };
 
@@ -1356,36 +1430,8 @@ export const ComplaintsList = () => {
     }
   };
 
-  // Use optimized filter hook
-  const { filteredComplaints, complaintsForNewTab, complaintsForHistoryTab } = useComplaintsFilter(complaints, {
-    searchTerm,
-    deviceFilter,
-    activeTab,
-    startDate,
-    endDate,
-    userRole
-  });
-
-  // Lazy loading for performance
-  const { 
-    visibleItems: visibleNewComplaints, 
-    hasMore: hasMoreNew, 
-    loadMore: loadMoreNew 
-  } = useLazyRender({ 
-    items: complaintsForNewTab, 
-    itemsPerPage: 20, 
-    initialLoad: 15 
-  });
-
-  const { 
-    visibleItems: visibleHistoryComplaints, 
-    hasMore: hasMoreHistory, 
-    loadMore: loadMoreHistory 
-  } = useLazyRender({ 
-    items: complaintsForHistoryTab, 
-    itemsPerPage: 20, 
-    initialLoad: 15 
-  });
+  // Filtered complaints for display based on active tab
+  const displayComplaints = complaints;
 
   // Get unique device types for filter
   const getUniqueDevices = () => {
@@ -1614,7 +1660,7 @@ export const ComplaintsList = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {visibleNewComplaints
+                  {displayComplaints
                      .map((complaint) => {
                        const duplicateInfo = getDuplicateInfo(complaint, complaints);
                       
@@ -2140,15 +2186,23 @@ export const ComplaintsList = () => {
                 </TableBody>
               </Table>
               
-              {/* Botão Carregar Mais para aba Novas */}
-              {hasMoreNew && (
+              {/* Botão Carregar Mais */}
+              {hasMore && (
                 <div className="flex justify-center py-4">
                   <Button 
                     variant="outline" 
-                    onClick={loadMoreNew}
+                    onClick={loadMore}
+                    disabled={loadingMore}
                     className="text-sm"
                   >
-                    Carregar mais denúncias ({complaintsForNewTab.length - visibleNewComplaints.length} restantes)
+                    {loadingMore ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Carregando...
+                      </>
+                    ) : (
+                      `Carregar mais denúncias (${totalCount - complaints.length} restantes)`
+                    )}
                   </Button>
                 </div>
               )}
@@ -2186,8 +2240,8 @@ export const ComplaintsList = () => {
                  </TableRow>
                </TableHeader>
                <TableBody>
-                    {visibleHistoryComplaints
-                     .map((complaint) => {
+                     {displayComplaints
+                      .map((complaint) => {
                        const duplicateInfo = getDuplicateInfo(complaint, complaints);
                       
                       return (
@@ -2443,15 +2497,23 @@ export const ComplaintsList = () => {
                  </TableBody>
               </Table>
               
-              {/* Botão Carregar Mais para aba Histórico */}
-              {hasMoreHistory && (
+              {/* Botão Carregar Mais */}
+              {hasMore && (
                 <div className="flex justify-center py-4">
                   <Button 
                     variant="outline" 
-                    onClick={loadMoreHistory}
+                    onClick={loadMore}
+                    disabled={loadingMore}
                     className="text-sm"
                   >
-                    Carregar mais denúncias ({complaintsForHistoryTab.length - visibleHistoryComplaints.length} restantes)
+                    {loadingMore ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Carregando...
+                      </>
+                    ) : (
+                      `Carregar mais denúncias (${totalCount - complaints.length} restantes)`
+                    )}
                   </Button>
                 </div>
               )}
@@ -2460,11 +2522,11 @@ export const ComplaintsList = () => {
        </TabsContent>
      </Tabs>
 
-     {filteredComplaints.length === 0 && (
-       <div className="text-center py-8 text-gray-500">
-         Nenhuma denúncia encontrada com os filtros aplicados.
-       </div>
-     )}
+      {complaints.length === 0 && !loading && (
+        <div className="text-center py-8 text-gray-500">
+          Nenhuma denúncia encontrada com os filtros aplicados.
+        </div>
+      )}
 
       {/* Modal de dados do CNPJ */}
       <Dialog open={cnpjModalOpen} onOpenChange={setCnpjModalOpen}>
