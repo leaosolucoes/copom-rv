@@ -326,14 +326,14 @@ export const PosturasApiSettings = () => {
                   <p className="text-xs text-muted-foreground">{apiField.key}</p>
                 </div>
                 <Select
-                  value={config.field_mapping[apiField.key] || ''}
-                  onValueChange={(value) => updateFieldMapping(apiField.key, value)}
+                  value={config.field_mapping[apiField.key] || 'unmapped'}
+                  onValueChange={(value) => updateFieldMapping(apiField.key, value === 'unmapped' ? '' : value)}
                 >
                   <SelectTrigger className="bg-background border-input">
                     <SelectValue placeholder="Selecione o campo do sistema..." />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-input shadow-lg z-50">
-                    <SelectItem value="">Não mapear</SelectItem>
+                    <SelectItem value="unmapped">Não mapear</SelectItem>
                     {COMPLAINT_FIELDS.map((field) => (
                       <SelectItem key={field.key} value={field.key}>
                         {field.label}
