@@ -149,13 +149,12 @@ serve(async (req) => {
         console.log(`    Saída programada: ${horasSaida}:${minutosSaida.toString().padStart(2, '0')} (${minutosSaidaTotal} minutos)`)
         console.log(`    Hora atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')} (${minutosAtualTotal} minutos)`)
         
-        // CORREÇÃO: Só encerra se a hora atual for MAIOR que a hora de saída (não igual)
-        // Adiciona margem de 5 minutos para evitar encerramento precoce
-        if (minutosAtualTotal > minutosSaidaTotal + 5) {
-          console.log(`  - Passou do horário com margem: ${minutosAtualTotal} > ${minutosSaidaTotal + 5} - ENCERRA`)
+        // CORREÇÃO: Encerra exatamente na hora de saída programada ou logo após
+        if (minutosAtualTotal >= minutosSaidaTotal) {
+          console.log(`  - Passou do horário de saída: ${minutosAtualTotal} >= ${minutosSaidaTotal} - ENCERRA`)
           escalasParaEncerrar.push(escala)
         } else {
-          console.log(`  - Ainda no horário ou dentro da margem: ${minutosAtualTotal} <= ${minutosSaidaTotal + 5} - MANTÉM`)
+          console.log(`  - Ainda dentro do horário de serviço: ${minutosAtualTotal} < ${minutosSaidaTotal} - MANTÉM`)
         }
       } else {
         console.log(`  - Data futura: ${escala.data_servico} > ${dataBrasilia} - MANTÉM`)
