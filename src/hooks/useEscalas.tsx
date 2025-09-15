@@ -23,13 +23,27 @@ export const useEscalas = () => {
     if (!profile?.id) return;
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('escalas_viaturas')
         .select('*')
-        .eq('motorista_id', profile.id)
         .eq('status', 'ativa')
         .order('created_at', { ascending: false })
         .limit(1);
+
+      // Se for motorista, busca por motorista_id
+      // Se for fiscal, busca onde está nos fiscal_ids
+      if (profile.role === 'motorista') {
+        query = query.eq('motorista_id', profile.id);
+      } else if (profile.role === 'fiscal') {
+        query = query.contains('fiscal_ids', [profile.id]);
+      } else {
+        // Para outros perfis (admin, etc), pode buscar todas ou nenhuma
+        setEscalaAtiva(null);
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
