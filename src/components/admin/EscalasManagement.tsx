@@ -8,6 +8,7 @@ import { Calendar, Clock, Car, User, Phone, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { formatarDataBrasilComTimezone } from "@/utils/dataBrasil";
 import { DetalhesImprevisto } from "./DetalhesImprevisto";
 
 interface Escala {
@@ -228,9 +229,21 @@ export const EscalasManagement = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-warning">
-              {imprevistos.filter(i => 
-                format(new Date(i.created_at), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-              ).length}
+              {imprevistos.filter(i => {
+                const imprevistoBrasil = new Intl.DateTimeFormat('sv-SE', {
+                  timeZone: 'America/Sao_Paulo',
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+                }).format(new Date(i.created_at));
+                const hojeBrasil = new Intl.DateTimeFormat('sv-SE', {
+                  timeZone: 'America/Sao_Paulo',
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+                }).format(new Date());
+                return imprevistoBrasil === hojeBrasil;
+              }).length}
             </div>
             <p className="text-sm text-muted-foreground">
               ocorrências relatadas
@@ -295,13 +308,13 @@ export const EscalasManagement = () => {
                        <div className="flex items-center gap-2">
                          <Clock className="h-4 w-4 text-muted-foreground" />
                          <div className="text-sm">
-                           <div>{format(new Date(escala.data_servico), 'dd/MM/yyyy')}</div>
+                           <div>{formatarDataBrasilComTimezone(new Date(escala.data_servico + 'T12:00:00'))}</div>
                            <div className="text-muted-foreground">
                              {escala.hora_entrada} - {escala.hora_saida}
                            </div>
                            {escala.encerrado_em && (
                              <div className="text-red-600 font-medium">
-                               Encerrado: {format(new Date(escala.encerrado_em), 'HH:mm')}
+                               Encerrado: {formatarDataBrasilComTimezone(new Date(escala.encerrado_em)).split(' ')[1] || format(new Date(escala.encerrado_em), 'HH:mm')}
                              </div>
                            )}
                          </div>
@@ -370,9 +383,16 @@ export const EscalasManagement = () => {
                          </Badge>
                        )}
                      </div>
-                     <div className="text-sm text-muted-foreground">
-                       {format(new Date(imprevisto.created_at), 'dd/MM/yyyy HH:mm')}
-                     </div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Intl.DateTimeFormat('pt-BR', {
+                          timeZone: 'America/Sao_Paulo',
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }).format(new Date(imprevisto.created_at))}
+                      </div>
                    </div>
                   <p className="text-sm">{imprevisto.descricao_imprevisto}</p>
                   {imprevisto.fotos && imprevisto.fotos.length > 0 && (

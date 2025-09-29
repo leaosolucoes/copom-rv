@@ -9,6 +9,7 @@ import { Car, Clock, User, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { formatarDataBrasilComTimezone } from "@/utils/dataBrasil";
 
 interface EscalaViaturaModalProps {
   open: boolean;
@@ -228,7 +229,7 @@ export const EscalaViaturaModal = ({
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-primary" />
                 <span>
-                  {format(new Date(escalaData.data_servico), 'dd/MM/yyyy')} - 
+                  {formatarDataBrasilComTimezone(new Date(escalaData.data_servico + 'T12:00:00'))} - 
                   {escalaData.hora_entrada} às {escalaData.hora_saida}
                 </span>
               </div>

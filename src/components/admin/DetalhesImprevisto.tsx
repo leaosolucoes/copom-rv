@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, User, Car, Camera, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
+import { formatarDataBrasilComTimezone } from "@/utils/dataBrasil";
 import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -126,7 +127,14 @@ export const DetalhesImprevisto = ({
                 Data e Horário
               </div>
               <p className="text-sm text-muted-foreground pl-6">
-                {format(new Date(imprevisto.created_at), 'dd/MM/yyyy HH:mm')}
+                {new Intl.DateTimeFormat('pt-BR', {
+                  timeZone: 'America/Sao_Paulo',
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }).format(new Date(imprevisto.created_at))}
               </p>
             </div>
           </div>
@@ -205,7 +213,14 @@ export const DetalhesImprevisto = ({
             
             {imprevisto.admin_ciente && imprevisto.admin_ciente_em && (
               <div className="text-sm text-muted-foreground">
-                Marcado como ciente em {format(new Date(imprevisto.admin_ciente_em), 'dd/MM/yyyy HH:mm')}
+                Marcado como ciente em {new Intl.DateTimeFormat('pt-BR', {
+                  timeZone: 'America/Sao_Paulo',
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }).format(new Date(imprevisto.admin_ciente_em))}
               </div>
             )}
           </div>
