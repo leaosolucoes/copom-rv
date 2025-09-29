@@ -133,22 +133,45 @@ serve(async (req: Request): Promise<Response> => {
       )
     }
 
-    // Verificar se já são 07:00h ou depois no horário de Brasília
+    // Verificar escalas que devem ser encerradas
     const [horasAtual, minutosAtual] = horaAtualMinutos.split(':').map(Number)
     const minutosAtualTotal = horasAtual * 60 + minutosAtual
     const seteHoras = 7 * 60 // 07:00h em minutos (420 minutos)
     
     console.log(`Hora atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')} (${minutosAtualTotal} minutos)`)
-    console.log(`Horário de encerramento: 07:00 (${seteHoras} minutos)`)
+    console.log(`Horário de limpeza: 07:00 (${seteHoras} minutos)`)
 
-    let escalasParaEncerrar: any[] = []
+    let escalasParaEncerrar: Database['public']['Tables']['escalas_viaturas']['Row'][] = []
 
-    // Se já passou das 07:00h, encerrar TODAS as escalas ativas
+    // Só encerrar às 07:00h se for para limpeza de escalas que cruzaram meia-noite e já venceram
     if (minutosAtualTotal >= seteHoras) {
-      console.log('Já passou das 07:00h - encerrando TODAS as escalas ativas')
-      escalasParaEncerrar = escalasAtivas || []
+      console.log('São 07:00h ou mais - verificando escalas vencidas para limpeza')
+      
+      // Filtrar apenas escalas que realmente venceram
+      const escalasValidadas = escalasAtivas as Database['public']['Tables']['escalas_viaturas']['Row'][]
+      
+      for (const escala of escalasValidadas) {
+        const [horaSaidaH, horaSaidaM] = escala.hora_saida.split(':').map(Number)
+        const [horaEntradaH, horaEntradaM] = escala.hora_entrada.split(':').map(Number)
+        
+        const horaSaidaMinutos = horaSaidaH * 60 + horaSaidaM
+        const horaEntradaMinutos = horaEntradaH * 60 + horaEntradaM
+        
+        // Verificar se a escala cruza meia-noite (hora_saida < hora_entrada)
+        const cruzaMeiaNoite = horaSaidaMinutos < horaEntradaMinutos
+        
+        if (cruzaMeiaNoite) {
+          // Para escalas que cruzam meia-noite, encerrar apenas se já passou das 07:00h
+          // (assumindo que são escalas "presas" que deveriam ter terminado)
+          console.log(`Escala ${escala.id} cruza meia-noite (${escala.hora_entrada}-${escala.hora_saida}) - será encerrada para limpeza`)
+          escalasParaEncerrar.push(escala)
+        } else {
+          // Para escalas no mesmo dia, não encerrar se ainda está no período válido
+          console.log(`Escala ${escala.id} não cruza meia-noite (${escala.hora_entrada}-${escala.hora_saida}) - mantida ativa`)
+        }
+      }
     } else {
-      console.log(`Ainda não são 07:00h (atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')}). Escalas mantidas ativas.`)
+      console.log(`Ainda não são 07:00h (atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')}). Nenhuma limpeza necessária.`)
     }
 
     if (escalasParaEncerrar.length === 0) {
