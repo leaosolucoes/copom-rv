@@ -15,6 +15,8 @@ interface EscalaAtivaCardProps {
     hora_entrada: string;
     hora_saida: string;
     km_inicial: number;
+    km_final?: number | null;
+    observacoes?: string | null;
     celular_funcional: string | null;
     viaturas: { prefixo: string; modelo: string; placa: string } | null;
     fiscal: { full_name: string }[] | null;
@@ -67,6 +69,12 @@ export const EscalaAtivaCard = ({ escala, onEscalaUpdated }: EscalaAtivaCardProp
                   <span className="font-medium">KM Inicial: </span>
                   <span>{escala.km_inicial.toLocaleString()}</span>
                 </div>
+                {escala.km_final && (
+                  <div className="text-sm">
+                    <span className="font-medium">KM Final: </span>
+                    <span className="text-green-600 font-semibold">{escala.km_final.toLocaleString()}</span>
+                  </div>
+                )}
                 {escala.fiscal && escala.fiscal.length > 0 && (
                   <div className="flex items-start gap-2 text-sm">
                     <User className="h-4 w-4 text-muted-foreground mt-0.5" />
@@ -85,6 +93,13 @@ export const EscalaAtivaCard = ({ escala, onEscalaUpdated }: EscalaAtivaCardProp
               <div className="flex items-center gap-2 text-sm">
                 <Phone className="h-4 w-4 text-muted-foreground" />
                 <span>Contato: {escala.celular_funcional}</span>
+              </div>
+            )}
+
+            {escala.observacoes && (
+              <div className="mt-3 p-3 bg-muted rounded-lg">
+                <span className="text-muted-foreground text-sm font-medium">Observações:</span>
+                <p className="text-sm mt-1">{escala.observacoes}</p>
               </div>
             )}
           </div>

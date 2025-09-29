@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { StopCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { format } from "date-fns";
 
 interface EncerrarEscalaModalProps {
@@ -30,6 +31,7 @@ export const EncerrarEscalaModal = ({
   const [observacoes, setObservacoes] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { profile } = useSupabaseAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,13 +49,23 @@ export const EncerrarEscalaModal = ({
 
     setLoading(true);
     try {
+      // Construir mensagem de observação com informações do usuário
+      const userRole = profile?.role === 'motorista' ? 'Motorista' : 'Fiscal';
+      const userName = profile?.full_name || 'Usuário';
+      const observacaoSistema = `Encerrado pelo ${userRole} ${userName} com KM final ${kmFinalNum}`;
+      
+      // Combinar observação do sistema com observações do usuário
+      const observacaoCompleta = observacoes.trim() 
+        ? `${observacaoSistema}. Observações: ${observacoes.trim()}`
+        : observacaoSistema;
+
       const { error } = await supabase
         .from('escalas_viaturas')
         .update({
           km_final: kmFinalNum,
           status: 'encerrada',
           encerrado_em: new Date().toISOString(),
-          observacoes: observacoes.trim() || null
+          observacoes: observacaoCompleta
         })
         .eq('id', escala.id);
 

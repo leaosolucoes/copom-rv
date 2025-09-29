@@ -123,42 +123,22 @@ serve(async (req) => {
       )
     }
 
-    const escalasParaEncerrar = []
+    // Verificar se já são 07:00h ou depois no horário de Brasília
+    const [horasAtual, minutosAtual] = horaAtualMinutos.split(':').map(Number)
+    const minutosAtualTotal = horasAtual * 60 + minutosAtual
+    const seteHoras = 7 * 60 // 07:00h em minutos (420 minutos)
+    
+    console.log(`Hora atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')} (${minutosAtualTotal} minutos)`)
+    console.log(`Horário de encerramento: 07:00 (${seteHoras} minutos)`)
 
-    for (const escala of escalasAtivas) {
-      console.log(`Verificando escala ${escala.id}:`)
-      console.log(`  - Data serviço: ${escala.data_servico}`)
-      console.log(`  - Hora saída: ${escala.hora_saida}`)
-      
-      // Verificar se a data de serviço é anterior à data atual
-      if (escala.data_servico < dataBrasilia) {
-        console.log(`  - Data anterior: ${escala.data_servico} < ${dataBrasilia} - ENCERRA`)
-        escalasParaEncerrar.push(escala)
-        continue
-      }
-      
-      // Para escalas de hoje, verificar se passou do horário
-      if (escala.data_servico === dataBrasilia) {
-        const [horasSaida, minutosSaida] = escala.hora_saida.split(':').map(Number)
-        const [horasAtual, minutosAtual] = horaAtualMinutos.split(':').map(Number)
-        
-        const minutosSaidaTotal = horasSaida * 60 + minutosSaida
-        const minutosAtualTotal = horasAtual * 60 + minutosAtual
-        
-        console.log(`  - Comparação de horário:`)
-        console.log(`    Saída programada: ${horasSaida}:${minutosSaida.toString().padStart(2, '0')} (${minutosSaidaTotal} minutos)`)
-        console.log(`    Hora atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')} (${minutosAtualTotal} minutos)`)
-        
-        // CORREÇÃO: Encerra exatamente na hora de saída programada ou logo após
-        if (minutosAtualTotal >= minutosSaidaTotal) {
-          console.log(`  - Passou do horário de saída: ${minutosAtualTotal} >= ${minutosSaidaTotal} - ENCERRA`)
-          escalasParaEncerrar.push(escala)
-        } else {
-          console.log(`  - Ainda dentro do horário de serviço: ${minutosAtualTotal} < ${minutosSaidaTotal} - MANTÉM`)
-        }
-      } else {
-        console.log(`  - Data futura: ${escala.data_servico} > ${dataBrasilia} - MANTÉM`)
-      }
+    let escalasParaEncerrar = []
+
+    // Se já passou das 07:00h, encerrar TODAS as escalas ativas
+    if (minutosAtualTotal >= seteHoras) {
+      console.log('Já passou das 07:00h - encerrando TODAS as escalas ativas')
+      escalasParaEncerrar = escalasAtivas
+    } else {
+      console.log(`Ainda não são 07:00h (atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')}). Escalas mantidas ativas.`)
     }
 
     if (escalasParaEncerrar.length === 0) {
