@@ -5,10 +5,29 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 export default function ChecklistViatura() {
   const navigate = useNavigate();
+  const { profile } = useSupabaseAuth();
   const [logoUrl, setLogoUrl] = useState<string>('');
+
+  const getBackRoute = () => {
+    switch (profile?.role) {
+      case 'fiscal':
+        return '/fiscal';
+      case 'motorista':
+        return '/motoristas';
+      case 'atendente':
+        return '/atendente';
+      case 'admin':
+        return '/admin';
+      case 'super_admin':
+        return '/super-admin';
+      default:
+        return '/';
+    }
+  };
 
   useEffect(() => {
     const fetchLogo = async () => {
@@ -40,7 +59,7 @@ export default function ChecklistViatura() {
         <div className="flex items-center gap-4 mb-6">
           <Button 
             variant="outline" 
-            onClick={() => navigate('/motoristas')}
+            onClick={() => navigate(getBackRoute())}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
