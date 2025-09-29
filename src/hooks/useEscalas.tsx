@@ -31,11 +31,11 @@ export const useEscalas = () => {
         .limit(1);
 
       // Se for motorista, busca por motorista_id
-      // Se for fiscal, busca onde está nos fiscal_ids
+      // Se for fiscal, busca onde está dirigindo OU nos fiscal_ids
       if (profile.role === 'motorista') {
         query = query.eq('motorista_id', profile.id);
       } else if (profile.role === 'fiscal') {
-        query = query.contains('fiscal_ids', [profile.id]);
+        query = query.or(`motorista_id.eq.${profile.id},fiscal_ids.cs.{${profile.id}}`);
       } else {
         // Para outros perfis (admin, etc), pode buscar todas ou nenhuma
         setEscalaAtiva(null);
