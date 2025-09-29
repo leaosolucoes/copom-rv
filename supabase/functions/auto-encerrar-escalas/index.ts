@@ -141,12 +141,12 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`Hora atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')} (${minutosAtualTotal} minutos)`)
     console.log(`Horário de encerramento: 07:00 (${seteHoras} minutos)`)
 
-    let escalasParaEncerrar = []
+    let escalasParaEncerrar: any[] = []
 
     // Se já passou das 07:00h, encerrar TODAS as escalas ativas
     if (minutosAtualTotal >= seteHoras) {
       console.log('Já passou das 07:00h - encerrando TODAS as escalas ativas')
-      escalasParaEncerrar = escalasAtivas
+      escalasParaEncerrar = escalasAtivas || []
     } else {
       console.log(`Ainda não são 07:00h (atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')}). Escalas mantidas ativas.`)
     }
@@ -176,9 +176,9 @@ serve(async (req: Request): Promise<Response> => {
     const { data: escalasEncerradas, error: updateError } = await supabaseClient
       .from('escalas_viaturas')
       .update({
-        status: 'encerrada',
+        status: 'encerrada' as const,
         encerrado_em: new Date().toISOString(),
-        encerrado_por: null, // Encerramento automático
+        encerrado_por: null,
         observacoes: 'Encerrado automaticamente por vencimento do horário'
       })
       .in('id', idsParaEncerrar)
@@ -203,7 +203,7 @@ serve(async (req: Request): Promise<Response> => {
         processedAt: brasiliaTime,
         dataAtual: dataBrasilia,
         horaAtual: horaAtualMinutos,
-        escalasEncerradas: escalasEncerradas?.map(e => ({
+        escalasEncerradas: escalasEncerradas?.map((e: any) => ({
           id: e.id,
           viatura_id: e.viatura_id,
           data_servico: e.data_servico,

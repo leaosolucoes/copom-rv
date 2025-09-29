@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-token',
 }
 
-serve(async (req) => {
+serve(async (req): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -131,31 +131,33 @@ serve(async (req) => {
       }
     }
 
-    statusCode = result.status
+    statusCode = result?.status || 500
     const executionTime = Date.now() - startTime
 
     // Log da requisição
-    await logApiRequest(req, tokenData.token_id, statusCode, executionTime, result.data, supabase)
+    if (result) {
+      await logApiRequest(req, tokenData.token_id, statusCode, executionTime, result.data, supabase)
+    }
 
     return new Response(
-      JSON.stringify(result.data),
+      JSON.stringify(result?.data || { error: 'Resposta inválida' }),
       { 
         status: statusCode, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     )
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao processar requisição:', error)
     const executionTime = Date.now() - startTime
 
     // Log do erro
     if (tokenValidation.tokenData) {
-      await logApiRequest(req, tokenValidation.tokenData.token_id, 500, executionTime, { error: error.message }, supabase)
+      await logApiRequest(req, tokenValidation.tokenData.token_id, 500, executionTime, { error: error?.message || String(error) }, supabase)
     }
 
     return new Response(
-      JSON.stringify({ error: 'Erro interno do servidor', details: error.message }),
+      JSON.stringify({ error: 'Erro interno do servidor', details: error?.message || String(error) }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -402,7 +404,7 @@ async function createComplaint(req: Request, supabase: any) {
           normalizedBody.user_location = {
             latitude: latitude,
             longitude: longitude,
-            accuracy: !isNaN(accuracy) ? accuracy : null
+            accuracy: accuracy !== null && !isNaN(accuracy) ? accuracy : 0
           }
           console.log('user_location convertido:', normalizedBody.user_location)
         }

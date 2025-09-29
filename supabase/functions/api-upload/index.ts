@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-token',
 }
 
-serve(async (req) => {
+serve(async (req): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -71,15 +71,13 @@ serve(async (req) => {
       supabase
     )
 
-    if (result.headers) {
-      return new Response(
-        result.data,
-        { 
-          status: result.status, 
-          headers: { ...corsHeaders, ...result.headers } 
-        }
-      )
-    }
+    return new Response(
+      JSON.stringify(result.data),
+      { 
+        status: result.status, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
 
     return new Response(
       JSON.stringify(result.data),

@@ -135,7 +135,7 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
         if (window.top !== window.self) {
           logger.error('Carregamento em iframe detectado - Bloqueando');
           // Forçar saída do iframe
-          window.top!.location = window.self.location;
+          window.top!.location.href = window.self.location.href;
           // Bloquear completamente se não conseguir sair
           document.body.innerHTML = '<h1>🚫 ACESSO NEGADO</h1><p>Esta aplicação não pode ser carregada em iframe.</p>';
         }
