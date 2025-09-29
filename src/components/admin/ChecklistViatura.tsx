@@ -52,7 +52,7 @@ export const ChecklistViatura = () => {
     data_checklist: new Date().toISOString().split('T')[0],
     horario_checklist: new Date().toTimeString().slice(0, 5),
     nome_guerra: '',
-    km_inicial: 0,
+    km_inicial: '',
     combustivel_nivel: '',
     oleo_nivel: '',
     data_proxima_troca_oleo: '',
@@ -172,7 +172,7 @@ export const ChecklistViatura = () => {
       camposFaltando.push("Nome de Guerra");
     }
 
-    if (!formData.km_inicial || formData.km_inicial <= 0) {
+    if (!formData.km_inicial || parseInt(formData.km_inicial) <= 0) {
       camposFaltando.push("KM Inicial");
     }
 
@@ -246,10 +246,10 @@ export const ChecklistViatura = () => {
         }
 
         // Se existe um checklist anterior, validar KM
-        if (ultimoChecklist && ultimoChecklist.km_inicial >= formData.km_inicial) {
+        if (ultimoChecklist && ultimoChecklist.km_inicial >= parseInt(formData.km_inicial)) {
           toast({
             title: "KM Inválido",
-            description: `O KM atual (${formData.km_inicial.toLocaleString()}) não pode ser menor ou igual ao último KM registrado (${ultimoChecklist.km_inicial.toLocaleString()}). Verifique o KM atual da viatura e registre corretamente.`,
+            description: `O KM atual (${parseInt(formData.km_inicial).toLocaleString()}) não pode ser menor ou igual ao último KM registrado (${ultimoChecklist.km_inicial.toLocaleString()}). Verifique o KM atual da viatura e registre corretamente.`,
             variant: "destructive"
           });
           return;
@@ -266,10 +266,10 @@ export const ChecklistViatura = () => {
           console.error('Erro ao buscar dados da viatura:', viaturaError);
         }
 
-        if (viaturaData && viaturaData.km_atual >= formData.km_inicial) {
+        if (viaturaData && viaturaData.km_atual >= parseInt(formData.km_inicial)) {
           toast({
             title: "KM Inválido",
-            description: `O KM atual (${formData.km_inicial.toLocaleString()}) não pode ser menor ou igual ao KM atual da viatura ${viaturaData.prefixo} (${viaturaData.km_atual.toLocaleString()}). Verifique o KM atual da viatura e registre corretamente.`,
+            description: `O KM atual (${parseInt(formData.km_inicial).toLocaleString()}) não pode ser menor ou igual ao KM atual da viatura ${viaturaData.prefixo} (${viaturaData.km_atual.toLocaleString()}). Verifique o KM atual da viatura e registre corretamente.`,
             variant: "destructive"
           });
           return;
@@ -299,6 +299,7 @@ export const ChecklistViatura = () => {
         viatura_id: selectedViatura,
         fiscal_id: profile.id,
         ...formData,
+        km_inicial: parseInt(formData.km_inicial),
         data_proxima_troca_oleo: formData.data_proxima_troca_oleo || null,
         km_proxima_troca_oleo: formData.km_proxima_troca_oleo || null,
         status_aprovacao: aprovado ? 'aprovado' : 'reprovado'
@@ -356,7 +357,7 @@ export const ChecklistViatura = () => {
           viaturaId: selectedViatura,
           viaturaPrefixo: viaturaData?.prefixo || '',
           viaturaModelo: viaturaData?.modelo || '',
-          kmInicial: formData.km_inicial,
+          kmInicial: parseInt(formData.km_inicial),
           motoristaId: profile.id,
           motoristaNome: profile.full_name
         });
@@ -370,7 +371,7 @@ export const ChecklistViatura = () => {
         data_checklist: new Date().toISOString().split('T')[0],
         horario_checklist: new Date().toTimeString().slice(0, 5),
         nome_guerra: profile?.full_name || '',
-        km_inicial: 0,
+        km_inicial: '',
         combustivel_nivel: '',
         oleo_nivel: '',
         data_proxima_troca_oleo: '',
@@ -415,7 +416,7 @@ export const ChecklistViatura = () => {
       data_checklist: new Date().toISOString().split('T')[0],
       horario_checklist: new Date().toTimeString().slice(0, 5),
       nome_guerra: profile?.full_name || '',
-      km_inicial: 0,
+      km_inicial: '',
       combustivel_nivel: '',
       oleo_nivel: '',
       data_proxima_troca_oleo: '',
@@ -584,8 +585,9 @@ export const ChecklistViatura = () => {
                 id="km_inicial"
                 type="number"
                 value={formData.km_inicial}
-                onChange={(e) => setFormData({ ...formData, km_inicial: parseInt(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, km_inicial: e.target.value })}
                 min="0"
+                placeholder="Digite o KM inicial"
                 required
               />
             </div>
