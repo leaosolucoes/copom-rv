@@ -76,7 +76,7 @@ serve(async (req: Request): Promise<Response> => {
   }
   
   try {
-    console.log('=== INICIANDO VERIFICAÇÃO DE ESCALAS ===')
+    console.log('=== AUTO-ENCERRAR ESCALAS - EXECUÇÃO ÚNICA ÀS 07:00 ===')
     
     const supabaseClient = createClient<Database>(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -106,6 +106,26 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`Data Brasília: ${dataBrasilia}`)
     console.log(`Hora Brasília: ${horaAtualMinutos}`)
 
+    // Esta função deve executar APENAS às 07:00
+    const [horasAtual, minutosAtual] = horaAtualMinutos.split(':').map(Number)
+    
+    if (horasAtual !== 7 || minutosAtual !== 0) {
+      console.log(`Função executada fora do horário programado (07:00). Hora atual: ${horaAtualMinutos}`)
+      return new Response(
+        JSON.stringify({ 
+          message: 'Função deve executar apenas às 07:00',
+          horaAtual: horaAtualMinutos,
+          processedAt: brasiliaTime
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+          status: 200 
+        }
+      )
+    }
+
+    console.log('=== EXECUTANDO LIMPEZA ÀS 07:00 - ENCERRANDO ESCALAS VENCIDAS ===')
+
     // Buscar escalas ativas
     const { data: escalasAtivas, error: fetchError } = await supabaseClient
       .from('escalas_viaturas')
@@ -133,45 +153,56 @@ serve(async (req: Request): Promise<Response> => {
       )
     }
 
-    // Verificar escalas que devem ser encerradas
-    const [horasAtual, minutosAtual] = horaAtualMinutos.split(':').map(Number)
+    // Criar timestamp atual para comparação
+    const dataAtual = new Date(`${dataBrasilia}T${horaAtualMinutos}:00.000-03:00`)
     const minutosAtualTotal = horasAtual * 60 + minutosAtual
-    const seteHoras = 7 * 60 // 07:00h em minutos (420 minutos)
     
+    console.log(`=== ANÁLISE DE ESCALAS PARA ENCERRAMENTO ===`)
     console.log(`Hora atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')} (${minutosAtualTotal} minutos)`)
-    console.log(`Horário de limpeza: 07:00 (${seteHoras} minutos)`)
 
     let escalasParaEncerrar: Database['public']['Tables']['escalas_viaturas']['Row'][] = []
-
-    // Só encerrar às 07:00h se for para limpeza de escalas que cruzaram meia-noite e já venceram
-    if (minutosAtualTotal >= seteHoras) {
-      console.log('São 07:00h ou mais - verificando escalas vencidas para limpeza')
+    const escalasValidadas = escalasAtivas as Database['public']['Tables']['escalas_viaturas']['Row'][]
+    
+    for (const escala of escalasValidadas) {
+      const [horaSaidaH, horaSaidaM] = escala.hora_saida.split(':').map(Number)
+      const [horaEntradaH, horaEntradaM] = escala.hora_entrada.split(':').map(Number)
       
-      // Filtrar apenas escalas que realmente venceram
-      const escalasValidadas = escalasAtivas as Database['public']['Tables']['escalas_viaturas']['Row'][]
+      const horaSaidaMinutos = horaSaidaH * 60 + horaSaidaM
+      const horaEntradaMinutos = horaEntradaH * 60 + horaEntradaM
       
-      for (const escala of escalasValidadas) {
-        const [horaSaidaH, horaSaidaM] = escala.hora_saida.split(':').map(Number)
-        const [horaEntradaH, horaEntradaM] = escala.hora_entrada.split(':').map(Number)
-        
-        const horaSaidaMinutos = horaSaidaH * 60 + horaSaidaM
-        const horaEntradaMinutos = horaEntradaH * 60 + horaEntradaM
-        
-        // Verificar se a escala cruza meia-noite (hora_saida < hora_entrada)
-        const cruzaMeiaNoite = horaSaidaMinutos < horaEntradaMinutos
-        
-        if (cruzaMeiaNoite) {
-          // Para escalas que cruzam meia-noite, encerrar apenas se já passou das 07:00h
-          // (assumindo que são escalas "presas" que deveriam ter terminado)
-          console.log(`Escala ${escala.id} cruza meia-noite (${escala.hora_entrada}-${escala.hora_saida}) - será encerrada para limpeza`)
-          escalasParaEncerrar.push(escala)
-        } else {
-          // Para escalas no mesmo dia, não encerrar se ainda está no período válido
-          console.log(`Escala ${escala.id} não cruza meia-noite (${escala.hora_entrada}-${escala.hora_saida}) - mantida ativa`)
-        }
+      // Verificar se a escala cruza meia-noite
+      const cruzaMeiaNoite = horaSaidaMinutos < horaEntradaMinutos
+      
+      // Calcular quando a escala deveria ter terminado
+      let timestampFimEscala: Date
+      
+      if (cruzaMeiaNoite) {
+        // Escala que cruza meia-noite: fim é no dia seguinte
+        const dataEscala = new Date(escala.data_servico + 'T00:00:00.000-03:00')
+        dataEscala.setDate(dataEscala.getDate() + 1) // Próximo dia
+        timestampFimEscala = new Date(`${dataEscala.toISOString().split('T')[0]}T${escala.hora_saida}:00.000-03:00`)
+      } else {
+        // Escala no mesmo dia
+        timestampFimEscala = new Date(`${escala.data_servico}T${escala.hora_saida}:00.000-03:00`)
       }
-    } else {
-      console.log(`Ainda não são 07:00h (atual: ${horasAtual}:${minutosAtual.toString().padStart(2, '0')}). Nenhuma limpeza necessária.`)
+      
+      const venceu = dataAtual > timestampFimEscala
+      
+      console.log(`Escala ${escala.id}:`)
+      console.log(`  - Viatura: ${escala.viatura_id}`)
+      console.log(`  - Data: ${escala.data_servico}`)
+      console.log(`  - Horário: ${escala.hora_entrada} às ${escala.hora_saida}`)
+      console.log(`  - Cruza meia-noite: ${cruzaMeiaNoite}`)
+      console.log(`  - Fim previsto: ${timestampFimEscala.toISOString()}`)
+      console.log(`  - Atual: ${dataAtual.toISOString()}`)
+      console.log(`  - Venceu: ${venceu}`)
+      
+      if (venceu) {
+        console.log(`  ➡️ SERÁ ENCERRADA (vencida)`)
+        escalasParaEncerrar.push(escala)
+      } else {
+        console.log(`  ✅ MANTIDA ATIVA (ainda dentro do prazo)`)
+      }
     }
 
     if (escalasParaEncerrar.length === 0) {
