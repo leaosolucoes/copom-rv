@@ -1,5 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0"
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 interface Database {
   public: {
@@ -64,7 +69,12 @@ interface Database {
   }
 }
 
-serve(async (req) => {
+serve(async (req: Request): Promise<Response> => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+  
   try {
     console.log('=== INICIANDO VERIFICAÇÃO DE ESCALAS ===')
     
@@ -117,7 +127,7 @@ serve(async (req) => {
           processedAt: brasiliaTime
         }),
         { 
-          headers: { 'Content-Type': 'application/json' }, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
           status: 200 
         }
       )
@@ -152,7 +162,7 @@ serve(async (req) => {
           horaAtual: horaAtualMinutos
         }),
         { 
-          headers: { 'Content-Type': 'application/json' }, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
           status: 200 
         }
       )
@@ -201,22 +211,22 @@ serve(async (req) => {
         }))
       }),
       { 
-        headers: { 'Content-Type': 'application/json' }, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
         status: 200 
       }
     )
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('=== ERRO NO PROCESSAMENTO ===', error)
     return new Response(
       JSON.stringify({ 
         success: false,
         error: 'Erro interno do servidor',
-        details: error.message,
+        details: error?.message || String(error),
         timestamp: new Date().toISOString()
       }),
       { 
-        headers: { 'Content-Type': 'application/json' }, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
         status: 500 
       }
     )
