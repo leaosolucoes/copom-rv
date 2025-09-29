@@ -343,7 +343,7 @@ export const ChecklistViatura = () => {
       });
 
       // Verificar se é motorista e perguntar sobre escala
-      if (profile?.role === 'motorista') {
+      if (profile?.role === 'motorista' || profile?.role === 'fiscal') {
         // Buscar dados da viatura para mostrar na pergunta
         const { data: viaturaData } = await supabase
           .from('viaturas')
