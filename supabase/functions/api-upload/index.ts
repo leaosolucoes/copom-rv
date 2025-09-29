@@ -98,7 +98,7 @@ serve(async (req): Promise<Response> => {
   }
 })
 
-async function validateApiToken(req: Request, supabase: any) {
+async function validateApiToken(req: Request, supabase: any): Promise<{ valid: true; tokenData: any } | { valid: false; response: Response }> {
   const apiToken = req.headers.get('x-api-token')
   if (!apiToken) {
     return {

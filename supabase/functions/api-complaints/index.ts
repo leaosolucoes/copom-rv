@@ -166,7 +166,7 @@ serve(async (req): Promise<Response> => {
   }
 })
 
-async function validateApiToken(req: Request, supabase: any) {
+async function validateApiToken(req: Request, supabase: any): Promise<{ valid: true; tokenData: any } | { valid: false; response: Response }> {
   // Log de debugging - ver todos os headers
   console.log('Headers recebidos:')
   for (const [key, value] of req.headers.entries()) {

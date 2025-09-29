@@ -185,11 +185,11 @@ _Este é um teste - sistema funcionando corretamente!_`
           })
         }
       } catch (error) {
-        console.error(`❌ Erro para número ${phoneNumber}:`, error.message)
+        console.error(`❌ Erro para número ${phoneNumber}:`, error instanceof Error ? error.message : 'Erro desconhecido')
         results.push({
           phoneNumber: phoneNumber,
           success: false,
-          error: error.message
+          error: error instanceof Error ? error.message : 'Erro desconhecido'
         })
       }
     }
@@ -226,13 +226,13 @@ _Este é um teste - sistema funcionando corretamente!_`
 
   } catch (error) {
     console.error('=== ERRO TESTE WHATSAPP ===')
-    console.error('❌ Error:', error.message)
-    console.error('❌ Stack:', error.stack)
+    console.error('❌ Error:', error instanceof Error ? error.message : 'Erro desconhecido')
+    console.error('❌ Stack:', error instanceof Error ? error.stack : 'Stack não disponível')
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro interno do servidor',
         timestamp: new Date().toISOString()
       }),
       { 

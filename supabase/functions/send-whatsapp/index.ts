@@ -192,7 +192,7 @@ serve(async (req) => {
         results.push({
           phoneNumber,
           success: false,
-          error: error.message
+          error: error instanceof Error ? error.message : 'Erro desconhecido'
         })
       }
     }
@@ -233,12 +233,12 @@ serve(async (req) => {
   } catch (error) {
     console.error('=== ERRO NO PROCESSAMENTO ===')
     console.error('Erro:', error)
-    console.error('Stack:', error.stack)
+    console.error('Stack:', error instanceof Error ? error.stack : 'Stack não disponível')
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro interno do servidor',
         timestamp: new Date().toISOString()
       }),
       { 

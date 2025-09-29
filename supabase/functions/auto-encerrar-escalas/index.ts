@@ -173,10 +173,17 @@ serve(async (req: Request): Promise<Response> => {
     // Encerrar as escalas vencidas
     const idsParaEncerrar = escalasParaEncerrar.map(e => e.id)
     
-    const { data: escalasEncerradas, error: updateError } = await supabaseClient
+    const updateData = {
+      status: 'encerrada' as const,
+      encerrado_em: new Date().toISOString(),
+      encerrado_por: null as string | null,
+      observacoes: 'Encerrado automaticamente por vencimento do horário'
+    }
+    
+    const { data: escalasEncerradas, error: updateError } = await (supabaseClient as any)
       .from('escalas_viaturas')
       .update({
-        status: 'encerrada' as const,
+        status: 'encerrada',
         encerrado_em: new Date().toISOString(),
         encerrado_por: null,
         observacoes: 'Encerrado automaticamente por vencimento do horário'

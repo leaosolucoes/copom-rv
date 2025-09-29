@@ -73,8 +73,8 @@ serve(async (req) => {
   } catch (error) {
     console.error('Erro no teste:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
-      stack: error.stack 
+      error: error instanceof Error ? error.message : 'Erro desconhecido',
+      stack: error instanceof Error ? error.stack : 'Stack não disponível' 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

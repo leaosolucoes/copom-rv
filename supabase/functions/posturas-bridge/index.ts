@@ -78,7 +78,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in posturas-bridge:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Erro desconhecido' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -249,7 +249,7 @@ async function handleSendComplaint(supabaseClient: any, complaintId: string) {
       JSON.stringify({ 
         success: false,
         error: 'Erro ao conectar com a API Posturas',
-        message: `Falha na comunicação com o sistema: ${error.message}`,
+        message: `Falha na comunicação com o sistema: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         details: { environment: isProduction ? 'production' : 'test', hint: isTlsNameError(error) ? 'Problema de certificado TLS do servidor. Verifique o domínio e o certificado do endpoint.' : undefined }
       }),
       { 
@@ -264,7 +264,7 @@ async function handleSendComplaint(supabaseClient: any, complaintId: string) {
     JSON.stringify({ 
       success: false,
       error: 'Erro interno do servidor',
-      message: error.message
+      message: error instanceof Error ? error.message : 'Erro desconhecido'
     }),
     { 
       status: 500,
@@ -301,6 +301,6 @@ async function handleFetchBairros(supabaseClient: any) {
 
   } catch (error) {
     console.error('Error fetching bairros:', error);
-    throw new Error(`Erro ao buscar bairros: ${error.message}`);
+    throw new Error(`Erro ao buscar bairros: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
