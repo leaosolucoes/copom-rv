@@ -399,7 +399,8 @@ export const ComplaintsList = () => {
           attendant:users!complaints_attendant_id_fkey(full_name),
           archived_by_user:users!complaints_archived_by_fkey(full_name)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500);
 
       if (error) {
         console.error('❌ Erro na query refetch:', error);
@@ -992,6 +993,10 @@ export const ComplaintsList = () => {
 
   const archiveComplaint = async (complaintId: string) => {
     try {
+      // Atualização otimista: remove da lista imediatamente
+      setComplaints(prev => prev.filter(c => c.id !== complaintId));
+      setSelectedComplaint(null);
+      
       const { error } = await supabase
         .from('complaints')
         .update({ 
@@ -1007,11 +1012,10 @@ export const ComplaintsList = () => {
         title: "Sucesso",
         description: "Denúncia arquivada no histórico",
       });
-      
-      setSelectedComplaint(null);
-      refetch();
     } catch (error) {
       console.error('Erro ao arquivar denúncia:', error);
+      // Se der erro, recarrega a lista
+      fetchComplaints();
       toast({
         title: "Erro",
         description: "Erro ao arquivar denúncia",
