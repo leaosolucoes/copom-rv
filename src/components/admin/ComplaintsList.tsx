@@ -12,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, UserCheck, RefreshCw, Smartphone, Search } from 'lucide-react';
 import { MediaModal } from "@/components/ui/media-modal";
-import { logger } from '@/lib/secureLogger';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -22,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useComplaintsFilter } from '@/hooks/useComplaintsFilter';
 import { useLazyRender } from '@/hooks/useLazyRender';
+import { useDebounce } from '@/hooks/useDebounce';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
@@ -72,12 +72,12 @@ const VideoPreview = ({ video, index, onOpenModal }: VideoPreviewProps) => {
   };
 
   const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
-    logger.error('Erro ao carregar vídeo');
+    // Erro ao carregar vídeo
     setVideoError(true);
   };
 
   const handleVideoLoaded = () => {
-    logger.debug('Vídeo carregado com sucesso');
+    // Vídeo carregado com sucesso
     setVideoLoaded(true);
   };
 
@@ -201,6 +201,9 @@ export const ComplaintsList = () => {
   const [logoUrl, setLogoUrl] = useState<string>('');
   const [cnpjSearch, setCnpjSearch] = useState<string>('');
   const [cnpjData, setCnpjData] = useState<any>(null);
+  
+  // Debounce search para melhorar performance
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [mediaModal, setMediaModal] = useState<{
     isOpen: boolean;
     media: string[];
@@ -237,48 +240,57 @@ export const ComplaintsList = () => {
     fetchLogo();
   }, [userRole]);
 
+  // Realtime simplificado (somente desktop, sem auto-refresh)
   useEffect(() => {
-    // Detecção mais robusta de tablets e dispositivos móveis
-    const isMobileOrTablet = /iPhone|iPad|iPod|Android|Tablet|Mobile/i.test(navigator.userAgent) || 
-                             window.innerWidth <= 1280 || // Incluir tablets baseado na largura da tela (aumentado para 1280)
-                             ('ontouchstart' in window); // Detectar dispositivos touch
+    const isMobile = /iPhone|iPad|iPod|Android|Tablet|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 768;
     
-    console.log('Device detection:', {
-      userAgent: navigator.userAgent,
-      windowWidth: window.innerWidth,
-      hasTouch: 'ontouchstart' in window,
-      isMobileOrTablet
-    });
+    if (isMobile) return;
     
-    // DESABILITAR COMPLETAMENTE realtime para dispositivos móveis/tablets
-    if (!isMobileOrTablet) {
-      const subscription = setupRealtimeUpdates();
-      return () => {
-        supabase.removeChannel(subscription);
-      };
-    } else {
-      console.log('🚫 Realtime DESABILITADO para dispositivo móvel/tablet');
-    }
+    const channel = supabase
+      .channel('complaints-updates')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'complaints' },
+        (payload) => {
+          const newComplaint = payload.new as Complaint;
+          const shouldShow = userRole === 'super_admin' || userRole === 'admin' || 
+                           (userRole === 'atendente' && newComplaint.status !== 'a_verificar' && newComplaint.status !== 'finalizada');
+          
+          if (shouldShow) {
+            setComplaints(prev => {
+              if (prev.some(c => c.id === newComplaint.id)) return prev;
+              return [newComplaint, ...prev];
+            });
+            
+            if (newComplaint.status === 'nova' && soundEnabled) {
+              playNotificationSound();
+            }
+            
+            toast({
+              title: "Nova Denúncia",
+              description: `Denúncia de ${newComplaint.complainant_name}`,
+              duration: 5000,
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'complaints' },
+        (payload) => {
+          const updated = payload.new as Complaint;
+          setComplaints(prev => prev.map(c => c.id === updated.id ? updated : c));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userRole, soundEnabled]);
 
-  // Atualização automática COMPLETAMENTE desabilitada para mobile e tablet
-  useEffect(() => {
-    const isMobileOrTablet = /iPhone|iPad|iPod|Android|Tablet|Mobile/i.test(navigator.userAgent) || 
-                             window.innerWidth <= 1280 || // Incluir tablets baseado na largura da tela (aumentado para 1280)
-                             ('ontouchstart' in window); // Detectar dispositivos touch
-    
-    if (!isMobileOrTablet) {
-      const interval = setInterval(() => {
-        logger.debug('🔄 Atualizando lista automaticamente...');
-        fetchComplaints();
-      }, 300000); // 5 minutos
-
-      return () => clearInterval(interval);
-    }
-  }, [userRole]);
-
   const setupRealtimeUpdates = () => {
-    logger.debug(`🔗 Configurando realtime para: ${userRole}`);
+    // Configurando realtime
     
     const channel = supabase
       .channel(`complaints-realtime-${Math.random()}`)
@@ -301,7 +313,7 @@ export const ComplaintsList = () => {
           // REMOVIDO: Log de should show por segurança
           
           if (shouldShow) {
-            logger.debug(`✅ Adicionando nova denúncia à lista...`);
+            // Adicionando nova denúncia à lista
             
             // Adicionar imediatamente à lista em tempo real
             setComplaints(prevComplaints => {
@@ -315,7 +327,7 @@ export const ComplaintsList = () => {
             
             // Tocar som se for uma denúncia nova
             if (newComplaint.status === 'nova' && soundEnabled) {
-              logger.debug(`🔊 Tocando som para nova denúncia...`);
+              // Tocando som para nova denúncia
               playNotificationSound();
             }
             
@@ -365,11 +377,11 @@ export const ComplaintsList = () => {
       )
       .subscribe(
         (status) => {
-          logger.debug(`📡 Status da conexão realtime: ${status}`);
+          // Conexão realtime estabelecida
           if (status === 'SUBSCRIBED') {
-            logger.info('✅ Conectado ao realtime com sucesso!');
+            // Conectado ao realtime com sucesso
           } else if (status === 'CHANNEL_ERROR') {
-            logger.error('Erro na conexão realtime');
+            console.error('Erro na conexão realtime');
           }
         }
       );
@@ -379,7 +391,7 @@ export const ComplaintsList = () => {
 
   const refetch = async () => {
     try {
-      logger.debug('🔄 Recarregando denúncias...');
+      // Recarregando denúncias
       const { data, error } = await supabase
         .from('complaints')
         .select(`
@@ -431,9 +443,7 @@ export const ComplaintsList = () => {
   const fetchComplaints = async () => {
     try {
       setLoading(true);
-      console.log('🔍 FETCH COMPLAINTS - Iniciando...', { userRole: profile?.role });
       
-      // Clear any cached data and force fresh query
       const { data, error } = await supabase
         .from('complaints')
         .select(`
@@ -441,14 +451,10 @@ export const ComplaintsList = () => {
           attendant:users!complaints_attendant_id_fkey(full_name),
           archived_by_user:users!complaints_archived_by_fkey(full_name)
         `)
-        .order('created_at', { ascending: false });
-
-      console.log('🔍 DEBUG fetchComplaints - Dados brutos:', data?.slice(0, 2));
-
-      console.log('📊 Query result:', { error, dataLength: data?.length });
+        .order('created_at', { ascending: false })
+        .limit(500); // Limitar para evitar carregar todos os dados
 
       if (error) {
-        console.error('❌ Erro na query:', error);
         toast({
           title: "Erro",
           description: `Erro ao carregar denúncias: ${error.message}`,
@@ -457,34 +463,20 @@ export const ComplaintsList = () => {
         throw error;
       }
       
-      // Filter complaints based on user role for attendants
       let filteredData = data || [];
       
       if (profile?.role === 'atendente') {
-        // Atendentes não podem ver denúncias com status 'finalizada' ou 'a_verificar'
         filteredData = data?.filter(complaint => 
           complaint.status !== 'finalizada' && complaint.status !== 'a_verificar'
         ) || [];
-        console.log('🔍 Filtered for atendente:', { 
-          originalLength: data?.length, 
-          filteredLength: filteredData.length 
-        });
       }
-      
-      console.log('📝 Final complaints set:', {
-        total: filteredData.length,
-        byStatus: filteredData.reduce((acc: any, complaint) => {
-          acc[complaint.status] = (acc[complaint.status] || 0) + 1;
-          return acc;
-        }, {})
-      });
       
       setComplaints(filteredData as Complaint[]);
     } catch (error) {
-      console.error('❌ Erro ao carregar denúncias:', error);
+      console.error('Erro ao carregar denúncias:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar denúncias. Verifique sua conexão.",
+        description: "Erro ao carregar denúncias",
         variant: "destructive",
       });
     } finally {
@@ -796,10 +788,10 @@ export const ComplaintsList = () => {
   };
 
   const playNotificationSound = () => {
-    logger.debug('🔊 Tentando tocar som - soundEnabled:', soundEnabled);
+    // Tentando tocar som
     
     if (!soundEnabled) {
-      logger.debug('🔇 Som desabilitado nas configurações');
+      // Som desabilitado nas configurações
       return;
     }
 
@@ -815,7 +807,7 @@ export const ComplaintsList = () => {
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            logger.debug('✅ Som tocado com sucesso!');
+            // Som tocado com sucesso
           })
           .catch((error) => {
             console.log('❌ Erro ao tocar som principal, tentando fallback:', error);
@@ -1366,9 +1358,9 @@ export const ComplaintsList = () => {
     }
   };
 
-  // Use optimized filter hook
+  // Use optimized filter hook with debounced search
   const { filteredComplaints, complaintsForNewTab, complaintsForHistoryTab } = useComplaintsFilter(complaints, {
-    searchTerm,
+    searchTerm: debouncedSearch, // Usar debounced ao invés de searchTerm direto
     deviceFilter,
     activeTab,
     startDate,
@@ -1425,7 +1417,7 @@ export const ComplaintsList = () => {
     return `(${count}) - ${percentage}%`;
   };
 
-  logger.debug('RENDER DEBUG: Component status updated');
+  // RENDER DEBUG: Component status updated
 
   if (loading) {
     return <div>Carregando denúncias...</div>;
