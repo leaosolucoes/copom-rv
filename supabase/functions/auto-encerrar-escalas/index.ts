@@ -148,50 +148,62 @@ serve(async (req: Request): Promise<Response> => {
     const escalasValidadas = escalasAtivas as Database['public']['Tables']['escalas_viaturas']['Row'][]
     
     for (const escala of escalasValidadas) {
-      const [horaSaidaH, horaSaidaM] = escala.hora_saida.split(':').map(Number)
-      const [horaEntradaH, horaEntradaM] = escala.hora_entrada.split(':').map(Number)
-      
-      // Verificar se a escala cruza meia-noite
-      const cruzaMeiaNoite = (horaSaidaH < horaEntradaH) || 
-                             (horaSaidaH === horaEntradaH && horaSaidaM < horaEntradaM)
-      
-      // Calcular timestamp de fim da escala no timezone do Brasil
-      let timestampFimEscala: Date
-      
-      if (cruzaMeiaNoite) {
-        // Escala que cruza meia-noite: fim é no dia seguinte
-        const dataEscalaInicio = new Date(escala.data_servico + 'T00:00:00.000-03:00')
-        const dataEscalaFim = new Date(dataEscalaInicio)
-        dataEscalaFim.setDate(dataEscalaFim.getDate() + 1)
+      try {
+        const [horaSaidaH, horaSaidaM] = escala.hora_saida.split(':').map(Number)
+        const [horaEntradaH, horaEntradaM] = escala.hora_entrada.split(':').map(Number)
         
-        const dataFimStr = dataEscalaFim.toISOString().split('T')[0]
-        timestampFimEscala = new Date(`${dataFimStr}T${escala.hora_saida}:00.000-03:00`)
-      } else {
-        // Escala no mesmo dia
-        timestampFimEscala = new Date(`${escala.data_servico}T${escala.hora_saida}:00.000-03:00`)
-      }
-      
-      // Adicionar margem de segurança: só encerra se já passou pelo menos 2 horas após hora_saida
-      const margemSegurancaMs = 2 * 60 * 60 * 1000 // 2 horas em milissegundos
-      const timestampComMargem = new Date(timestampFimEscala.getTime() + margemSegurancaMs)
-      
-      const deveEncerrar = dataHoraAtualBrasil > timestampFimEscala
-      const dentroMargem = dataHoraAtualBrasil <= timestampComMargem
-      
-      console.log(`\nEscala ${escala.id}:`)
-      console.log(`  Viatura: ${escala.viatura_id}`)
-      console.log(`  Data serviço: ${escala.data_servico}`)
-      console.log(`  Horário: ${escala.hora_entrada} → ${escala.hora_saida}`)
-      console.log(`  Cruza meia-noite: ${cruzaMeiaNoite ? 'Sim' : 'Não'}`)
-      console.log(`  Fim previsto: ${timestampFimEscala.toISOString()}`)
-      console.log(`  Fim + margem: ${timestampComMargem.toISOString()}`)
-      console.log(`  Deve encerrar: ${deveEncerrar}`)
-      
-      if (deveEncerrar) {
-        console.log(`  ➡️ SERÁ ENCERRADA`)
-        escalasParaEncerrar.push(escala)
-      } else {
-        console.log(`  ✅ MANTIDA ATIVA`)
+        // Verificar se a escala cruza meia-noite
+        const cruzaMeiaNoite = (horaSaidaH < horaEntradaH) || 
+                               (horaSaidaH === horaEntradaH && horaSaidaM < horaEntradaM)
+        
+        // Calcular timestamp de fim da escala no timezone do Brasil
+        let timestampFimEscala: Date
+        
+        if (cruzaMeiaNoite) {
+          // Escala que cruza meia-noite: fim é no dia seguinte
+          const dataEscalaInicio = new Date(escala.data_servico + 'T00:00:00.000-03:00')
+          const dataEscalaFim = new Date(dataEscalaInicio)
+          dataEscalaFim.setDate(dataEscalaFim.getDate() + 1)
+          
+          const dataFimStr = dataEscalaFim.toISOString().split('T')[0]
+          timestampFimEscala = new Date(`${dataFimStr}T${escala.hora_saida}:00.000-03:00`)
+        } else {
+          // Escala no mesmo dia
+          timestampFimEscala = new Date(`${escala.data_servico}T${escala.hora_saida}:00.000-03:00`)
+        }
+        
+        // Validar se a data é válida
+        if (isNaN(timestampFimEscala.getTime())) {
+          console.error(`  ⚠️ Data inválida para escala ${escala.id}, pulando...`)
+          continue
+        }
+        
+        // Adicionar margem de segurança: só encerra se já passou pelo menos 2 horas após hora_saida
+        const margemSegurancaMs = 2 * 60 * 60 * 1000 // 2 horas em milissegundos
+        const timestampComMargem = new Date(timestampFimEscala.getTime() + margemSegurancaMs)
+        
+        const deveEncerrar = dataHoraAtualBrasil > timestampFimEscala
+        const dentroMargem = dataHoraAtualBrasil <= timestampComMargem
+        
+        console.log(`\nEscala ${escala.id}:`)
+        console.log(`  Viatura: ${escala.viatura_id}`)
+        console.log(`  Data serviço: ${escala.data_servico}`)
+        console.log(`  Horário: ${escala.hora_entrada} → ${escala.hora_saida}`)
+        console.log(`  Cruza meia-noite: ${cruzaMeiaNoite ? 'Sim' : 'Não'}`)
+        console.log(`  Fim previsto: ${timestampFimEscala.toISOString()}`)
+        console.log(`  Fim + margem: ${timestampComMargem.toISOString()}`)
+        console.log(`  Deve encerrar: ${deveEncerrar}`)
+        
+        if (deveEncerrar) {
+          console.log(`  ➡️ SERÁ ENCERRADA`)
+          escalasParaEncerrar.push(escala)
+        } else {
+          console.log(`  ✅ MANTIDA ATIVA`)
+        }
+      } catch (error) {
+        console.error(`Erro ao processar escala ${escala.id}:`, error)
+        // Continuar processando próxima escala
+        continue
       }
     }
 
