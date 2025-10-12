@@ -178,27 +178,23 @@ serve(async (req: Request): Promise<Response> => {
           continue
         }
         
-        // Adicionar margem de segurança: só encerra se já passou pelo menos 2 horas após hora_saida
-        const margemSegurancaMs = 2 * 60 * 60 * 1000 // 2 horas em milissegundos
-        const timestampComMargem = new Date(timestampFimEscala.getTime() + margemSegurancaMs)
-        
-        const deveEncerrar = dataHoraAtualBrasil > timestampFimEscala
-        const dentroMargem = dataHoraAtualBrasil <= timestampComMargem
+        // Verificar se o horário de saída já passou
+        const deveEncerrar = dataHoraAtualBrasil >= timestampFimEscala
         
         console.log(`\nEscala ${escala.id}:`)
         console.log(`  Viatura: ${escala.viatura_id}`)
         console.log(`  Data serviço: ${escala.data_servico}`)
         console.log(`  Horário: ${escala.hora_entrada} → ${escala.hora_saida}`)
         console.log(`  Cruza meia-noite: ${cruzaMeiaNoite ? 'Sim' : 'Não'}`)
-        console.log(`  Fim previsto: ${timestampFimEscala.toISOString()}`)
-        console.log(`  Fim + margem: ${timestampComMargem.toISOString()}`)
+        console.log(`  Fim previsto (Brasil): ${timestampFimEscala.toISOString()}`)
+        console.log(`  Data/Hora atual (Brasil): ${dataHoraAtualBrasil.toISOString()}`)
         console.log(`  Deve encerrar: ${deveEncerrar}`)
         
         if (deveEncerrar) {
-          console.log(`  ➡️ SERÁ ENCERRADA`)
+          console.log(`  ➡️ SERÁ ENCERRADA (horário de saída já passou)`)
           escalasParaEncerrar.push(escala)
         } else {
-          console.log(`  ✅ MANTIDA ATIVA`)
+          console.log(`  ✅ MANTIDA ATIVA (horário de saída ainda não passou)`)
         }
       } catch (error) {
         console.error(`Erro ao processar escala ${escala.id}:`, error)
