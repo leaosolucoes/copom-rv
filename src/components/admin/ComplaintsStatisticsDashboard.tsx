@@ -105,11 +105,13 @@ export function ComplaintsStatisticsDashboard() {
         const device = c.user_device_type || 'not_informed';
         deviceCounts[device] = (deviceCounts[device] || 0) + 1;
       });
-      const deviceBreakdown = Object.entries(deviceCounts).map(([device, count]) => ({
-        name: DEVICE_LABELS[device] || device,
-        value: count,
-        percentage: ((count / totalComplaints) * 100).toFixed(1) + '%'
-      }));
+      const deviceBreakdown = Object.entries(deviceCounts)
+        .filter(([_, count]) => count > 0)
+        .map(([device, count]) => ({
+          name: DEVICE_LABELS[device] || device,
+          value: count,
+          percentage: ((count / totalComplaints) * 100).toFixed(1) + '%'
+        }));
 
       // Top occurrence types
       const typeCounts: Record<string, number> = {};
