@@ -374,11 +374,11 @@ export function ComplaintsStatisticsDashboard() {
             <CardDescription>Tipos mais reportados</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={statistics.topOccurrenceTypes} layout="vertical">
+            <ResponsiveContainer width="100%" height={500}>
+              <BarChart data={statistics.topOccurrenceTypes} layout="vertical" margin={{ left: 20, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
-                <YAxis dataKey="type" type="category" width={150} fontSize={12} />
+                <YAxis dataKey="type" type="category" width={200} fontSize={11} />
                 <Tooltip />
                 <Bar dataKey="count" fill="#3b82f6" />
               </BarChart>
@@ -392,11 +392,11 @@ export function ComplaintsStatisticsDashboard() {
             <CardDescription>Bairros com mais denúncias</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={statistics.topNeighborhoods} layout="vertical">
+            <ResponsiveContainer width="100%" height={500}>
+              <BarChart data={statistics.topNeighborhoods} layout="vertical" margin={{ left: 20, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
-                <YAxis dataKey="neighborhood" type="category" width={150} fontSize={12} />
+                <YAxis dataKey="neighborhood" type="category" width={200} fontSize={11} />
                 <Tooltip />
                 <Bar dataKey="count" fill="#8b5cf6" />
               </BarChart>
@@ -412,10 +412,10 @@ export function ComplaintsStatisticsDashboard() {
           <CardDescription>Denúncias registradas no período selecionado</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={statistics.dailyTrend}>
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={statistics.dailyTrend} margin={{ left: 10, right: 30, top: 10, bottom: 10 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" fontSize={12} />
+              <XAxis dataKey="date" fontSize={11} />
               <YAxis />
               <Tooltip />
               <Legend />
@@ -432,10 +432,10 @@ export function ComplaintsStatisticsDashboard() {
           <CardDescription>Horários de pico de denúncias</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={statistics.hourlyDistribution}>
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart data={statistics.hourlyDistribution} margin={{ left: 10, right: 30, top: 10, bottom: 10 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="hour" fontSize={12} />
+              <XAxis dataKey="hour" fontSize={11} />
               <YAxis />
               <Tooltip />
               <Bar dataKey="count" fill="#f59e0b" />
