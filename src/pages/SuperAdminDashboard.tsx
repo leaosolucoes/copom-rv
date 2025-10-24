@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ComplaintsListLazy } from '@/components/admin/ComplaintsListLazy';
+import { ComplaintsStatisticsDashboard } from '@/components/admin/ComplaintsStatisticsDashboard';
 import { SystemSettings } from '@/components/admin/SystemSettings';
 import { WhatsAppConfig } from '@/components/admin/WhatsAppConfig';
 import { FormFieldsConfig } from '@/components/admin/FormFieldsConfig';
@@ -26,7 +27,7 @@ import { ViaturasManagement } from '@/components/admin/ViaturasManagement';
 import { ChecklistConfigManagement } from '@/components/admin/ChecklistConfigManagement';
 import { EscalasManagement } from '@/components/admin/EscalasManagement';
 import { PosturasApiSettings } from '@/components/admin/PosturasApiSettings';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Clock, Scale, Car, Calendar, Server } from 'lucide-react';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Clock, Scale, Car, Calendar, Server, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -121,6 +122,11 @@ const SuperAdminDashboard = () => {
                 <span className="hidden sm:inline">Denúncias</span>
                 <span className="sm:hidden">Lista</span>
               </TabsTrigger>
+              <TabsTrigger value="statistics" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <BarChart3 className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Estatísticas</span>
+                <span className="sm:hidden">Stats</span>
+              </TabsTrigger>
               <TabsTrigger value="users" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Users className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Usuários</span>
@@ -213,6 +219,10 @@ const SuperAdminDashboard = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="statistics" className="space-y-6">
+            <ComplaintsStatisticsDashboard />
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
