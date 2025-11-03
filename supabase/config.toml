@@ -1,13 +1,1 @@
-project_id = "smytdnkylauxocqrkchn"
-
-[functions.api-complaints]
-verify_jwt = false
-
-[functions.search-cpf]
-verify_jwt = false
-
-[functions.search-cep]
-verify_jwt = false
-
-[functions.auto-encerrar-escalas]
-verify_jwt = false
+project_id = "doyttekxvonlwmmxfezd"
