@@ -28,15 +28,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 interface ApiToken {
   id: string;
-  token_name: string;
-  token_type: 'sandbox' | 'production';
-  scopes: string[];
-  is_active: boolean;
-  expires_at: string | null;
-  last_used_at: string | null;
-  usage_count: number;
-  rate_limit_per_hour: number;
+  name: string;
+  token: string;
+  permissions: any;
+  active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 interface ApiLog {
@@ -44,21 +41,22 @@ interface ApiLog {
   endpoint: string;
   method: string;
   status_code: number;
-  execution_time_ms: number;
   ip_address: string;
   user_agent: string;
   created_at: string;
   token_id: string;
+  request_body: any;
+  response_body: any;
 }
 
 interface ApiEndpoint {
   id: string;
   path: string;
   method: string;
-  description: string;
-  required_scopes: string[];
-  rate_limit_per_hour: number;
-  is_enabled: boolean;
+  description: string | null;
+  rate_limit: number;
+  active: boolean;
+  created_at: string;
 }
 
 export function ApiManagement() {
@@ -159,10 +157,7 @@ export function ApiManagement() {
         return;
       }
       
-      setTokens((directTokens || []).map(token => ({
-        ...token,
-        token_type: token.token_type as 'sandbox' | 'production'
-      })) as ApiToken[]);
+      setTokens(directTokens || []);
       logger.info('✅ Tokens carregados diretamente:', directTokens?.length || 0);
       
     } catch (error) {
@@ -212,9 +207,7 @@ export function ApiManagement() {
     try {
       logger.debug('🔄 Carregando tokens...');
       
-      // Primeiro verificar se o usuário pode acessar
-      const { data: authCheck, error: authError } = await supabase
-        .rpc('is_current_user_super_admin_safe');
+      // Verificar permissões de admin
       
       // REMOVIDO: Log de verificação de super admin por segurança
       
@@ -233,7 +226,7 @@ export function ApiManagement() {
       }
       
       logger.info('✅ Tokens carregados:', data?.length || 0);
-      setTokens((data || []) as ApiToken[]);
+      setTokens(data || []);
     } catch (error: any) {
       logger.error('💥 Erro na função loadTokens:', error);
       toast({
@@ -248,9 +241,7 @@ export function ApiManagement() {
     try {
       logger.debug('🔄 Carregando logs da API...');
       
-      // Primeiro verificar se o usuário pode acessar
-      const { data: authCheck, error: authError } = await supabase
-        .rpc('is_current_user_super_admin_safe');
+      // Verificar permissões de admin
       
       // REMOVIDO: Log de verificação de super admin para logs por segurança
       
@@ -268,10 +259,7 @@ export function ApiManagement() {
       }
       
       logger.info('✅ Logs carregados:', data?.length || 0);
-      setLogs((data || []).map(log => ({
-        ...log,
-        ip_address: String(log.ip_address || 'unknown')
-      })) as ApiLog[]);
+      setLogs(data || []);
     } catch (error: any) {
       logger.error('💥 Erro na função loadLogs:', error);
       setLogs([]);
@@ -360,7 +348,7 @@ export function ApiManagement() {
     try {
       const { error } = await supabase
         .from('api_tokens')
-        .update({ is_active: !isActive })
+        .update({ active: !isActive })
         .eq('id', tokenId);
 
       if (error) throw error;
@@ -442,7 +430,7 @@ export function ApiManagement() {
             host: ["{{baseUrl}}"],
             path: endpoint.path.split('/').filter(Boolean)
           },
-          description: `${endpoint.description}\n\nScopes necessários: ${endpoint.required_scopes.join(', ')}\nRate limit: ${endpoint.rate_limit_per_hour} requisições/hora`
+          description: `${endpoint.description || 'Sem descrição'}\nRate limit: ${endpoint.rate_limit} requisições/hora`
         }
       }))
     };
@@ -674,41 +662,39 @@ export function ApiManagement() {
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="flex-1 space-y-3">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-semibold">{token.token_name}</h3>
-                          <Badge variant={token.token_type === 'production' ? 'default' : 'secondary'}>
-                            {token.token_type === 'production' ? 'Produção' : 'Sandbox'}
-                          </Badge>
-                          <Badge variant={token.is_active ? 'default' : 'destructive'}>
-                            {token.is_active ? 'Ativo' : 'Inativo'}
+                          <h3 className="font-semibold">{token.name}</h3>
+                          <Badge variant={token.active ? 'default' : 'destructive'}>
+                            {token.active ? 'Ativo' : 'Inativo'}
                           </Badge>
                         </div>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
                           <p>Criado em: {new Date(token.created_at).toLocaleString('pt-BR')}</p>
-                          <p>Último uso: {token.last_used_at ? new Date(token.last_used_at).toLocaleString('pt-BR') : 'Nunca'}</p>
-                          <p>Uso total: {token.usage_count} requisições</p>
-                          <p>Rate limit: {token.rate_limit_per_hour}/hora</p>
+                          <p>Atualizado em: {new Date(token.updated_at).toLocaleString('pt-BR')}</p>
                         </div>
                         
                         <div>
                           <p className="text-sm font-medium mb-2">Permissões:</p>
                           <div className="flex flex-wrap gap-1">
-                            {token.scopes.map(scope => (
-                              <Badge key={scope} variant="outline" className="text-xs">
-                                {scope}
+                            {Array.isArray(token.permissions) && token.permissions.map((perm: string, idx: number) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {perm}
                               </Badge>
                             ))}
+                            {!Array.isArray(token.permissions) && (
+                              <span className="text-xs text-muted-foreground">Nenhuma permissão definida</span>
+                            )}
                           </div>
                         </div>
                       </div>
                       
                       <div className="flex-shrink-0">
                         <Button 
-                          variant={token.is_active ? "destructive" : "default"}
+                          variant={token.active ? "destructive" : "default"}
                           size="sm"
-                          onClick={() => toggleTokenStatus(token.id, token.is_active)}
+                          onClick={() => toggleTokenStatus(token.id, token.active)}
                         >
-                          {token.is_active ? (
+                          {token.active ? (
                             <>
                               <EyeOff className="h-4 w-4 mr-2" />
                               Desativar
@@ -770,7 +756,6 @@ export function ApiManagement() {
                       <TableCell>
                         {getStatusBadge(log.status_code)}
                       </TableCell>
-                      <TableCell>{log.execution_time_ms}</TableCell>
                       <TableCell className="font-mono text-sm">
                         {log.ip_address}
                       </TableCell>
@@ -803,7 +788,6 @@ export function ApiManagement() {
                     <TableHead>Endpoint</TableHead>
                     <TableHead>Método</TableHead>
                     <TableHead>Descrição</TableHead>
-                    <TableHead>Scopes</TableHead>
                     <TableHead>Rate Limit</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
@@ -818,19 +802,10 @@ export function ApiManagement() {
                         <Badge variant="outline">{endpoint.method}</Badge>
                       </TableCell>
                       <TableCell>{endpoint.description}</TableCell>
+                      <TableCell>{endpoint.rate_limit}/h</TableCell>
                       <TableCell>
-                        <div className="flex gap-1 flex-wrap">
-                          {endpoint.required_scopes.map(scope => (
-                            <Badge key={scope} variant="secondary" className="text-xs">
-                              {scope}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>{endpoint.rate_limit_per_hour}/h</TableCell>
-                      <TableCell>
-                        <Badge variant={endpoint.is_enabled ? 'default' : 'destructive'}>
-                          {endpoint.is_enabled ? 'Ativo' : 'Inativo'}
+                        <Badge variant={endpoint.active ? 'default' : 'destructive'}>
+                          {endpoint.active ? 'Ativo' : 'Inativo'}
                         </Badge>
                       </TableCell>
                     </TableRow>
