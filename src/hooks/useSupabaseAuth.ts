@@ -198,7 +198,7 @@ export const useSupabaseAuth = () => {
         email: userData.email,
         full_name: userData.full_name,
         role: userData.role as 'super_admin' | 'admin' | 'atendente' | 'fiscal' | 'motorista',
-        is_active: userData.is_active
+        active: userData.is_active
       };
       
       // Store FIRST for mobile reliability - use multiple storage methods
@@ -350,6 +350,6 @@ export const useSupabaseAuth = () => {
     hasRole,
     isSuperAdmin,
     getUserRole,
-    isAuthenticated: !!user && !!session && !!profile && (profile as any).active
+    isAuthenticated: !!user && !!session && !!profile && profile.active === true
   };
 };

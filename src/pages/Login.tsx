@@ -27,35 +27,24 @@ const Login = () => {
   useEffect(() => {
     if (!authLoading && isAuthenticated && profile) {
       console.log('🔐 AUTH: Authenticated user confirmed:', profile.full_name, 'role:', profile.role);
-      console.log('📱 MOBILE: Starting redirection process...');
+      console.log('📱 Starting redirection process...');
       
-      // Add delay for mobile state synchronization
-      const redirectToRole = () => {
-        const routes = {
-          'super_admin': '/super-admin',
-          'admin': '/admin', 
-          'atendente': '/atendente',
-          'fiscal': '/fiscal'
-        };
-        
-        const targetRoute = routes[profile.role as keyof typeof routes] || '/atendente';
-        console.log('📱 MOBILE: Redirecting to:', targetRoute);
-        
-        try {
-          navigate(targetRoute, { replace: true });
-          console.log('✅ MOBILE: React Router navigation attempted');
-        } catch (error) {
-          console.error('❌ MOBILE: React Router failed, using window.location');
-          window.location.href = targetRoute;
-        }
+      const routes: Record<string, string> = {
+        'super_admin': '/super-admin',
+        'admin': '/admin', 
+        'atendente': '/atendente',
+        'fiscal': '/fiscal'
       };
-
-      // Mobile-specific delay for state synchronization
-      const delay = isMobile ? 1000 : 100;
       
-      setTimeout(redirectToRole, delay);
+      const targetRoute = routes[profile.role] || '/atendente';
+      console.log('📱 Redirecting to:', targetRoute);
+      
+      // Força redirecionamento imediato
+      setTimeout(() => {
+        window.location.href = targetRoute;
+      }, 100);
     }
-  }, [isAuthenticated, profile, navigate, authLoading]);
+  }, [isAuthenticated, profile, authLoading]);
 
 
   useEffect(() => {
@@ -101,70 +90,19 @@ const Login = () => {
 
       console.log('✅ MOBILE LOGIN: SignIn successful, iniciando verificação...');
       
-      // Para mobile, forçar verificação manual do localStorage
-      if (isMobile) {
-        console.log('📱 MOBILE LOGIN: Aguardando sincronização mobile...');
-        
-        // Aguardar mais tempo para mobile
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Verificar localStorage diretamente
-        const storedProfile = localStorage.getItem('custom_profile');
-        const storedSession = localStorage.getItem('custom_session');
-        
-        if (storedProfile && storedSession) {
-          const profileData = JSON.parse(storedProfile);
-          console.log('📱 MOBILE LOGIN: Profile encontrado no localStorage:', profileData);
-          
-          // Navegar diretamente baseado no localStorage
-          const routes = {
-            'super_admin': '/super-admin',
-            'admin': '/admin', 
-            'atendente': '/atendente',
-            'fiscal': '/fiscal'
-          };
-          
-          const targetRoute = routes[profileData.role as keyof typeof routes] || '/atendente';
-          console.log('📱 MOBILE LOGIN: Redirecionando para:', targetRoute);
-          
-          try {
-            navigate(targetRoute, { replace: true });
-            console.log('✅ MOBILE LOGIN: Navegação React Router executada');
-          } catch (navError) {
-            console.error('❌ MOBILE LOGIN: React Router falhou, usando window.location');
-            window.location.href = targetRoute;
-          }
-          
-          setLoading(false);
-          return;
-        } else {
-          console.log('⚠️ MOBILE LOGIN: Dados não encontrados no localStorage');
-        }
+      // Aguardar sincronização
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Verificar se o profile foi carregado
+      const storedProfile = localStorage.getItem('custom_profile');
+      console.log('📱 Profile no localStorage:', storedProfile);
+      
+      if (storedProfile) {
+        const profileData = JSON.parse(storedProfile);
+        console.log('📱 Profile carregado:', profileData);
       }
       
-      // Força redirecionamento imediato após login bem-sucedido 
-      console.log('💻 DESKTOP LOGIN: Login bem-sucedido, redirecionando...');
-      
-      // Aguardar um pouco menos e forçar redirecionamento
-      setTimeout(() => {
-        const storedProfile = localStorage.getItem('custom_profile');
-        if (storedProfile) {
-          const profileData = JSON.parse(storedProfile);
-          const routes = {
-            'super_admin': '/super-admin',
-            'admin': '/admin', 
-            'atendente': '/atendente',
-            'fiscal': '/fiscal'
-          };
-          
-          const targetRoute = routes[profileData.role as keyof typeof routes] || '/atendente';
-          console.log('💻 DESKTOP: Forçando redirecionamento para:', targetRoute);
-          
-          window.location.href = targetRoute; // Força navegação direta
-        }
-        
-        setLoading(false);
-      }, 1000); // Reduzido para 1 segundo
+      setLoading(false);
       
     } catch (error: any) {
       console.error('💥 LOGIN: Erro inesperado:', error);
