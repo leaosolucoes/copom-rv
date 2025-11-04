@@ -46,7 +46,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
       console.log('Iniciando busca de usuários...');
       
       // Use Supabase Auth with proper RLS policies
-      const { data: allUsers, error } = await supabase
+      let query = supabase
         .from('users')
         .select(`
           id,
@@ -56,8 +56,14 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
           active,
           created_at
         `)
-        .in('active', userRole === 'super_admin' ? [true, false] : [true]) // Super Admin vê ativos e inativos
         .order('created_at', { ascending: false });
+      
+      // Super Admin vê todos, outros veem apenas ativos
+      if (userRole !== 'super_admin') {
+        query = query.eq('active', true);
+      }
+      
+      const { data: allUsers, error } = await query;
 
       console.log('Resposta da consulta:', { allUsers, error });
 
