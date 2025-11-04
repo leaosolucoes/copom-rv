@@ -426,8 +426,10 @@ export type Database = {
           attendant_id: string | null
           classification: string | null
           complainant_address: string | null
+          complainant_block: string | null
           complainant_city: string | null
           complainant_complement: string | null
+          complainant_lot: string | null
           complainant_name: string
           complainant_neighborhood: string | null
           complainant_number: string | null
@@ -440,19 +442,30 @@ export type Database = {
           description: string
           id: string
           occurrence_address: string
+          occurrence_block: string | null
           occurrence_city: string | null
           occurrence_complement: string | null
           occurrence_date: string | null
+          occurrence_lot: string | null
           occurrence_neighborhood: string
           occurrence_number: string | null
           occurrence_reference: string | null
           occurrence_state: string | null
+          occurrence_time: string | null
           occurrence_type: string
           occurrence_zip: string | null
+          photos: Json | null
+          processed_at: string | null
           protocol_number: string | null
           status: Database["public"]["Enums"]["complaint_status"] | null
           system_identifier: string | null
           updated_at: string | null
+          user_agent: string | null
+          user_browser: string | null
+          user_device_type: string | null
+          user_ip: string | null
+          user_location: Json | null
+          videos: Json | null
           whatsapp_sent: boolean | null
           whatsapp_sent_at: string | null
         }
@@ -463,8 +476,10 @@ export type Database = {
           attendant_id?: string | null
           classification?: string | null
           complainant_address?: string | null
+          complainant_block?: string | null
           complainant_city?: string | null
           complainant_complement?: string | null
+          complainant_lot?: string | null
           complainant_name: string
           complainant_neighborhood?: string | null
           complainant_number?: string | null
@@ -477,19 +492,30 @@ export type Database = {
           description: string
           id?: string
           occurrence_address: string
+          occurrence_block?: string | null
           occurrence_city?: string | null
           occurrence_complement?: string | null
           occurrence_date?: string | null
+          occurrence_lot?: string | null
           occurrence_neighborhood: string
           occurrence_number?: string | null
           occurrence_reference?: string | null
           occurrence_state?: string | null
+          occurrence_time?: string | null
           occurrence_type: string
           occurrence_zip?: string | null
+          photos?: Json | null
+          processed_at?: string | null
           protocol_number?: string | null
           status?: Database["public"]["Enums"]["complaint_status"] | null
           system_identifier?: string | null
           updated_at?: string | null
+          user_agent?: string | null
+          user_browser?: string | null
+          user_device_type?: string | null
+          user_ip?: string | null
+          user_location?: Json | null
+          videos?: Json | null
           whatsapp_sent?: boolean | null
           whatsapp_sent_at?: string | null
         }
@@ -500,8 +526,10 @@ export type Database = {
           attendant_id?: string | null
           classification?: string | null
           complainant_address?: string | null
+          complainant_block?: string | null
           complainant_city?: string | null
           complainant_complement?: string | null
+          complainant_lot?: string | null
           complainant_name?: string
           complainant_neighborhood?: string | null
           complainant_number?: string | null
@@ -514,19 +542,30 @@ export type Database = {
           description?: string
           id?: string
           occurrence_address?: string
+          occurrence_block?: string | null
           occurrence_city?: string | null
           occurrence_complement?: string | null
           occurrence_date?: string | null
+          occurrence_lot?: string | null
           occurrence_neighborhood?: string
           occurrence_number?: string | null
           occurrence_reference?: string | null
           occurrence_state?: string | null
+          occurrence_time?: string | null
           occurrence_type?: string
           occurrence_zip?: string | null
+          photos?: Json | null
+          processed_at?: string | null
           protocol_number?: string | null
           status?: Database["public"]["Enums"]["complaint_status"] | null
           system_identifier?: string | null
           updated_at?: string | null
+          user_agent?: string | null
+          user_browser?: string | null
+          user_device_type?: string | null
+          user_ip?: string | null
+          user_location?: Json | null
+          videos?: Json | null
           whatsapp_sent?: boolean | null
           whatsapp_sent_at?: string | null
         }
@@ -928,6 +967,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      create_user_secure: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_password: string
+          p_role?: string
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -940,6 +988,27 @@ export type Database = {
       is_current_user_fiscal: { Args: never; Returns: boolean }
       is_current_user_motorista: { Args: never; Returns: boolean }
       is_current_user_super_admin_custom: { Args: never; Returns: boolean }
+      update_user_secure: {
+        Args: {
+          p_email?: string
+          p_full_name?: string
+          p_is_active?: boolean
+          p_password?: string
+          p_role?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      validate_api_token: {
+        Args: { token_string: string }
+        Returns: {
+          is_valid: boolean
+          rate_limit: number
+          scopes: Json
+          token_id: string
+          user_id: string
+        }[]
+      }
       verify_password: {
         Args: { password: string; password_hash: string }
         Returns: boolean
