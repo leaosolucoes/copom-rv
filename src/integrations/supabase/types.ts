@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_audit_logs: {
+        Row: {
+          created_at: string | null
+          failure_reason: string | null
+          geolocation: Json | null
+          id: string
+          ip_address: string | null
+          login_success: boolean
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+          user_name: string | null
+          user_role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          failure_reason?: string | null
+          geolocation?: Json | null
+          id?: string
+          ip_address?: string | null
+          login_success?: boolean
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          user_name?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          failure_reason?: string | null
+          geolocation?: Json | null
+          id?: string
+          ip_address?: string | null
+          login_success?: boolean
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          user_name?: string | null
+          user_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_endpoints: {
         Row: {
           active: boolean | null
@@ -287,6 +337,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      checklist_config_items: {
+        Row: {
+          ativo: boolean | null
+          categoria: string
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          obrigatorio: boolean | null
+          ordem: number
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          obrigatorio?: boolean | null
+          ordem: number
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          obrigatorio?: boolean | null
+          ordem?: number
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       checklist_equipamentos: {
         Row: {
@@ -612,6 +698,56 @@ export type Database = {
           value?: Json | null
         }
         Relationships: []
+      }
+      consultation_audit_logs: {
+        Row: {
+          consultation_type: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          search_result: Json | null
+          searched_data: string
+          success: boolean
+          user_agent: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          consultation_type: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          search_result?: Json | null
+          searched_data: string
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          consultation_type?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          search_result?: Json | null
+          searched_data?: string
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultation_audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       escala_imprevistos: {
         Row: {
