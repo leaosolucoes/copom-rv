@@ -1,5 +1,6 @@
-import { Building2, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logo2bpm from "@/assets/logo-2bpm.png";
 
 interface HeaderProps {
   showLoginButton?: boolean;
@@ -12,23 +13,13 @@ export const Header = ({ showLoginButton = true, logoUrl }: HeaderProps) => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            {logoUrl ? (
-              <div className="flex items-center space-x-3">
-                <img src={logoUrl} alt="Logo Prefeitura" className="h-16 w-auto" />
-                <div className="text-white">
-                  <h1 className="text-xl font-bold">2º BPM - PMGO - COPOM - RIO VERDE</h1>
-                  <p className="text-sm opacity-90">Sistema de Denúncias</p>
-                </div>
+            <div className="flex items-center space-x-3">
+              <img src={logoUrl || logo2bpm} alt="Logo 2º BPM" className="h-16 w-auto" />
+              <div className="text-white">
+                <h1 className="text-xl font-bold">2º BPM - PMGO - COPOM - RIO VERDE</h1>
+                <p className="text-sm opacity-90">Sistema de Denúncias</p>
               </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Building2 className="h-8 w-8 text-white" />
-                <div className="text-white">
-                  <h1 className="text-xl font-bold">2º BPM - PMGO - COPOM - RIO VERDE</h1>
-                  <p className="text-sm opacity-90">Sistema de Denúncias</p>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
 
           {showLoginButton && (
