@@ -69,8 +69,13 @@ serve(async (req) => {
       )
     }
 
+    // Retornar na estrutura que o componente espera (com .result)
     return new Response(
-      JSON.stringify({ success: true, data }),
+      JSON.stringify({ 
+        success: true, 
+        result: data.result || data,  // Compatibilidade com ambas estruturas
+        data: data.result || data      // Mantém data também para compatibilidade
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
