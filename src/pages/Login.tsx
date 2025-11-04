@@ -35,12 +35,10 @@ const Login = () => {
           'super_admin': '/super-admin',
           'admin': '/admin', 
           'atendente': '/atendente',
-          'fiscal': '/fiscal',
-          'motorista': '/motoristas',
-          'transporte': '/transporte'
+          'fiscal': '/fiscal'
         };
         
-        const targetRoute = routes[profile.role as keyof typeof routes] || '/';
+        const targetRoute = routes[profile.role as keyof typeof routes] || '/atendente';
         console.log('📱 MOBILE: Redirecting to:', targetRoute);
         
         try {
@@ -123,12 +121,10 @@ const Login = () => {
             'super_admin': '/super-admin',
             'admin': '/admin', 
             'atendente': '/atendente',
-            'fiscal': '/fiscal',
-            'motorista': '/motoristas',
-            'transporte': '/transporte'
+            'fiscal': '/fiscal'
           };
           
-          const targetRoute = routes[profileData.role as keyof typeof routes] || '/';
+          const targetRoute = routes[profileData.role as keyof typeof routes] || '/atendente';
           console.log('📱 MOBILE LOGIN: Redirecionando para:', targetRoute);
           
           try {
@@ -158,12 +154,10 @@ const Login = () => {
             'super_admin': '/super-admin',
             'admin': '/admin', 
             'atendente': '/atendente',
-            'fiscal': '/fiscal',
-            'motorista': '/motoristas',
-            'transporte': '/transporte'
+            'fiscal': '/fiscal'
           };
           
-          const targetRoute = routes[profileData.role as keyof typeof routes] || '/';
+          const targetRoute = routes[profileData.role as keyof typeof routes] || '/atendente';
           console.log('💻 DESKTOP: Forçando redirecionamento para:', targetRoute);
           
           window.location.href = targetRoute; // Força navegação direta
