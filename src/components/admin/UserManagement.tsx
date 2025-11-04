@@ -18,9 +18,8 @@ interface User {
   email: string;
   full_name: string;
   role: 'super_admin' | 'admin' | 'atendente' | 'fiscal' | 'motorista' | 'transporte';
-  is_active: boolean;
+  active: boolean;
   created_at: string;
-  last_login: string | null;
 }
 
 interface UserManagementProps {
@@ -54,11 +53,10 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
           email,
           full_name,
           role,
-          is_active,
-          created_at,
-          last_login
+          active,
+          created_at
         `)
-        .in('is_active', userRole === 'super_admin' ? [true, false] : [true]) // Super Admin vê ativos e inativos
+        .in('active', userRole === 'super_admin' ? [true, false] : [true]) // Super Admin vê ativos e inativos
         .order('created_at', { ascending: false });
 
       console.log('Resposta da consulta:', { allUsers, error });
@@ -78,7 +76,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
         : allUsers; // Super Admin vê todos os usuários
         
       console.log('Usuários filtrados:', filteredUsers);
-      setUsers(filteredUsers);
+      setUsers(filteredUsers as any);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
       toast({
@@ -173,7 +171,7 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
         full_name: user.full_name,
         password: '',
         role: user.role as 'admin' | 'atendente' | 'fiscal' | 'motorista' | 'transporte',
-        is_active: user.is_active
+        is_active: user.active
       });
     setDialogOpen(true);
   };
@@ -379,19 +377,12 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{getRoleBadge(user.role)}</TableCell>
                     <TableCell>
-                      <Badge variant={user.is_active ? "default" : "secondary"}>
-                        {user.is_active ? 'Ativo' : 'Inativo'}
+                      <Badge variant={user.active ? "default" : "secondary"}>
+                        {user.active ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {user.last_login 
-                        ? new Date(user.last_login).toLocaleDateString('pt-BR') + ' ' + 
-                          new Date(user.last_login).toLocaleTimeString('pt-BR', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })
-                        : 'Nunca'
-                      }
+                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
@@ -404,10 +395,10 @@ export const UserManagement = ({ userRole = 'super_admin' }: UserManagementProps
                         </Button>
                         <Button
                           size="sm"
-                          variant={user.is_active ? "destructive" : "default"}
-                          onClick={() => handleToggleActive(user.id, user.is_active)}
+                          variant={user.active ? "destructive" : "default"}
+                          onClick={() => handleToggleActive(user.id, user.active)}
                         >
-                          {user.is_active ? 'Desativar' : 'Ativar'}
+                          {user.active ? 'Desativar' : 'Ativar'}
                         </Button>
                       </div>
                     </TableCell>

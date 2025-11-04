@@ -9,7 +9,7 @@ interface UserProfile {
   email: string;
   full_name: string;
   role: 'super_admin' | 'admin' | 'atendente' | 'fiscal' | 'motorista';
-  is_active: boolean;
+  active: boolean;
   user_roles?: Array<{
     role: string;
     is_active: boolean;
@@ -55,10 +55,10 @@ export const useSupabaseAuth = () => {
           email,
           full_name,
           role,
-          is_active
+          active
         `)
         .eq('id', userId)
-        .eq('is_active', true)
+        .eq('active', true)
         .maybeSingle();
 
       if (userError) {
@@ -71,7 +71,7 @@ export const useSupabaseAuth = () => {
         return null;
       }
 
-      return userData as UserProfile;
+      return userData as any;
     } catch (error) {
       logger.error('Error fetching user profile:', error);
       return null;
@@ -215,7 +215,7 @@ export const useSupabaseAuth = () => {
       // Set auth state immediately for mobile
       setUser(mockUser);
       setSession(mockSession);
-      setProfile(profileData);
+      setProfile(profileData as any);
       
       // Force state update for mobile
       if (typeof window !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent)) {
@@ -231,12 +231,6 @@ export const useSupabaseAuth = () => {
       }
       
       logger.debug('✅ Auth state set successfully for', userData.full_name, 'role:', userData.role);
-
-      // Update last login
-      await supabase
-        .from('users')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', userData.user_id);
 
       // Log successful login
       await logAccessAudit({
@@ -356,6 +350,6 @@ export const useSupabaseAuth = () => {
     hasRole,
     isSuperAdmin,
     getUserRole,
-    isAuthenticated: !!user && !!session && !!profile && profile.is_active
+    isAuthenticated: !!user && !!session && !!profile && (profile as any).active
   };
 };

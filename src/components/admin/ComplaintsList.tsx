@@ -26,7 +26,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 
-type ComplaintStatus = 'nova' | 'cadastrada' | 'finalizada' | 'a_verificar' | 'verificado' | 'fiscal_solicitado';
+type ComplaintStatus = Database['public']['Enums']['complaint_status'];
 
 // ... keep existing code (interfaces and types)
 
@@ -254,7 +254,7 @@ export const ComplaintsList = () => {
         (payload) => {
           const newComplaint = payload.new as Complaint;
           const shouldShow = userRole === 'super_admin' || userRole === 'admin' || 
-                           (userRole === 'atendente' && newComplaint.status !== 'a_verificar' && newComplaint.status !== 'finalizada');
+                           (userRole === 'atendente' && (newComplaint.status as any) !== 'a_verificar' && (newComplaint.status as any) !== 'finalizada');
           
           if (shouldShow) {
             setComplaints(prev => {
@@ -359,7 +359,7 @@ export const ComplaintsList = () => {
             ).filter(complaint => {
               // Filtrar denúncias que não devem mais ser visíveis para atendentes
               if (userRole === 'atendente') {
-                return complaint.status !== 'finalizada' && complaint.status !== 'a_verificar';
+                return (complaint.status as any) !== 'finalizada' && (complaint.status as any) !== 'a_verificar';
               }
               return true;
             })
@@ -416,12 +416,12 @@ export const ComplaintsList = () => {
       
       if (profile?.role === 'atendente') {
         filteredData = data?.filter(complaint => 
-          complaint.status !== 'finalizada' && complaint.status !== 'a_verificar'
+          (complaint.status as any) !== 'finalizada' && (complaint.status as any) !== 'a_verificar'
         ) || [];
         // REMOVIDO: Log de filtered data por segurança
       }
       
-      setComplaints(filteredData as Complaint[]);
+      setComplaints(filteredData as any);
     } catch (error) {
       console.error('❌ Erro ao recarregar denúncias:', error);
       toast({
@@ -468,11 +468,11 @@ export const ComplaintsList = () => {
       
       if (profile?.role === 'atendente') {
         filteredData = data?.filter(complaint => 
-          complaint.status !== 'finalizada' && complaint.status !== 'a_verificar'
+          (complaint.status as any) !== 'finalizada' && (complaint.status as any) !== 'a_verificar'
         ) || [];
       }
       
-      setComplaints(filteredData as Complaint[]);
+      setComplaints(filteredData as any);
     } catch (error) {
       console.error('Erro ao carregar denúncias:', error);
       toast({
@@ -847,7 +847,7 @@ export const ComplaintsList = () => {
       const { error } = await supabase
         .from('complaints')
         .update({ 
-          status: 'a_verificar',
+          status: 'a_verificar' as any,
           processed_at: new Date().toISOString()
         })
         .eq('id', complaintId);
@@ -1000,7 +1000,7 @@ export const ComplaintsList = () => {
       const { error } = await supabase
         .from('complaints')
         .update({ 
-          status: 'finalizada' as ComplaintStatus,
+          status: 'finalizada' as any,
           processed_at: new Date().toISOString(),
           archived_by: user?.id
         })
@@ -1029,7 +1029,7 @@ export const ComplaintsList = () => {
       const { error } = await supabase
         .from('complaints')
         .update({ 
-          status: 'verificado' as ComplaintStatus,
+          status: 'verificado' as any,
           processed_at: new Date().toISOString()
         })
         .eq('id', complaintId);
@@ -1111,7 +1111,7 @@ export const ComplaintsList = () => {
     try {
       // Filtrar denúncias do histórico (finalizada, cadastrada e fiscal_solicitado) - sempre usar histórico para PDF
       let complaintsToExport = complaints.filter(complaint => 
-        complaint.status === 'finalizada' || complaint.status === 'cadastrada' || complaint.status === 'fiscal_solicitado'
+        (complaint.status as any) === 'finalizada' || (complaint.status as any) === 'cadastrada' || (complaint.status as any) === 'fiscal_solicitado'
       );
       
       // Aplicar filtros de busca se houver
@@ -1944,8 +1944,8 @@ export const ComplaintsList = () => {
                                        </div>
                                      )}
                                     
-                                    {/* Formulário RAI - mostrar para atendente e denúncia nova ou verificada */}
-                                    {userRole === 'atendente' && (selectedComplaint.status === 'nova' || selectedComplaint.status === 'verificado') && (
+                                     {/* Formulário RAI - mostrar para atendente e denúncia nova ou verificada */}
+                                     {userRole === 'atendente' && ((selectedComplaint.status as any) === 'nova' || (selectedComplaint.status as any) === 'verificado') && (
                                      <div className="space-y-4 border-t pt-4">
                                        <h4 className="text-md font-semibold text-primary">Cadastrar com PROTOCOLO</h4>
                                        <div className="grid grid-cols-2 gap-4">
@@ -2031,7 +2031,7 @@ export const ComplaintsList = () => {
                                       )}
 
                                        {/* Botões para ATENDENTE com denúncia VERIFICADA */}
-                                       {userRole === 'atendente' && selectedComplaint.status === 'verificado' && (
+                                       {userRole === 'atendente' && (selectedComplaint.status as any) === 'verificado' && (
                                          <Button 
                                            onClick={() => {
                                              console.log('Botão "Cadastrar com RAI" (verificado) clicado!', { 
@@ -2069,7 +2069,7 @@ export const ComplaintsList = () => {
                                       )}
                                        
                                       {/* Botões para ADMIN/SUPER_ADMIN com denúncia A_VERIFICAR */}
-                                      {(userRole === 'admin' || userRole === 'super_admin') && selectedComplaint.status === 'a_verificar' && (
+                                      {(userRole === 'admin' || userRole === 'super_admin') && (selectedComplaint.status as any) === 'a_verificar' && (
                                         <>
                                           <Button 
                                             onClick={() => archiveComplaint(selectedComplaint.id)}

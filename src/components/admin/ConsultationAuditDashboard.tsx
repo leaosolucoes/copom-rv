@@ -91,7 +91,7 @@ export function ConsultationAuditDashboard() {
       }
       
       logger.debug('Logs carregados com sucesso');
-      setLogs(data || []);
+      setLogs(data as any || []);
       
       if (data && data.length > 0) {
         toast.success(`${data.length} logs carregados com sucesso!`);
