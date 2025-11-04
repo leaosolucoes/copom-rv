@@ -417,7 +417,7 @@ export function ApiManagement() {
       variable: [
         {
           key: "baseUrl",
-          value: "https://smytdnkylauxocqrkchn.supabase.co/functions/v1",
+          value: "https://doyttekxvonlwmmxfezd.supabase.co/functions/v1",
           type: "string"
         },
         {
@@ -858,7 +858,7 @@ export function ApiManagement() {
                      <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
 {`curl -H "x-api-token: seu_token_aqui" \\
      -H "Content-Type: application/json" \\
-     https://smytdnkylauxocqrkchn.supabase.co/functions/v1/api-users`}
+     https://doyttekxvonlwmmxfezd.supabase.co/functions/v1/api-users`}
                      </pre>
                   </div>
                 </div>
@@ -1066,7 +1066,7 @@ X-RateLimit-Reset: 1640995200`}
                   <div className="bg-muted p-4 rounded-lg">
                      <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
 {`curl -X POST \\
-  https://smytdnkylauxocqrkchn.supabase.co/functions/v1/api-complaints \\
+  https://doyttekxvonlwmmxfezd.supabase.co/functions/v1/api-complaints \\
   -H "Content-Type: application/json" \\
   -H "x-api-token: seu_token_aqui" \\
   -d '{
@@ -1090,7 +1090,7 @@ X-RateLimit-Reset: 1640995200`}
                   <div className="bg-muted p-4 rounded-lg">
                      <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
 {`curl -X GET \\
-  "https://smytdnkylauxocqrkchn.supabase.co/functions/v1/api-complaints?page=1&limit=10&status=nova" \\
+  "https://doyttekxvonlwmmxfezd.supabase.co/functions/v1/api-complaints?page=1&limit=10&status=nova" \\
   -H "x-api-token: seu_token_aqui"`}
                     </pre>
                   </div>
@@ -1101,7 +1101,7 @@ X-RateLimit-Reset: 1640995200`}
                   <div className="bg-muted p-4 rounded-lg">
                      <pre className="bg-background p-3 rounded text-sm overflow-x-auto">
 {`curl -X GET \\
-  https://smytdnkylauxocqrkchn.supabase.co/functions/v1/api-cnpj/11222333000181 \\
+  https://doyttekxvonlwmmxfezd.supabase.co/functions/v1/api-cnpj/11222333000181 \\
   -H "x-api-token: seu_token_aqui"`}
                     </pre>
                   </div>
@@ -1124,7 +1124,7 @@ X-RateLimit-Reset: 1640995200`}
                     <div className="flex items-start gap-3">
                       <div className="min-w-20 font-medium text-sm">URL:</div>
                        <div className="text-sm font-mono bg-background px-2 py-1 rounded">
-                         https://smytdnkylauxocqrkchn.supabase.co/functions/v1/api-[endpoint]
+                         https://doyttekxvonlwmmxfezd.supabase.co/functions/v1/api-[endpoint]
                        </div>
                     </div>
                     <div className="flex items-start gap-3">
