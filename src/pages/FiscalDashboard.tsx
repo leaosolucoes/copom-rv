@@ -5,19 +5,13 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { CNPJLookup } from "@/components/cnpj/CNPJLookup";
 import { CEPLookup } from "@/components/cep/CEPLookup";
-import { FiscalAudienciasDashboard } from "@/components/audiencias/FiscalAudienciasDashboard";
-import { ChecklistViaturaCard } from "@/components/fiscal/ChecklistViaturaCard";
-import { EscalaAtivaCard } from "@/components/motorista/EscalaAtivaCard";
-import { ImprevistosMotoristaCard } from "@/components/motorista/ImprevistosMotoristaCard";
-import { useEscalas } from "@/hooks/useEscalas";
-import { LogOut, FileSearch, Car, Clipboard } from "lucide-react";
+import { LogOut, FileSearch, Clipboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function FiscalDashboard() {
   const { profile, signOut, isLoading } = useSupabaseAuth();
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
-  const { escalaAtiva, loading: escalasLoading, refetch: refetchEscalas } = useEscalas();
 
   useEffect(() => {
     if (!isLoading && !profile) {
@@ -78,34 +72,6 @@ export default function FiscalDashboard() {
         </div>
 
         <div className="grid gap-6">
-          <FiscalAudienciasDashboard />
-
-          {/* Seção de Viaturas */}
-          <div className="bg-card border rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
-              <Car className="h-5 w-5" />
-              Controle de Viaturas
-            </h2>
-            <p className="text-muted-foreground mb-4">
-              Gerencie escalas, realize checklists e acompanhe imprevistos das viaturas.
-            </p>
-          </div>
-
-          <div className="max-w-6xl mx-auto">
-            <div className="grid gap-6 lg:grid-cols-3 md:grid-cols-2">
-              <ChecklistViaturaCard />
-              
-              {!escalasLoading && escalaAtiva && (
-                <EscalaAtivaCard 
-                  escala={escalaAtiva} 
-                  onEscalaUpdated={refetchEscalas}
-                />
-              )}
-              
-              <ImprevistosMotoristaCard />
-            </div>
-          </div>
-          
           <div className="bg-card border rounded-lg p-6">
             <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
               <Clipboard className="h-5 w-5" />
