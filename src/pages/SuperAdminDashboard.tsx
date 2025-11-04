@@ -17,7 +17,7 @@ import { OccurrenceTypesConfig } from '@/components/admin/OccurrenceTypesConfig'
 import { SoundNotificationControl } from '@/components/admin/SoundNotificationControl';
 import { ApiManagement } from '@/components/admin/ApiManagement';
 import { ConsultationAuditDashboard } from '@/components/admin/ConsultationAuditDashboard';
-import AccessAuditDashboard from '@/components/admin/AccessAuditDashboard';
+import { AccessAuditDashboard } from '@/components/admin/AccessAuditDashboard';
 import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
 import { AudienciasDashboard } from '@/components/audiencias/AudienciasDashboard';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
