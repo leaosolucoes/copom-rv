@@ -70,17 +70,16 @@ Deno.serve(async (req) => {
         user_role: auditData.user_role,
         ip_address: clientIP,
         user_agent: userAgent,
-        device_type: deviceInfo.device,
-        browser_name: deviceInfo.browser,
-        operating_system: deviceInfo.os,
-        location_country: locationData?.country || null,
-        location_region: locationData?.regionName || null,
-        location_city: locationData?.city || null,
-        login_method: auditData.login_method || 'email_password',
         login_success: auditData.login_success,
         failure_reason: auditData.failure_reason || null,
-        logout_timestamp: auditData.logout_timestamp || null,
-        session_duration_minutes: auditData.session_duration_minutes || null,
+        geolocation: locationData ? {
+          country: locationData.country || null,
+          region: locationData.regionName || null,
+          city: locationData.city || null,
+          device: deviceInfo.device,
+          browser: deviceInfo.browser,
+          os: deviceInfo.os
+        } : null,
       })
 
     if (error) {
