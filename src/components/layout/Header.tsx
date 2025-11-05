@@ -14,7 +14,7 @@ export const Header = ({ showLoginButton = true, logoUrl }: HeaderProps) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-3">
-              <img src={logoUrl || logo2bpm} alt="Logo 2º BPM" className="h-16 w-auto" />
+              <img src={logoUrl || logo2bpm} alt="Logo 2º BPM" className="h-24 w-auto" />
               <div className="text-white">
                 <h1 className="text-xl font-bold">2º BPM - PMGO - COPOM - RIO VERDE</h1>
                 <p className="text-sm opacity-90">Sistema de Denúncias</p>
