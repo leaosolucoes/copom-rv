@@ -50,7 +50,7 @@ serve(async (req) => {
     if (action === 'list-tokens') {
       console.log('📋 Listando tokens...');
       
-      const supabaseUrl = 'https://smytdnkylauxocqrkchn.supabase.co'
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://doyttekxvonlwmmxfezd.supabase.co'
       const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
       
       if (!serviceKey) {
@@ -95,7 +95,7 @@ serve(async (req) => {
     }
 
     // Configuração do Supabase Admin
-    const supabaseUrl = 'https://smytdnkylauxocqrkchn.supabase.co'
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://doyttekxvonlwmmxfezd.supabase.co'
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     
     console.log('🔑 Service key disponível:', !!serviceKey)
