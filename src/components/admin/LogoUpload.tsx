@@ -17,9 +17,9 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [colors, setColors] = useState({
-    primary: '#228B22',
-    secondary: '#1F4E79', 
-    accent: '#FF6B35',
+    primary: '#1E3A8A',
+    secondary: '#2D4A9E',
+    accent: '#FFD700',
     background: '#F8F9FA'
   });
   const [savingColors, setSavingColors] = useState(false);
@@ -61,6 +61,20 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
     } catch (error) {
       console.error('Erro ao carregar cores:', error);
     }
+  };
+
+  const applyLogoBPMColors = () => {
+    setColors({
+      primary: '#1E3A8A',
+      secondary: '#2D4A9E',
+      accent: '#FFD700',
+      background: '#F8F9FA'
+    });
+    
+    toast({
+      title: "Cores Aplicadas",
+      description: "Cores oficiais do 2º BPM aplicadas. Clique em 'Salvar Cores' para confirmar.",
+    });
   };
 
   const saveSystemColors = async () => {
@@ -339,7 +353,36 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <Button 
+                onClick={applyLogoBPMColors}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                🎨 Aplicar Cores da Logo
+              </Button>
+            </div>
+            
+            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border-l-4 border-blue-500">
+              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">🎨 Paleta Oficial 2º BPM:</h4>
+              <div className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded border border-gray-300" style={{backgroundColor: '#1E3A8A'}}></div>
+                  <span><strong>Azul Militar:</strong> #1E3A8A (Primário)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded border border-gray-300" style={{backgroundColor: '#FFD700'}}></div>
+                  <span><strong>Amarelo Dourado:</strong> #FFD700 (Destaque)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded border border-gray-300" style={{backgroundColor: '#2D4A9E'}}></div>
+                  <span><strong>Azul Claro:</strong> #2D4A9E (Secundário)</span>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="primary-color">Cor Primária</Label>

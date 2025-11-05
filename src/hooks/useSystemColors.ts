@@ -9,9 +9,9 @@ interface SystemColors {
 }
 
 const defaultColors: SystemColors = {
-  primary: '#228B22',
-  secondary: '#1F4E79',
-  accent: '#FF6B35',
+  primary: '#1E3A8A',
+  secondary: '#2D4A9E',
+  accent: '#FFD700',
   background: '#F8F9FA'
 };
 
