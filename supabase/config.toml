@@ -1,1 +1,10 @@
 project_id = "doyttekxvonlwmmxfezd"
+
+[functions.send-whatsapp-meta]
+verify_jwt = false
+
+[functions.test-whatsapp-meta]
+verify_jwt = false
+
+[functions.whatsapp-meta-webhook]
+verify_jwt = false

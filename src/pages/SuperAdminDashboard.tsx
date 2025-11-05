@@ -11,6 +11,7 @@ import { ComplaintsListLazy } from '@/components/admin/ComplaintsListLazy';
 import { ComplaintsStatisticsDashboard } from '@/components/admin/ComplaintsStatisticsDashboard';
 import { SystemSettings } from '@/components/admin/SystemSettings';
 import { WhatsAppConfig } from '@/components/admin/WhatsAppConfig';
+import WhatsAppMetaConfig from '@/components/admin/WhatsAppMetaConfig';
 import { FormFieldsConfig } from '@/components/admin/FormFieldsConfig';
 import { LogoUpload } from '@/components/admin/LogoUpload';
 import { OccurrenceTypesConfig } from '@/components/admin/OccurrenceTypesConfig';
@@ -132,6 +133,11 @@ const SuperAdminDashboard = () => {
                 <span className="hidden sm:inline">WhatsApp</span>
                 <span className="sm:hidden">Zap</span>
               </TabsTrigger>
+              <TabsTrigger value="whatsapp-meta" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <MessageSquare className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">WhatsApp Meta</span>
+                <span className="sm:hidden">Meta</span>
+              </TabsTrigger>
               <TabsTrigger value="form" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Layout className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Formulário</span>
@@ -217,13 +223,27 @@ const SuperAdminDashboard = () => {
           <TabsContent value="whatsapp" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Configuração WhatsApp</CardTitle>
+                <CardTitle>Configuração WhatsApp (Evolution API)</CardTitle>
                 <CardDescription>
                   Configure a integração com Evolution API para envio automático de mensagens
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <WhatsAppConfig />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="whatsapp-meta" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>WhatsApp Business API (Meta Oficial)</CardTitle>
+                <CardDescription>
+                  Configure a integração oficial da Meta para envio de mensagens via WhatsApp Business
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <WhatsAppMetaConfig />
               </CardContent>
             </Card>
           </TabsContent>
