@@ -202,8 +202,7 @@ serve(async (req) => {
       token_hash: tokenHash,
       token_type: body.token_type || 'production',
       scopes: Array.isArray(body.scopes) ? body.scopes : ['*'],
-      rate_limit_per_hour: parseInt(body.rate_limit_per_hour) || 1000,
-      expires_at: body.expires_at || null
+      rate_limit_per_hour: parseInt(body.rate_limit_per_hour) || 1000
     }
     console.log('💾 Dados para inserção:', { ...insertData, token_hash: 'hidden' })
 
@@ -237,7 +236,6 @@ serve(async (req) => {
         name: newToken.token_name,
         type: newToken.token_type,
         scopes: newToken.scopes,
-        expires_at: newToken.expires_at,
         rate_limit_per_hour: newToken.rate_limit_per_hour
       }
     }
