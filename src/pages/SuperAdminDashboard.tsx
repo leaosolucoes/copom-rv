@@ -22,8 +22,7 @@ import { AccessAuditDashboard } from '@/components/admin/AccessAuditDashboard';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
-import { PosturasApiSettings } from '@/components/admin/PosturasApiSettings';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, Server, BarChart3 } from 'lucide-react';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -157,11 +156,6 @@ const SuperAdminDashboard = () => {
                 <Code className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">API</span>
                 <span className="sm:hidden">API</span>
-              </TabsTrigger>
-              <TabsTrigger value="posturas-api" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
-                <Server className="h-3 w-3 md:h-4 md:w-4" />
-                <span className="hidden sm:inline">Posturas-API</span>
-                <span className="sm:hidden">P-API</span>
               </TabsTrigger>
               <TabsTrigger value="consultas" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Search className="h-3 w-3 md:h-4 md:w-4" />
@@ -304,19 +298,6 @@ const SuperAdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="posturas-api" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Posturas-API</CardTitle>
-                <CardDescription>
-                  Configurações e gerenciamento específico da API de Posturas
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <PosturasApiSettings />
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="consultas" className="space-y-6">
             <div className="space-y-6">
