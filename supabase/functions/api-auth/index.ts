@@ -195,16 +195,14 @@ serve(async (req) => {
     const tokenHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
     console.log('🔒 Hash do token criado')
 
-    // Dados para inserção
+    // Dados para inserção (mapear para colunas corretas da tabela)
     const insertData = {
-      user_id: userId,
-      token_name: body.token_name || 'API Token',
-      token_hash: tokenHash,
-      token_type: body.token_type || 'production',
-      scopes: Array.isArray(body.scopes) ? body.scopes : ['*'],
-      rate_limit_per_hour: parseInt(body.rate_limit_per_hour) || 1000
+      name: body.token_name || 'API Token',
+      token: tokenHash,
+      permissions: Array.isArray(body.scopes) ? body.scopes : ['*'],
+      active: true
     }
-    console.log('💾 Dados para inserção:', { ...insertData, token_hash: 'hidden' })
+    console.log('💾 Dados para inserção:', { ...insertData, token: 'hidden' })
 
     // Inserir token
     const { data: newToken, error: insertError } = await supabaseAdmin
@@ -233,10 +231,10 @@ serve(async (req) => {
       token: tokenString,
       token_info: {
         id: newToken.id,
-        name: newToken.token_name,
-        type: newToken.token_type,
-        scopes: newToken.scopes,
-        rate_limit_per_hour: newToken.rate_limit_per_hour
+        name: newToken.name,
+        permissions: newToken.permissions,
+        active: newToken.active,
+        created_at: newToken.created_at
       }
     }
 
