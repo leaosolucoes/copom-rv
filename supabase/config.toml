@@ -1,5 +1,8 @@
 project_id = "doyttekxvonlwmmxfezd"
 
+[functions.api-complaints]
+verify_jwt = false
+
 [functions.send-whatsapp-meta]
 verify_jwt = false
 

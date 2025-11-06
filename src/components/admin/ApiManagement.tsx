@@ -366,10 +366,30 @@ export function ApiManagement() {
       return;
     }
 
+    // Validar formato do token
+    const trimmedToken = tokenToTest.trim();
+    if (!trimmedToken.startsWith('sat_')) {
+      toast({
+        title: "⚠️ Formato de token inválido",
+        description: "O token deve começar com 'sat_'. Certifique-se de colar o token COMPLETO que foi gerado, não o hash da base de dados.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (trimmedToken.length < 40) {
+      toast({
+        title: "⚠️ Token muito curto",
+        description: "O token parece incompleto. Certifique-se de copiar o token COMPLETO quando ele for gerado.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setTestResult(null);
     
     try {
-      logger.info('🧪 Testando token...');
+      logger.info('🧪 Testando token:', trimmedToken.substring(0, 20) + '...');
       
       const startTime = Date.now();
       
@@ -379,7 +399,7 @@ export function ApiManagement() {
         {
           method: 'GET',
           headers: {
-            'x-api-token': tokenToTest.trim(),
+            'x-api-token': trimmedToken,
             'Content-Type': 'application/json'
           }
         }

@@ -7,8 +7,12 @@ const corsHeaders = {
 }
 
 serve(async (req): Promise<Response> => {
+  console.log('🚀 API-COMPLAINTS INICIADA')
+  console.log('Timestamp:', new Date().toISOString())
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('✅ CORS preflight - respondendo')
     return new Response(null, { headers: corsHeaders })
   }
 
@@ -20,6 +24,7 @@ serve(async (req): Promise<Response> => {
   console.log('Method:', req.method)
   console.log('URL:', req.url)
   console.log('Path:', path)
+  console.log('Query params:', url.search)
   
   // Verificar se é uma requisição válida
   if (!['GET', 'POST', 'PUT', 'DELETE'].includes(req.method)) {
@@ -167,15 +172,25 @@ serve(async (req): Promise<Response> => {
 })
 
 async function validateApiToken(req: Request, supabase: any): Promise<{ valid: true; tokenData: any } | { valid: false; response: Response }> {
+  console.log('🔐 INICIANDO VALIDAÇÃO DE TOKEN')
+  
   // Log de debugging - ver todos os headers
-  console.log('Headers recebidos:')
+  console.log('📋 Headers recebidos:')
   for (const [key, value] of req.headers.entries()) {
-    console.log(`${key}: ${value}`)
+    // Não mostrar o token completo por segurança, apenas início
+    if (key === 'x-api-token') {
+      console.log(`${key}: ${value ? value.substring(0, 20) + '...' : 'null'}`)
+    } else {
+      console.log(`${key}: ${value}`)
+    }
   }
   
   // Tentar pegar o token do header x-api-token primeiro
   let apiToken = req.headers.get('x-api-token')
-  console.log('x-api-token encontrado:', apiToken)
+  console.log('🎫 x-api-token presente:', !!apiToken)
+  if (apiToken) {
+    console.log('🎫 Token começa com:', apiToken.substring(0, 20) + '...')
+  }
   
   // Se não encontrar, tentar pegar do Authorization header
   if (!apiToken) {
@@ -199,22 +214,32 @@ async function validateApiToken(req: Request, supabase: any): Promise<{ valid: t
   }
 
   // Gerar hash do token usando o mesmo método da api-auth
-  console.log('Gerando hash do token...')
+  console.log('🔒 Gerando hash do token...')
+  console.log('🔒 Token original (primeiros 30 caracteres):', apiToken.substring(0, 30))
+  
   const encoder = new TextEncoder()
   const tokenData = encoder.encode(apiToken)
   const hashBuffer = await crypto.subtle.digest('SHA-256', tokenData)
   const hashArray = Array.from(new Uint8Array(hashBuffer))
   const tokenHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-  console.log('Hash gerado:', tokenHash.substring(0, 20) + '...')
+  console.log('🔒 Hash gerado (primeiros 40 caracteres):', tokenHash.substring(0, 40))
 
   // Buscar token pelo hash diretamente na tabela
+  console.log('🔍 Buscando token na base de dados...')
   const { data: tokens, error } = await supabase
     .from('api_tokens')
     .select('id, active, permissions')
     .eq('token', tokenHash)
     .limit(1)
 
-  console.log('Resultado da busca:', { found: !!tokens?.length, error: error?.message })
+  console.log('📊 Resultado da busca:')
+  console.log('  - Tokens encontrados:', tokens?.length || 0)
+  console.log('  - Erro:', error?.message || 'nenhum')
+  if (tokens && tokens.length > 0) {
+    console.log('  - Token ID:', tokens[0].id)
+    console.log('  - Token ativo:', tokens[0].active)
+    console.log('  - Permissões:', JSON.stringify(tokens[0].permissions))
+  }
 
   if (error || !tokens || tokens.length === 0) {
     console.log('Token não encontrado ou erro na busca')
