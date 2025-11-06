@@ -961,15 +961,10 @@ export const ComplaintsList = () => {
         console.log('Verificação pós-atualização:', updatedComplaint);
       }
       
-      toast({
-        title: "Sucesso",
-        description: `Denúncia ${status === 'cadastrada' ? 'cadastrada com RAI' : 'atualizada'} com sucesso!`,
-      });
-      
       // Limpar dados do formulário RAI
       setRaiData({ rai: '', classification: '' });
       
-      // Recarregar os dados completos da denúncia do banco para garantir que tudo está atualizado
+      // IMPORTANTE: Recarregar os dados COMPLETOS da denúncia incluindo TODAS as informações
       const { data: fullComplaintData, error: fetchError } = await supabase
         .from('complaints')
         .select('*')
@@ -977,11 +972,28 @@ export const ComplaintsList = () => {
         .single();
       
       if (!fetchError && fullComplaintData) {
-        console.log('✅ Denúncia recarregada com todos os dados:', fullComplaintData);
+        console.log('✅ Denúncia recarregada com TODOS os dados:', fullComplaintData);
+        console.log('📍 user_location:', fullComplaintData.user_location);
+        console.log('🖥️ user_agent:', fullComplaintData.user_agent);
+        console.log('📷 photos:', fullComplaintData.photos);
+        console.log('🎥 videos:', fullComplaintData.videos);
         setSelectedComplaint(fullComplaintData as Complaint);
       } else {
-        console.error('Erro ao recarregar denúncia:', fetchError);
+        console.error('❌ Erro ao recarregar denúncia:', fetchError);
+        // Se falhar, manter os dados atuais e apenas atualizar o status
+        setSelectedComplaint(prev => prev ? {
+          ...prev,
+          status: status as any,
+          system_identifier: systemIdentifier,
+          classification: updateData.classification,
+          processed_at: updateData.processed_at
+        } : null);
       }
+      
+      toast({
+        title: "Sucesso",
+        description: `Denúncia ${status === 'cadastrada' ? 'cadastrada com RAI' : 'atualizada'} com sucesso!`,
+      });
       
       // Forçar atualização da lista múltiplas vezes para garantir
       console.log('Forçando atualização da lista...');
