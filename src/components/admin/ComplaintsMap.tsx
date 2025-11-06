@@ -79,21 +79,38 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
         }
 
         if (data?.value) {
-          // O valor pode vir como string JSON
+          // O valor vem como JSONB, pode ser string ou objeto
           let tokenValue = data.value;
           
+          // Se for string, tentar parsear
           if (typeof tokenValue === 'string') {
             try {
-              tokenValue = JSON.parse(tokenValue);
+              // Se começar com aspas duplas, remover
+              if (tokenValue.startsWith('"') && tokenValue.endsWith('"')) {
+                tokenValue = tokenValue.slice(1, -1);
+              } else {
+                // Tentar parsear como JSON
+                tokenValue = JSON.parse(tokenValue);
+              }
             } catch {
-              // Se não for JSON, usar como está
+              // Se falhar, usar como está
             }
           }
           
-          const finalToken = tokenValue as string;
-          console.log('✅ Token do Mapbox carregado:', finalToken.substring(0, 20) + '...');
-          console.log('Token completo para verificação:', finalToken);
+          const finalToken = String(tokenValue).trim();
+          console.log('✅ Token do Mapbox carregado:', finalToken.substring(0, 30) + '...');
+          console.log('🔑 Tamanho do token:', finalToken.length);
+          console.log('🔍 Começa com pk.?', finalToken.startsWith('pk.'));
+          
+          if (!finalToken.startsWith('pk.')) {
+            console.error('❌ ERRO: Token inválido - deve começar com "pk."');
+            alert('ERRO: Token do Mapbox inválido. Verifique a configuração.');
+            return;
+          }
+          
           setMapboxToken(finalToken);
+        } else {
+          console.warn('⚠️ Nenhum token encontrado no banco de dados');
         }
       } catch (error) {
         console.error('Erro ao buscar token do Mapbox:', error);
@@ -170,16 +187,27 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
         });
 
         map.current.on('error', (e) => {
-          console.error('❌ ERRO no mapa:', e);
-          console.error('Detalhes do erro:', e.error);
+          console.error('❌ ERRO no mapa Mapbox:', e);
+          console.error('📋 Tipo de erro:', e.type);
+          console.error('📋 Erro objeto:', e.error);
           
-          if (e.error?.message) {
-            if (e.error.message.includes('token') || e.error.message.includes('Unauthorized') || e.error.message.includes('401')) {
-              console.error('🔑 ERRO DE TOKEN: Token inválido ou expirado');
-              alert('ERRO: O token do Mapbox está inválido ou expirado. Por favor, configure um novo token nas configurações.');
-            }
-            if (e.error.message.includes('WebGL')) {
-              setWebglError(true);
+          if (e.error) {
+            console.error('📋 Mensagem do erro:', e.error.message);
+            
+            if (e.error.message) {
+              const errorMsg = e.error.message.toLowerCase();
+              
+              if (errorMsg.includes('token') || errorMsg.includes('unauthorized') || errorMsg.includes('401')) {
+                console.error('🔑 ERRO DE AUTENTICAÇÃO: Token inválido ou expirado');
+                alert('ERRO: O token do Mapbox está inválido ou expirado.\n\nPor favor:\n1. Vá em https://account.mapbox.com/access-tokens/\n2. Crie ou copie um token válido\n3. Cole no campo de configuração do Mapbox');
+                setWebglError(false); // Não é erro de WebGL
+              } else if (errorMsg.includes('webgl')) {
+                console.error('🎨 ERRO DE WEBGL: WebGL não suportado');
+                setWebglError(true);
+              } else {
+                console.error('⚠️ ERRO DESCONHECIDO:', errorMsg);
+                alert('ERRO no Mapbox: ' + errorMsg);
+              }
             }
           }
           setMapInitializing(false);
@@ -671,7 +699,7 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
             </div>
           </div>
         )}
-        <div ref={mapContainer} className="w-full h-full" />
+        <div ref={mapContainer} className="w-full h-full min-h-[500px]" style={{ minHeight: '500px' }} />
         
         {/* Legenda de Status (apenas se marcadores visíveis) */}
         {showMarkers && (
