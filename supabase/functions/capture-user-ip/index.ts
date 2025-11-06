@@ -25,7 +25,6 @@ interface ComplaintData {
   occurrence_date?: string
   occurrence_time?: string
   classification: string
-  assigned_to?: string
   photos?: string[]
   videos?: string[]
   user_location?: any
