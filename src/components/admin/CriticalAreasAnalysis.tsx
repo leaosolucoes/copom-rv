@@ -16,6 +16,14 @@ interface Complaint {
 
 interface CriticalAreasAnalysisProps {
   complaints: Complaint[];
+  comparisonComplaints?: Complaint[];
+  dateRange: DateRange | null;
+  comparisonRange: DateRange | null;
+}
+
+interface DateRange {
+  from: Date;
+  to: Date;
 }
 
 interface AreaCluster {
@@ -24,7 +32,12 @@ interface AreaCluster {
   radius: number;
 }
 
-export const CriticalAreasAnalysis = ({ complaints }: CriticalAreasAnalysisProps) => {
+export const CriticalAreasAnalysis = ({ 
+  complaints, 
+  comparisonComplaints,
+  dateRange,
+  comparisonRange 
+}: CriticalAreasAnalysisProps) => {
   const criticalAreas = useMemo(() => {
     // Filtrar denúncias com localização
     const withLocation = complaints.filter(
@@ -76,6 +89,53 @@ export const CriticalAreasAnalysis = ({ complaints }: CriticalAreasAnalysisProps
       .slice(0, 5); // Top 5 áreas críticas
   }, [complaints]);
 
+  const comparisonAreas = useMemo(() => {
+    if (!comparisonComplaints || comparisonComplaints.length === 0) return [];
+
+    const withLocation = comparisonComplaints.filter(
+      (c) => c.user_location?.latitude && c.user_location?.longitude
+    );
+
+    if (withLocation.length === 0) return [];
+
+    const CLUSTER_RADIUS = 0.0045;
+    const clusters: AreaCluster[] = [];
+
+    withLocation.forEach((complaint) => {
+      const lat = complaint.user_location!.latitude;
+      const lng = complaint.user_location!.longitude;
+
+      let foundCluster = false;
+      for (const cluster of clusters) {
+        const distance = Math.sqrt(
+          Math.pow(cluster.center.lat - lat, 2) + 
+          Math.pow(cluster.center.lng - lng, 2)
+        );
+
+        if (distance <= CLUSTER_RADIUS) {
+          cluster.complaints.push(complaint);
+          const avgLat = cluster.complaints.reduce((sum, c) => sum + c.user_location!.latitude, 0) / cluster.complaints.length;
+          const avgLng = cluster.complaints.reduce((sum, c) => sum + c.user_location!.longitude, 0) / cluster.complaints.length;
+          cluster.center = { lat: avgLat, lng: avgLng };
+          foundCluster = true;
+          break;
+        }
+      }
+
+      if (!foundCluster) {
+        clusters.push({
+          center: { lat, lng },
+          complaints: [complaint],
+          radius: CLUSTER_RADIUS,
+        });
+      }
+    });
+
+    return clusters
+      .sort((a, b) => b.complaints.length - a.complaints.length)
+      .slice(0, 5);
+  }, [comparisonComplaints]);
+
   const getOccurrenceTypes = (areaComplaints: Complaint[]) => {
     const types = areaComplaints.reduce((acc, c) => {
       acc[c.occurrence_type] = (acc[c.occurrence_type] || 0) + 1;
@@ -121,15 +181,43 @@ export const CriticalAreasAnalysis = ({ complaints }: CriticalAreasAnalysisProps
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-orange-500" />
           Análise de Áreas Críticas
+          {dateRange && (
+            <Badge variant="outline" className="ml-2">
+              {new Date(dateRange.from).toLocaleDateString('pt-BR')} - {new Date(dateRange.to).toLocaleDateString('pt-BR')}
+            </Badge>
+          )}
         </CardTitle>
         <CardDescription>
           Top {criticalAreas.length} regiões com maior concentração de denúncias
+          {comparisonRange && ' (com comparação de período)'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {criticalAreas.map((area, index) => {
           const severity = getSeverityLevel(area.complaints.length);
           const topTypes = getOccurrenceTypes(area.complaints);
+          
+          // Encontrar área correspondente no período de comparação
+          let comparisonArea: AreaCluster | null = null;
+          let trend: 'up' | 'down' | 'stable' | null = null;
+          
+          if (comparisonAreas.length > 0) {
+            // Buscar área próxima (mesma região)
+            comparisonArea = comparisonAreas.find((compArea) => {
+              const distance = Math.sqrt(
+                Math.pow(compArea.center.lat - area.center.lat, 2) + 
+                Math.pow(compArea.center.lng - area.center.lng, 2)
+              );
+              return distance <= 0.01; // ~1km de raio
+            }) || null;
+
+            if (comparisonArea) {
+              const diff = area.complaints.length - comparisonArea.complaints.length;
+              if (diff > 0) trend = 'up';
+              else if (diff < 0) trend = 'down';
+              else trend = 'stable';
+            }
+          }
 
           return (
             <div
@@ -138,13 +226,34 @@ export const CriticalAreasAnalysis = ({ complaints }: CriticalAreasAnalysisProps
             >
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Badge className={`${severity.color} text-white`}>
                       #{index + 1} - {severity.label}
                     </Badge>
                     <span className="text-sm font-semibold">
                       {area.complaints.length} denúncias
                     </span>
+                    
+                    {/* Indicador de tendência */}
+                    {trend && (
+                      <Badge 
+                        variant="outline" 
+                        className={
+                          trend === 'up' 
+                            ? 'bg-red-500/10 text-red-700 border-red-200' 
+                            : trend === 'down'
+                            ? 'bg-green-500/10 text-green-700 border-green-200'
+                            : 'bg-gray-500/10 text-gray-700 border-gray-200'
+                        }
+                      >
+                        {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '='} 
+                        {comparisonArea && (
+                          <span className="ml-1">
+                            {Math.abs(area.complaints.length - comparisonArea.complaints.length)}
+                          </span>
+                        )}
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3" />
@@ -167,6 +276,28 @@ export const CriticalAreasAnalysis = ({ complaints }: CriticalAreasAnalysisProps
                   ))}
                 </div>
               </div>
+
+              {comparisonArea && (
+                <div className="pt-2 border-t bg-blue-500/5 -m-4 mt-2 p-3 rounded-b-lg">
+                  <p className="text-xs font-semibold text-blue-700 mb-1">Comparação com período anterior:</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Período anterior:</span>
+                      <span className="ml-1 font-semibold">{comparisonArea.complaints.length} denúncias</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Variação:</span>
+                      <span className={`ml-1 font-semibold ${
+                        trend === 'up' ? 'text-red-600' : trend === 'down' ? 'text-green-600' : 'text-gray-600'
+                      }`}>
+                        {trend === 'up' ? '+' : trend === 'down' ? '-' : ''}
+                        {Math.abs(area.complaints.length - comparisonArea.complaints.length)}
+                        {' '}({trend === 'up' ? 'aumento' : trend === 'down' ? 'redução' : 'estável'})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="pt-2 border-t">
                 <p className="text-xs text-muted-foreground">

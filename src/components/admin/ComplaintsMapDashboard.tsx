@@ -4,8 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ComplaintsMap } from './ComplaintsMap';
 import { CriticalAreasAnalysis } from './CriticalAreasAnalysis';
+import { TemporalFilters } from './TemporalFilters';
 import { supabase } from '@/integrations/supabase/client';
-import { MapPin, RefreshCw, TrendingUp, AlertCircle, CheckCircle, Archive } from 'lucide-react';
+import { MapPin, RefreshCw, TrendingUp, AlertCircle, CheckCircle, Archive, ArrowUpDown } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface Complaint {
@@ -22,8 +23,16 @@ interface Complaint {
   attendant_id?: string;
 }
 
+interface DateRange {
+  from: Date;
+  to: Date;
+}
+
 export const ComplaintsMapDashboard = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [comparisonComplaints, setComparisonComplaints] = useState<Complaint[]>([]);
+  const [dateRange, setDateRange] = useState<DateRange | null>(null);
+  const [comparisonRange, setComparisonRange] = useState<DateRange | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     total: 0,
@@ -37,11 +46,22 @@ export const ComplaintsMapDashboard = () => {
   const fetchComplaints = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Query principal
+      let query = supabase
         .from('complaints')
         .select('id, protocol_number, complainant_name, occurrence_type, status, user_location, created_at, attendant_id')
         .not('status', 'eq', 'arquivada')
         .order('created_at', { ascending: false });
+
+      // Aplicar filtro de data se existir
+      if (dateRange) {
+        query = query
+          .gte('created_at', dateRange.from.toISOString())
+          .lte('created_at', dateRange.to.toISOString());
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -52,6 +72,30 @@ export const ComplaintsMapDashboard = () => {
       }));
 
       setComplaints(processedData);
+
+      // Query de comparação se existir
+      if (comparisonRange) {
+        let comparisonQuery = supabase
+          .from('complaints')
+          .select('id, protocol_number, complainant_name, occurrence_type, status, user_location, created_at, attendant_id')
+          .not('status', 'eq', 'arquivada')
+          .gte('created_at', comparisonRange.from.toISOString())
+          .lte('created_at', comparisonRange.to.toISOString())
+          .order('created_at', { ascending: false });
+
+        const { data: compData, error: compError } = await comparisonQuery;
+
+        if (compError) throw compError;
+
+        const processedCompData = (compData || []).map((complaint: any) => ({
+          ...complaint,
+          user_location: complaint.user_location as { latitude: number; longitude: number } | undefined,
+        }));
+
+        setComparisonComplaints(processedCompData);
+      } else {
+        setComparisonComplaints([]);
+      }
 
       // Calcular estatísticas
       const withLocation = data?.filter((c: any) => c.user_location?.latitude && c.user_location?.longitude).length || 0;
@@ -102,10 +146,18 @@ export const ComplaintsMapDashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [dateRange, comparisonRange]);
 
   return (
     <div className="space-y-6">
+      {/* Filtros Temporais */}
+      <TemporalFilters
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+        comparisonRange={comparisonRange}
+        onComparisonRangeChange={setComparisonRange}
+      />
+
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
@@ -239,7 +291,12 @@ export const ComplaintsMapDashboard = () => {
 
       {/* Informações adicionais */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CriticalAreasAnalysis complaints={complaints} />
+        <CriticalAreasAnalysis 
+          complaints={complaints}
+          comparisonComplaints={comparisonRange ? comparisonComplaints : undefined}
+          dateRange={dateRange}
+          comparisonRange={comparisonRange}
+        />
         
         <Card>
           <CardHeader>
@@ -274,6 +331,17 @@ export const ComplaintsMapDashboard = () => {
             </p>
             <p>
               • Prioriza áreas por severidade (crítica, alta, média, baixa)
+            </p>
+            
+            <p className="font-semibold text-foreground pt-2">Filtros Temporais:</p>
+            <p>
+              • Filtre denúncias por períodos específicos
+            </p>
+            <p>
+              • Compare dois períodos diferentes para analisar evolução
+            </p>
+            <p>
+              • Identifique tendências e padrões ao longo do tempo
             </p>
             
             <p className="pt-2">
