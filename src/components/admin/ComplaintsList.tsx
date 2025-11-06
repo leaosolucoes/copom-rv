@@ -2216,14 +2216,6 @@ export const ComplaintsList = () => {
           <Card>
             <CardHeader>
               <CardTitle>Histórico de Denúncias</CardTitle>
-              {!startDate && !endDate && (userRole === 'admin' || userRole === 'super_admin') && (
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-2">
-                  <p className="text-sm text-blue-700">
-                    📅 Por padrão, são exibidas apenas as denúncias de hoje. 
-                    Para ver denúncias de outros dias, use os filtros de data acima.
-                  </p>
-                </div>
-              )}
             </CardHeader>
            <CardContent>
              <Table>

@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { toZonedTime } from 'date-fns-tz';
+import { startOfDay, endOfDay } from 'date-fns';
 
 type ComplaintStatus = 'nova' | 'cadastrada' | 'finalizada' | 'a_verificar' | 'verificado' | 'fiscal_solicitado';
 
@@ -63,14 +65,12 @@ export const useComplaintsFilter = (complaints: Complaint[], options: FilterOpti
 
   // Memoize hoje para evitar recálculos desnecessários (timezone São Paulo)
   const today = useMemo(() => {
-    // Obter data atual em São Paulo
-    const now = new Date();
-    const saoPauloDateStr = now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-    const saoPauloDate = new Date(saoPauloDateStr);
+    const timeZone = 'America/Sao_Paulo';
+    const nowInSaoPaulo = toZonedTime(new Date(), timeZone);
     
     return {
-      start: new Date(saoPauloDate.getFullYear(), saoPauloDate.getMonth(), saoPauloDate.getDate(), 0, 0, 0),
-      end: new Date(saoPauloDate.getFullYear(), saoPauloDate.getMonth(), saoPauloDate.getDate(), 23, 59, 59, 999)
+      start: startOfDay(nowInSaoPaulo),
+      end: endOfDay(nowInSaoPaulo)
     };
   }, []);
 
@@ -78,18 +78,18 @@ export const useComplaintsFilter = (complaints: Complaint[], options: FilterOpti
   const dateRange = useMemo(() => {
     if (startDate && endDate) {
       return {
-        start: new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()),
-        end: new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59)
+        start: startOfDay(startDate),
+        end: endOfDay(endDate)
       };
     } else if (startDate) {
       return {
-        start: new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()),
-        end: new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 23, 59, 59)
+        start: startOfDay(startDate),
+        end: endOfDay(startDate)
       };
     } else if (endDate) {
       return {
         start: new Date(0),
-        end: new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59)
+        end: endOfDay(endDate)
       };
     }
     return null;
@@ -113,13 +113,14 @@ export const useComplaintsFilter = (complaints: Complaint[], options: FilterOpti
       // Date filter for history tab
       let matchesDateFilter = true;
       if (activeTab === 'historico') {
+        const timeZone = 'America/Sao_Paulo';
         // Converter data da denúncia para timezone São Paulo
-        const complaintDateStr = new Date(complaint.created_at).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-        const complaintDate = new Date(complaintDateStr);
+        const complaintDate = toZonedTime(new Date(complaint.created_at), timeZone);
         
         if (!startDate && !endDate) {
-          // Default to today's complaints in São Paulo timezone
-          matchesDateFilter = complaintDate >= today.start && complaintDate <= today.end;
+          // REMOVIDO: Filtro de data padrão (hoje) - Mostrar TODAS as denúncias cadastradas
+          // O atendente precisa ver todas as denúncias que foram cadastradas com RAI
+          matchesDateFilter = true;
         } else if (dateRange) {
           // Use selected date range
           matchesDateFilter = complaintDate >= dateRange.start && complaintDate <= dateRange.end;
