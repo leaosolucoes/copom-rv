@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ComplaintsListLazy } from '@/components/admin/ComplaintsListLazy';
 import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
+import { AttendanceTimeAlertsBanner } from '@/components/admin/AttendanceTimeAlertsBanner';
+import { AttendanceTimeNotificationBadge } from '@/components/admin/AttendanceTimeNotificationBadge';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
@@ -98,6 +100,8 @@ const AdminDashboard = () => {
       </div>
 
       <main className="container mx-auto px-4 py-4 md:py-8">
+        <AttendanceTimeAlertsBanner />
+        
         <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
           <TabsList className="grid w-full grid-cols-4 md:w-fit">
             <TabsTrigger value="complaints" className="flex items-center gap-2 text-xs md:text-sm">
@@ -180,6 +184,8 @@ const AdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
+      
+      <AttendanceTimeNotificationBadge />
     </div>
   );
 };

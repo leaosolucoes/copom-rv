@@ -20,6 +20,9 @@ import { ApiManagement } from '@/components/admin/ApiManagement';
 import { ConsultationAuditDashboard } from '@/components/admin/ConsultationAuditDashboard';
 import { AccessAuditDashboard } from '@/components/admin/AccessAuditDashboard';
 import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
+import { AttendanceTimeAlertsBanner } from '@/components/admin/AttendanceTimeAlertsBanner';
+import { AttendanceTimeNotificationBadge } from '@/components/admin/AttendanceTimeNotificationBadge';
+import { AttendanceTimeAlertsConfig } from '@/components/admin/AttendanceTimeAlertsConfig';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
@@ -110,6 +113,8 @@ const SuperAdminDashboard = () => {
       </div>
 
       <main className="container mx-auto px-4 py-4 md:py-8">
+        <AttendanceTimeAlertsBanner />
+        
         <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
           <div className="overflow-x-auto pb-2">
             <TabsList className="inline-flex w-max gap-1 bg-muted p-1 rounded-md">
@@ -370,10 +375,14 @@ const SuperAdminDashboard = () => {
               </Card>
               
               <SoundNotificationControl />
+              
+              <AttendanceTimeAlertsConfig />
             </div>
           </TabsContent>
         </Tabs>
       </main>
+      
+      <AttendanceTimeNotificationBadge />
     </div>
   );
 };
