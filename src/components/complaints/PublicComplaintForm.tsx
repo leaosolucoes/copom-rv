@@ -248,9 +248,9 @@ export const PublicComplaintForm = () => {
         }
 
         // Validar tamanho do arquivo
-        const maxSize = type === 'photo' ? 5 * 1024 * 1024 : 50 * 1024 * 1024; // 5MB para fotos, 50MB para vídeos
+        const maxSize = type === 'photo' ? 5 * 1024 * 1024 : 100 * 1024 * 1024; // 5MB para fotos, 100MB para vídeos
         if (file.size > maxSize) {
-          throw new Error(`Arquivo muito grande. Tamanho máximo: ${type === 'photo' ? '5MB' : '50MB'}`);
+          throw new Error(`Arquivo muito grande. Tamanho máximo: ${type === 'photo' ? '5MB' : '100MB'}`);
         }
 
         // Gerar nome único para o arquivo
@@ -613,7 +613,7 @@ export const PublicComplaintForm = () => {
                       disabled={uploadingMedia}
                       className="flex-1"
                     />
-                    <span className="text-xs text-muted-foreground">Máx: 50MB cada</span>
+                    <span className="text-xs text-muted-foreground">Máx: 100MB cada</span>
                   </div>
                   
                   {/* Preview dos vídeos */}
