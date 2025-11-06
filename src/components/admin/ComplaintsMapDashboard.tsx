@@ -49,6 +49,8 @@ export const ComplaintsMapDashboard = () => {
     try {
       setLoading(true);
       
+      console.log('🗺️ MAP: Iniciando busca de denúncias...');
+      
       // Query principal
       let query = supabase
         .from('complaints')
@@ -58,6 +60,7 @@ export const ComplaintsMapDashboard = () => {
 
       // Aplicar filtro de data se existir
       if (dateRange) {
+        console.log('🗺️ MAP: Aplicando filtro de data:', dateRange);
         query = query
           .gte('created_at', dateRange.from.toISOString())
           .lte('created_at', dateRange.to.toISOString());
@@ -65,7 +68,16 @@ export const ComplaintsMapDashboard = () => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      console.log('🗺️ MAP: Resultado da query:', { 
+        dataLength: data?.length, 
+        error: error?.message,
+        errorDetails: error 
+      });
+
+      if (error) {
+        console.error('🗺️ MAP: Erro na query:', error);
+        throw error;
+      }
 
       // Converter user_location de Json para o tipo esperado
       const processedData = (data || []).map((complaint: any) => ({
@@ -73,10 +85,12 @@ export const ComplaintsMapDashboard = () => {
         user_location: complaint.user_location as { latitude: number; longitude: number } | undefined,
       }));
 
+      console.log('🗺️ MAP: Denúncias processadas:', processedData.length);
       setComplaints(processedData);
 
       // Query de comparação se existir
       if (comparisonRange) {
+        console.log('🗺️ MAP: Buscando denúncias de comparação...');
         let comparisonQuery = supabase
           .from('complaints')
           .select('id, protocol_number, complainant_name, occurrence_type, status, user_location, created_at, attendant_id')
@@ -87,7 +101,10 @@ export const ComplaintsMapDashboard = () => {
 
         const { data: compData, error: compError } = await comparisonQuery;
 
-        if (compError) throw compError;
+        if (compError) {
+          console.error('🗺️ MAP: Erro na query de comparação:', compError);
+          throw compError;
+        }
 
         const processedCompData = (compData || []).map((complaint: any) => ({
           ...complaint,
@@ -106,6 +123,15 @@ export const ComplaintsMapDashboard = () => {
       const processada = data?.filter((c: any) => c.status === 'processada').length || 0;
       const arquivada = data?.filter((c: any) => c.status === 'arquivada').length || 0;
 
+      console.log('🗺️ MAP: Estatísticas calculadas:', {
+        total: data?.length || 0,
+        nova,
+        em_andamento,
+        processada,
+        arquivada,
+        with_location: withLocation,
+      });
+
       setStats({
         total: data?.length || 0,
         nova,
@@ -114,11 +140,13 @@ export const ComplaintsMapDashboard = () => {
         arquivada,
         with_location: withLocation,
       });
+      
+      console.log('🗺️ MAP: Busca concluída com sucesso!');
     } catch (error) {
-      console.error('Erro ao buscar denúncias:', error);
+      console.error('🗺️ MAP: ERRO CRÍTICO ao buscar denúncias:', error);
       toast({
         title: 'Erro',
-        description: 'Não foi possível carregar as denúncias',
+        description: `Não foi possível carregar as denúncias: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: 'destructive',
       });
     } finally {
