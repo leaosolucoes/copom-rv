@@ -23,10 +23,12 @@ import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashbo
 import { AttendanceTimeAlertsBanner } from '@/components/admin/AttendanceTimeAlertsBanner';
 import { AttendanceTimeNotificationBadge } from '@/components/admin/AttendanceTimeNotificationBadge';
 import { AttendanceTimeAlertsConfig } from '@/components/admin/AttendanceTimeAlertsConfig';
+import { ComplaintsMapDashboard } from '@/components/admin/ComplaintsMapDashboard';
+import { MapboxTokenConfig } from '@/components/admin/MapboxTokenConfig';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, BarChart3, Clock } from 'lucide-react';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, BarChart3, Clock, Map } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -128,6 +130,11 @@ const SuperAdminDashboard = () => {
                 <span className="hidden sm:inline">Estatísticas</span>
                 <span className="sm:hidden">Stats</span>
               </TabsTrigger>
+              <TabsTrigger value="map" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Map className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Mapa</span>
+                <span className="sm:hidden">Mapa</span>
+              </TabsTrigger>
               <TabsTrigger value="attendance-time" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Clock className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Tempo de Atendimento</span>
@@ -209,6 +216,10 @@ const SuperAdminDashboard = () => {
 
           <TabsContent value="statistics" className="space-y-6">
             <ComplaintsStatisticsDashboard />
+          </TabsContent>
+
+          <TabsContent value="map" className="space-y-6">
+            <ComplaintsMapDashboard />
           </TabsContent>
 
           <TabsContent value="attendance-time" className="space-y-6">
@@ -377,6 +388,8 @@ const SuperAdminDashboard = () => {
               <SoundNotificationControl />
               
               <AttendanceTimeAlertsConfig />
+              
+              <MapboxTokenConfig />
             </div>
           </TabsContent>
         </Tabs>

@@ -11,10 +11,11 @@ import { ComplaintsListLazy } from '@/components/admin/ComplaintsListLazy';
 import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
 import { AttendanceTimeAlertsBanner } from '@/components/admin/AttendanceTimeAlertsBanner';
 import { AttendanceTimeNotificationBadge } from '@/components/admin/AttendanceTimeNotificationBadge';
+import { ComplaintsMapDashboard } from '@/components/admin/ComplaintsMapDashboard';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
-import { Users, FileText, Search, Clock } from 'lucide-react';
+import { Users, FileText, Search, Clock, Map } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
@@ -103,11 +104,16 @@ const AdminDashboard = () => {
         <AttendanceTimeAlertsBanner />
         
         <Tabs defaultValue="complaints" className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-4 md:w-fit">
+          <TabsList className="grid w-full grid-cols-5 md:w-fit">
             <TabsTrigger value="complaints" className="flex items-center gap-2 text-xs md:text-sm">
               <FileText className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Denúncias</span>
               <span className="sm:hidden">Lista</span>
+            </TabsTrigger>
+            <TabsTrigger value="map" className="flex items-center gap-2 text-xs md:text-sm">
+              <Map className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Mapa</span>
+              <span className="sm:hidden">Mapa</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2 text-xs md:text-sm">
               <Users className="h-3 w-3 md:h-4 md:w-4" />
@@ -138,6 +144,10 @@ const AdminDashboard = () => {
                 <ComplaintsListLazy />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="map" className="space-y-6">
+            <ComplaintsMapDashboard />
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
