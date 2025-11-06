@@ -21,11 +21,18 @@ export const useSystemColors = () => {
 
   const loadSystemColors = async () => {
     try {
-      const { data, error } = await supabase
+      // Timeout de 3 segundos para não travar o app
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout')), 3000);
+      });
+
+      const fetchPromise = supabase
         .from('system_settings')
         .select('value')
         .eq('key', 'system_colors')
         .maybeSingle();
+
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
       if (error) throw error;
 
@@ -34,11 +41,11 @@ export const useSystemColors = () => {
         setColors(systemColors);
         applyColorsToCSS(systemColors);
       } else {
-        // Aplicar cores padrão se não existir configuração
         applyColorsToCSS(defaultColors);
       }
     } catch (error) {
-      console.error('Erro ao carregar cores do sistema:', error);
+      // Sempre aplicar cores padrão em caso de erro - NUNCA travar
+      console.warn('Usando cores padrão:', error);
       applyColorsToCSS(defaultColors);
     } finally {
       setLoading(false);
@@ -46,7 +53,9 @@ export const useSystemColors = () => {
   };
 
   const applyColorsToCSS = (systemColors: SystemColors) => {
-    const root = document.documentElement;
+    try {
+      const root = document.documentElement;
+      if (!root) return;
     
     // Converter hex para HSL
     const hexToHsl = (hex: string) => {
@@ -85,11 +94,14 @@ export const useSystemColors = () => {
     root.style.setProperty('--gradient-government', `linear-gradient(135deg, ${systemColors.primary}, ${adjustBrightness(systemColors.primary, 10)})`);
     root.style.setProperty('--gradient-header', `linear-gradient(90deg, ${adjustBrightness(systemColors.primary, -5)}, ${adjustBrightness(systemColors.primary, 5)})`);
     
-    // Sombras com cor primária
-    const primaryHsl = hexToHsl(systemColors.primary);
-    root.style.setProperty('--shadow-soft', `0 2px 8px hsl(${primaryHsl} / 0.08)`);
-    root.style.setProperty('--shadow-form', `0 4px 12px hsl(${primaryHsl} / 0.12)`);
-    root.style.setProperty('--shadow-header', `0 2px 4px hsl(${primaryHsl} / 0.15)`);
+      // Sombras com cor primária
+      const primaryHsl = hexToHsl(systemColors.primary);
+      root.style.setProperty('--shadow-soft', `0 2px 8px hsl(${primaryHsl} / 0.08)`);
+      root.style.setProperty('--shadow-form', `0 4px 12px hsl(${primaryHsl} / 0.12)`);
+      root.style.setProperty('--shadow-header', `0 2px 4px hsl(${primaryHsl} / 0.15)`);
+    } catch (error) {
+      console.warn('Erro ao aplicar cores:', error);
+    }
   };
 
   const adjustBrightness = (hex: string, percent: number) => {

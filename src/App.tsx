@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useSystemColors } from "@/hooks/useSystemColors";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import AtendenteDashboard from "./pages/AtendenteDashboard";
@@ -21,63 +22,65 @@ const App = () => {
   // Log simples para debug
   console.log('🚀 App iniciando - ' + new Date().toISOString());
   
-  // Apenas cores do sistema
+  // Apenas cores do sistema (não-bloqueante)
   useSystemColors();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/acesso" element={<Login />} />
-            <Route 
-              path="/atendente" 
-              element={
-                <ProtectedRoute allowedRoles={['atendente', 'admin', 'super_admin']}>
-                  <AtendenteDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin" 
-              element={
-                <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/super-admin" 
-              element={
-                <ProtectedRoute allowedRoles={['super_admin']}>
-                  <SuperAdminDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/fiscal" 
-              element={
-                <ProtectedRoute allowedRoles={['fiscal', 'admin', 'super_admin']}>
-                  <FiscalDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/diagnostico" 
-              element={
-                <ProtectedRoute allowedRoles={['super_admin']}>
-                  <SystemDiagnostics />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/acesso" element={<Login />} />
+              <Route 
+                path="/atendente" 
+                element={
+                  <ProtectedRoute allowedRoles={['atendente', 'admin', 'super_admin']}>
+                    <AtendenteDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/super-admin" 
+                element={
+                  <ProtectedRoute allowedRoles={['super_admin']}>
+                    <SuperAdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/fiscal" 
+                element={
+                  <ProtectedRoute allowedRoles={['fiscal', 'admin', 'super_admin']}>
+                    <FiscalDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/diagnostico" 
+                element={
+                  <ProtectedRoute allowedRoles={['super_admin']}>
+                    <SystemDiagnostics />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 
