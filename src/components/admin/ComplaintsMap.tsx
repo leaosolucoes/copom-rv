@@ -91,7 +91,8 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
           }
           
           const finalToken = tokenValue as string;
-          console.log('✅ Token do Mapbox configurado');
+          console.log('✅ Token do Mapbox carregado:', finalToken.substring(0, 20) + '...');
+          console.log('Token completo para verificação:', finalToken);
           setMapboxToken(finalToken);
         }
       } catch (error) {
@@ -131,6 +132,11 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
       try {
         setMapInitializing(true);
         setWebglError(false);
+        
+        console.log('🗺️ Inicializando mapa...');
+        console.log('Token a ser usado:', mapboxToken.substring(0, 20) + '...');
+        console.log('Estilo do mapa:', `mapbox://styles/mapbox/${mapStyle}`);
+        
         mapboxgl.accessToken = mapboxToken;
 
         map.current = new mapboxgl.Map({
@@ -142,6 +148,8 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
           antialias: true,
           failIfMajorPerformanceCaveat: false,
         });
+        
+        console.log('✅ Objeto map.current criado');
 
         map.current.addControl(
           new mapboxgl.NavigationControl({
@@ -156,14 +164,23 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
         );
 
         map.current.on('load', () => {
+          console.log('✅ Mapa CARREGADO completamente!');
           setMapLoaded(true);
           setMapInitializing(false);
         });
 
         map.current.on('error', (e) => {
-          console.error('❌ Erro no mapa:', e);
-          if (e.error?.message?.includes('WebGL')) {
-            setWebglError(true);
+          console.error('❌ ERRO no mapa:', e);
+          console.error('Detalhes do erro:', e.error);
+          
+          if (e.error?.message) {
+            if (e.error.message.includes('token') || e.error.message.includes('Unauthorized') || e.error.message.includes('401')) {
+              console.error('🔑 ERRO DE TOKEN: Token inválido ou expirado');
+              alert('ERRO: O token do Mapbox está inválido ou expirado. Por favor, configure um novo token nas configurações.');
+            }
+            if (e.error.message.includes('WebGL')) {
+              setWebglError(true);
+            }
           }
           setMapInitializing(false);
         });
