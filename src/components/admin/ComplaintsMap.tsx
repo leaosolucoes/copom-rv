@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Layers, Flame } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Layers, Flame, Map as MapIcon } from 'lucide-react';
 
 interface Complaint {
   id: string;
@@ -36,6 +37,17 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
   const [heatmapRadius, setHeatmapRadius] = useState<number>(30);
   const [showMarkers, setShowMarkers] = useState<boolean>(true);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
+  const [mapStyle, setMapStyle] = useState<string>('streets-v12');
+
+  const mapStyles = [
+    { value: 'streets-v12', label: 'Ruas', icon: '🗺️' },
+    { value: 'satellite-v9', label: 'Satélite', icon: '🛰️' },
+    { value: 'satellite-streets-v12', label: 'Satélite + Ruas', icon: '🌍' },
+    { value: 'light-v11', label: 'Claro', icon: '☀️' },
+    { value: 'dark-v11', label: 'Escuro', icon: '🌙' },
+    { value: 'outdoors-v12', label: 'Outdoor', icon: '🏔️' },
+    { value: 'navigation-day-v1', label: 'Navegação', icon: '🧭' },
+  ];
 
   // Buscar token do Mapbox
   useEffect(() => {
@@ -68,7 +80,7 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style: `mapbox://styles/mapbox/${mapStyle}`,
       center: [-47.9292, -15.7801], // Brasília como centro padrão
       zoom: 4,
     });
@@ -92,7 +104,7 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
     return () => {
       map.current?.remove();
     };
-  }, [mapboxToken]);
+  }, [mapboxToken, mapStyle]);
 
   // Adicionar/atualizar camada de heatmap
   useEffect(() => {
@@ -344,13 +356,36 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
 
   return (
     <div className="space-y-4">
-      {/* Controles do Heatmap */}
+      {/* Controles do Heatmap e Estilo */}
       <div className="bg-muted/50 border border-muted rounded-lg p-4 space-y-4">
         <div className="flex items-center justify-between">
           <h4 className="font-semibold text-sm flex items-center gap-2">
             <Layers className="h-4 w-4" />
             Controles de Visualização
           </h4>
+        </div>
+
+        {/* Seletor de Estilo do Mapa */}
+        <div className="space-y-2">
+          <Label htmlFor="map-style" className="flex items-center gap-2 text-sm">
+            <MapIcon className="h-4 w-4" />
+            <span>Estilo do Mapa</span>
+          </Label>
+          <Select value={mapStyle} onValueChange={setMapStyle}>
+            <SelectTrigger id="map-style" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {mapStyles.map((style) => (
+                <SelectItem key={style.value} value={style.value}>
+                  <span className="flex items-center gap-2">
+                    <span>{style.icon}</span>
+                    <span>{style.label}</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
