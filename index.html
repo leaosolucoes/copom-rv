@@ -9,7 +9,7 @@
     
     
     <!-- Cabeçalhos de segurança -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co; media-src 'self' https://*.supabase.co data: blob:; connect-src 'self' https://*.supabase.co; font-src 'self'; frame-src 'self' https://*.supabase.co; object-src 'none'; child-src 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://api.mapbox.com; img-src 'self' data: blob: https://*.supabase.co https://*.mapbox.com https://api.mapbox.com; media-src 'self' https://*.supabase.co data: blob:; connect-src 'self' https://*.supabase.co https://*.mapbox.com https://api.mapbox.com; font-src 'self'; frame-src 'self' https://*.supabase.co; object-src 'none'; child-src 'self'; worker-src 'self' blob:;">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
