@@ -14,31 +14,7 @@ export const MapboxTokenConfig = () => {
 
   useEffect(() => {
     fetchToken();
-    updateTokenIfNeeded();
   }, []);
-
-  const updateTokenIfNeeded = async () => {
-    const newToken = 'pk.eyJ1IjoiYWRpbGFmaWxobyIsImEiOiJjbWhuYW9hb2EwMHdlMnJwdGZ4NzVyeWw1In0.v00sJiC6ynqIDVKzkKLp8A';
-    
-    try {
-      const { error } = await supabase
-        .from('system_settings')
-        .update({ value: JSON.stringify(newToken) })
-        .eq('key', 'mapbox_public_token');
-
-      if (error) throw error;
-
-      console.log('✅ Token do Mapbox atualizado com sucesso');
-      setToken(newToken);
-      
-      toast({
-        title: 'Token Atualizado',
-        description: 'O token do Mapbox foi atualizado automaticamente',
-      });
-    } catch (error) {
-      console.error('❌ Erro ao atualizar token:', error);
-    }
-  };
 
   const fetchToken = async () => {
     try {
