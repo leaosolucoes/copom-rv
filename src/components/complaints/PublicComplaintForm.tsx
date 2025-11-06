@@ -34,7 +34,6 @@ interface FormData {
   occurrence_date: string;
   occurrence_time: string;
   classification: string;
-  assigned_to: string;
 }
 
 interface FormField {
@@ -97,8 +96,7 @@ export const PublicComplaintForm = () => {
     description: "",
     occurrence_date: "",
     occurrence_time: "",
-    classification: "",
-    assigned_to: ""
+    classification: ""
   });
 
   useEffect(() => {
@@ -691,7 +689,6 @@ export const PublicComplaintForm = () => {
         occurrence_date: formData.occurrence_date || null,
         occurrence_time: formData.occurrence_time || null,
         classification: formData.classification,
-        assigned_to: formData.assigned_to?.trim() || null,
         photos: uploadedPhotos.length > 0 ? uploadedPhotos : null,
         videos: uploadedVideos.length > 0 ? uploadedVideos : null,
         // Informações do usuário coletadas
@@ -750,8 +747,7 @@ export const PublicComplaintForm = () => {
         description: "",
         occurrence_date: "",
         occurrence_time: "",
-        classification: "",
-        assigned_to: ""
+        classification: ""
       });
 
       // Limpar uploads
