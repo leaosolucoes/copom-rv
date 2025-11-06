@@ -7,7 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Layers, Flame, Map as MapIcon } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Layers, Flame, Map as MapIcon, AlertCircle, ExternalLink } from 'lucide-react';
 
 interface Complaint {
   id: string;
@@ -39,6 +40,18 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
   const [mapStyle, setMapStyle] = useState<string>('streets-v12');
   const [mapInitializing, setMapInitializing] = useState<boolean>(false);
+  const [webglError, setWebglError] = useState<boolean>(false);
+
+  // Verificar suporte a WebGL
+  const checkWebGLSupport = () => {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      return !!gl;
+    } catch (e) {
+      return false;
+    }
+  };
 
   const mapStyles = [
     { value: 'streets-v12', label: 'Ruas', icon: '🗺️' },
@@ -105,10 +118,19 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
       map.current = null;
     }
 
+    // Verificar suporte WebGL antes de inicializar
+    if (!checkWebGLSupport()) {
+      console.error('❌ WebGL não está disponível');
+      setWebglError(true);
+      setMapInitializing(false);
+      return;
+    }
+
     // Adicionar um pequeno delay para garantir que o container está pronto
     const initMap = setTimeout(() => {
       try {
         setMapInitializing(true);
+        setWebglError(false);
         mapboxgl.accessToken = mapboxToken;
 
         map.current = new mapboxgl.Map({
@@ -118,6 +140,7 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
           zoom: 4,
           preserveDrawingBuffer: true,
           antialias: true,
+          failIfMajorPerformanceCaveat: false,
         });
 
         map.current.addControl(
@@ -139,11 +162,17 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
 
         map.current.on('error', (e) => {
           console.error('❌ Erro no mapa:', e);
+          if (e.error?.message?.includes('WebGL')) {
+            setWebglError(true);
+          }
           setMapInitializing(false);
         });
 
       } catch (error) {
         console.error('❌ ERRO ao inicializar mapa:', error);
+        if (error instanceof Error && error.message.includes('WebGL')) {
+          setWebglError(true);
+        }
         setMapInitializing(false);
       }
     }, 100);
@@ -413,6 +442,93 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
             <code className="bg-muted px-3 py-1.5 rounded text-xs">
               mapbox_public_token
             </code>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Renderizar erro de WebGL com instruções
+  if (webglError) {
+    const complaintsWithLocation = complaints.filter(
+      (c) => c.user_location?.latitude && c.user_location?.longitude
+    );
+
+    return (
+      <div className="space-y-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>WebGL não está disponível</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <p>
+              O mapa requer WebGL para funcionar, mas ele não está disponível no seu navegador.
+            </p>
+            
+            <div className="space-y-2 mt-4">
+              <p className="font-semibold">Possíveis soluções:</p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Habilite a aceleração de hardware no seu navegador</li>
+                <li>Atualize seu navegador para a versão mais recente</li>
+                <li>Atualize os drivers da sua placa de vídeo</li>
+                <li>Tente usar outro navegador (Chrome, Firefox, Edge)</li>
+              </ul>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open('https://get.webgl.org/', '_blank')}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Testar suporte WebGL
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.reload()}
+              >
+                Recarregar página
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+
+        {/* Lista alternativa de denúncias com localização */}
+        <div className="border rounded-lg p-4">
+          <h3 className="text-lg font-semibold mb-4">Denúncias com Localização ({complaintsWithLocation.length})</h3>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {complaintsWithLocation.map((complaint) => (
+              <div
+                key={complaint.id}
+                className="p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium">#{complaint.protocol_number}</p>
+                    <p className="text-sm text-muted-foreground">{complaint.occurrence_type}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {complaint.complainant_name}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-xs px-2 py-1 rounded ${
+                      complaint.status === 'nova'
+                        ? 'bg-blue-100 text-blue-700'
+                        : complaint.status === 'em_andamento'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-green-100 text-green-700'
+                    }`}
+                  >
+                    {complaint.status}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  📍 {complaint.user_location?.latitude.toFixed(6)}, {complaint.user_location?.longitude.toFixed(6)}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

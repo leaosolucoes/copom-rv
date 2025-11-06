@@ -114,50 +114,52 @@ export const useAttendanceTimeMonitor = (): UseAttendanceTimeMonitorReturn => {
       return elapsed > limitMs;
     });
 
-    // Notificar novas denúncias atrasadas
-    overdue.forEach((complaint) => {
-      if (!notifiedIds.has(complaint.id)) {
-        const startTime = complaint.verified_at || complaint.created_at;
-        const elapsedMinutes = Math.floor((now - new Date(startTime).getTime()) / (1000 * 60));
-        const delayMinutes = elapsedMinutes - timeLimit;
+    // Notificar novas denúncias atrasadas usando closure para acessar notifiedIds
+    setNotifiedIds((prevNotifiedIds) => {
+      const newNotifiedIds = new Set(prevNotifiedIds);
+      
+      overdue.forEach((complaint) => {
+        if (!prevNotifiedIds.has(complaint.id)) {
+          const startTime = complaint.verified_at || complaint.created_at;
+          const elapsedMinutes = Math.floor((now - new Date(startTime).getTime()) / (1000 * 60));
+          const delayMinutes = elapsedMinutes - timeLimit;
 
-        // Notificação desktop
-        sendDesktopNotification({
-          title: '⚠️ Denúncia Atrasada!',
-          body: `Protocolo #${complaint.protocol_number}\n${complaint.occurrence_type}\nAtrasado: ${delayMinutes} minutos`,
-          tag: `overdue-${complaint.id}`,
-        });
+          // Notificação desktop
+          sendDesktopNotification({
+            title: '⚠️ Denúncia Atrasada!',
+            body: `Protocolo #${complaint.protocol_number}\n${complaint.occurrence_type}\nAtrasado: ${delayMinutes} minutos`,
+            tag: `overdue-${complaint.id}`,
+          });
 
-        // Toast visual
-        toast({
-          title: '⚠️ Denúncia Atrasada',
-          description: `Protocolo #${complaint.protocol_number} - ${complaint.complainant_name}`,
-          variant: 'destructive',
-        });
+          // Toast visual
+          toast({
+            title: '⚠️ Denúncia Atrasada',
+            description: `Protocolo #${complaint.protocol_number} - ${complaint.complainant_name}`,
+            variant: 'destructive',
+          });
 
-        setNotifiedIds((prev) => new Set(prev).add(complaint.id));
-      }
-    });
-
-    // Remover IDs de denúncias que não estão mais atrasadas
-    setNotifiedIds((prev) => {
-      const newSet = new Set(prev);
-      prev.forEach((id) => {
-        if (!overdue.find((c) => c.id === id)) {
-          newSet.delete(id);
+          newNotifiedIds.add(complaint.id);
         }
       });
-      return newSet;
+
+      // Remover IDs de denúncias que não estão mais atrasadas
+      prevNotifiedIds.forEach((id) => {
+        if (!overdue.find((c) => c.id === id)) {
+          newNotifiedIds.delete(id);
+        }
+      });
+
+      return newNotifiedIds;
     });
 
     setOverdueComplaints(overdue);
-  }, [complaints, timeLimit, alertsEnabled, notifiedIds]);
+  }, [complaints, timeLimit, alertsEnabled]); // Removido notifiedIds das dependências
 
   // Inicializar
   useEffect(() => {
     fetchSettings();
     fetchComplaints();
-  }, [fetchSettings, fetchComplaints]);
+  }, []); // Removidas dependências para evitar loop infinito
 
   // Verificar periodicamente
   useEffect(() => {
