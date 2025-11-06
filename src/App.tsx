@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useSystemColors } from "@/hooks/useSystemColors";
 import { useDevToolsProtection } from "@/hooks/useDevToolsProtection";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SecurityProvider } from "@/components/security/SecurityProvider";
 import { validateDomain, checkIntegrity, initAntiTamper } from "@/utils/codeProtection";
@@ -35,6 +36,9 @@ const App = () => {
   
   // Proteções ativadas para produção
   useDevToolsProtection();
+  
+  // Monitoramento de performance
+  usePerformanceMonitor();
   
   useEffect(() => {
     console.log('✅ App montado com sucesso');

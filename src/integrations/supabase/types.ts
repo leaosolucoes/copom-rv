@@ -543,6 +543,53 @@ export type Database = {
           },
         ]
       }
+      performance_metrics: {
+        Row: {
+          created_at: string | null
+          duration_ms: number
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_type: string
+          success: boolean | null
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_ms: number
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_type: string
+          success?: boolean | null
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_ms?: number
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_type?: string
+          success?: boolean | null
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_metrics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           created_at: string | null

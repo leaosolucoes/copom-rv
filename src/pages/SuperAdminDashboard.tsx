@@ -26,10 +26,11 @@ import { AttendanceTimeAlertsConfig } from '@/components/admin/AttendanceTimeAle
 import { ComplaintsMapDashboard } from '@/components/admin/ComplaintsMapDashboard';
 import { MapboxTokenConfig } from '@/components/admin/MapboxTokenConfig';
 import { AnomalyAlertConfig } from '@/components/admin/AnomalyAlertConfig';
+import { PerformanceMonitorDashboard } from '@/components/admin/PerformanceMonitorDashboard';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, BarChart3, Clock, Map, Activity } from 'lucide-react';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, BarChart3, Clock, Map, Activity, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -185,6 +186,11 @@ const SuperAdminDashboard = () => {
                 <Shield className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Auditoria</span>
                 <span className="sm:hidden">Audit</span>
+              </TabsTrigger>
+              <TabsTrigger value="performance" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Zap className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Performance</span>
+                <span className="sm:hidden">Perf</span>
               </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Settings className="h-3 w-3 md:h-4 md:w-4" />
@@ -370,6 +376,23 @@ const SuperAdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="performance" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  Monitoramento de Performance
+                </CardTitle>
+                <CardDescription>
+                  Monitore em tempo real as métricas de carregamento e tempo de resposta das APIs
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PerformanceMonitorDashboard />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
