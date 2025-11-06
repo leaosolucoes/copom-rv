@@ -35,7 +35,9 @@ export default function SystemDiagnostics() {
     { name: 'Suporte a WebGL', status: 'pending', message: '' },
     { name: 'Content Security Policy', status: 'pending', message: '' },
     { name: 'Conectividade Supabase', status: 'pending', message: '' },
+    { name: 'Velocidade Supabase', status: 'pending', message: '' },
     { name: 'Conectividade Mapbox', status: 'pending', message: '' },
+    { name: 'Velocidade Mapbox', status: 'pending', message: '' },
     { name: 'Permissões de Geolocalização', status: 'pending', message: '' },
   ]);
   const [running, setRunning] = useState(false);
@@ -169,6 +171,79 @@ export default function SystemDiagnostics() {
     }
   };
 
+  const checkSupabaseSpeed = async () => {
+    updateTest('Velocidade Supabase', { status: 'running', message: 'Medindo latência...' });
+    
+    try {
+      const measurements: number[] = [];
+      
+      // Fazer 3 requisições e calcular média
+      for (let i = 0; i < 3; i++) {
+        const startTime = performance.now();
+        
+        const { error } = await supabase
+          .from('system_settings')
+          .select('id')
+          .limit(1);
+        
+        const endTime = performance.now();
+        const latency = endTime - startTime;
+        
+        if (error) throw error;
+        measurements.push(latency);
+        
+        // Pequeno delay entre requisições
+        if (i < 2) await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      const avgLatency = measurements.reduce((a, b) => a + b, 0) / measurements.length;
+      const minLatency = Math.min(...measurements);
+      const maxLatency = Math.max(...measurements);
+
+      let status: 'success' | 'warning' | 'error';
+      let message: string;
+
+      if (avgLatency < 100) {
+        status = 'success';
+        message = `Excelente (${avgLatency.toFixed(0)}ms)`;
+      } else if (avgLatency < 300) {
+        status = 'success';
+        message = `Boa (${avgLatency.toFixed(0)}ms)`;
+      } else if (avgLatency < 500) {
+        status = 'warning';
+        message = `Aceitável (${avgLatency.toFixed(0)}ms)`;
+      } else {
+        status = 'warning';
+        message = `Lenta (${avgLatency.toFixed(0)}ms)`;
+      }
+
+      const details = [
+        `Latência Média: ${avgLatency.toFixed(2)}ms`,
+        `Latência Mínima: ${minLatency.toFixed(2)}ms`,
+        `Latência Máxima: ${maxLatency.toFixed(2)}ms`,
+        `Medições: ${measurements.map(m => m.toFixed(0) + 'ms').join(', ')}`,
+        '',
+        'Referência:',
+        '• < 100ms: Excelente',
+        '• 100-300ms: Boa',
+        '• 300-500ms: Aceitável',
+        '• > 500ms: Lenta'
+      ].join('\n');
+
+      updateTest('Velocidade Supabase', {
+        status,
+        message,
+        details
+      });
+    } catch (error) {
+      updateTest('Velocidade Supabase', {
+        status: 'error',
+        message: 'Erro ao medir velocidade',
+        details: error instanceof Error ? error.message : 'Não foi possível medir latência'
+      });
+    }
+  };
+
   const checkMapbox = async () => {
     updateTest('Conectividade Mapbox', { status: 'running', message: 'Testando token...' });
     
@@ -230,6 +305,108 @@ export default function SystemDiagnostics() {
     }
   };
 
+  const checkMapboxSpeed = async () => {
+    updateTest('Velocidade Mapbox', { status: 'running', message: 'Medindo latência...' });
+    
+    try {
+      // Buscar token do banco
+      const { data: settingsData } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'mapbox_public_token')
+        .maybeSingle();
+
+      if (!settingsData?.value) {
+        updateTest('Velocidade Mapbox', {
+          status: 'warning',
+          message: 'Token não configurado',
+          details: 'Configure o token do Mapbox para medir velocidade'
+        });
+        return;
+      }
+
+      let token = settingsData.value;
+      if (typeof token === 'string') {
+        try {
+          if (token.startsWith('"') && token.endsWith('"')) {
+            token = token.slice(1, -1);
+          } else {
+            token = JSON.parse(token);
+          }
+        } catch {
+          // Se falhar, usar como está
+        }
+      }
+
+      const measurements: number[] = [];
+      
+      // Fazer 3 requisições e calcular média
+      for (let i = 0; i < 3; i++) {
+        const startTime = performance.now();
+        
+        const response = await fetch(
+          `https://api.mapbox.com/styles/v1/mapbox/streets-v12?access_token=${token}`,
+          { method: 'HEAD' }
+        );
+        
+        const endTime = performance.now();
+        const latency = endTime - startTime;
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        measurements.push(latency);
+        
+        // Pequeno delay entre requisições
+        if (i < 2) await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      const avgLatency = measurements.reduce((a, b) => a + b, 0) / measurements.length;
+      const minLatency = Math.min(...measurements);
+      const maxLatency = Math.max(...measurements);
+
+      let status: 'success' | 'warning' | 'error';
+      let message: string;
+
+      if (avgLatency < 150) {
+        status = 'success';
+        message = `Excelente (${avgLatency.toFixed(0)}ms)`;
+      } else if (avgLatency < 400) {
+        status = 'success';
+        message = `Boa (${avgLatency.toFixed(0)}ms)`;
+      } else if (avgLatency < 700) {
+        status = 'warning';
+        message = `Aceitável (${avgLatency.toFixed(0)}ms)`;
+      } else {
+        status = 'warning';
+        message = `Lenta (${avgLatency.toFixed(0)}ms)`;
+      }
+
+      const details = [
+        `Latência Média: ${avgLatency.toFixed(2)}ms`,
+        `Latência Mínima: ${minLatency.toFixed(2)}ms`,
+        `Latência Máxima: ${maxLatency.toFixed(2)}ms`,
+        `Medições: ${measurements.map(m => m.toFixed(0) + 'ms').join(', ')}`,
+        '',
+        'Referência:',
+        '• < 150ms: Excelente',
+        '• 150-400ms: Boa',
+        '• 400-700ms: Aceitável',
+        '• > 700ms: Lenta'
+      ].join('\n');
+
+      updateTest('Velocidade Mapbox', {
+        status,
+        message,
+        details
+      });
+    } catch (error) {
+      updateTest('Velocidade Mapbox', {
+        status: 'error',
+        message: 'Erro ao medir velocidade',
+        details: error instanceof Error ? error.message : 'Não foi possível medir latência'
+      });
+    }
+  };
+
   const checkGeolocation = async () => {
     updateTest('Permissões de Geolocalização', { status: 'running', message: 'Verificando...' });
     
@@ -281,7 +458,13 @@ export default function SystemDiagnostics() {
     await checkSupabase();
     await new Promise(resolve => setTimeout(resolve, 300));
     
+    await checkSupabaseSpeed();
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     await checkMapbox();
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    await checkMapboxSpeed();
     await new Promise(resolve => setTimeout(resolve, 300));
     
     await checkGeolocation();
@@ -332,8 +515,10 @@ export default function SystemDiagnostics() {
     if (name.includes('Navegador')) return <Monitor className="h-5 w-5" />;
     if (name.includes('WebGL')) return <Map className="h-5 w-5" />;
     if (name.includes('CSP')) return <Shield className="h-5 w-5" />;
-    if (name.includes('Supabase')) return <Database className="h-5 w-5" />;
-    if (name.includes('Mapbox')) return <Map className="h-5 w-5" />;
+    if (name.includes('Conectividade Supabase')) return <Database className="h-5 w-5" />;
+    if (name.includes('Velocidade Supabase')) return <Wifi className="h-5 w-5" />;
+    if (name.includes('Conectividade Mapbox')) return <Map className="h-5 w-5" />;
+    if (name.includes('Velocidade Mapbox')) return <Wifi className="h-5 w-5" />;
     if (name.includes('Geolocalização')) return <Wifi className="h-5 w-5" />;
     return <Info className="h-5 w-5" />;
   };
