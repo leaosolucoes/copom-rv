@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, Trash2, Image, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useSystemColors } from '@/hooks/useSystemColors';
 
 interface LogoUploadProps {
   onLogoUpdate: (logoUrl: string) => void;
@@ -24,7 +23,6 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
   });
   const [savingColors, setSavingColors] = useState(false);
   const { toast } = useToast();
-  const { reloadColors } = useSystemColors();
 
   const fetchCurrentLogo = async () => {
     try {
@@ -92,9 +90,6 @@ export const LogoUpload = ({ onLogoUpdate }: LogoUploadProps) => {
         });
 
       if (error) throw error;
-
-      // Recarregar cores do sistema para aplicar as mudanças imediatamente
-      await reloadColors();
 
       toast({
         title: "Sucesso",

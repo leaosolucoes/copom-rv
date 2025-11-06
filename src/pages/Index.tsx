@@ -9,19 +9,23 @@ const Index = () => {
   useEffect(() => {
     const fetchLogo = async () => {
       try {
-        const { data, error } = await supabase
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 2000)
+        );
+        
+        const fetchPromise = supabase
           .from('system_settings')
           .select('value')
           .eq('key', 'public_logo_url')
           .maybeSingle();
 
-        if (error) throw error;
+        const { data } = await Promise.race([fetchPromise, timeoutPromise]) as any;
         
         if (data?.value) {
           setLogoUrl(data.value as string);
         }
       } catch (error) {
-        console.error('Erro ao carregar logo:', error);
+        // Silenciosamente ignora erro de logo
       }
     };
 
