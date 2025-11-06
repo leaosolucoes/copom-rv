@@ -6,6 +6,7 @@ import { ComplaintsMap } from './ComplaintsMap';
 import { CriticalAreasAnalysis } from './CriticalAreasAnalysis';
 import { TemporalFilters } from './TemporalFilters';
 import { PredictiveDashboard } from './PredictiveDashboard';
+import { SeasonalityAnalysis } from './SeasonalityAnalysis';
 import { supabase } from '@/integrations/supabase/client';
 import { MapPin, RefreshCw, TrendingUp, AlertCircle, CheckCircle, Archive, ArrowUpDown } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -292,6 +293,9 @@ export const ComplaintsMapDashboard = () => {
 
       {/* Dashboard Preditivo */}
       <PredictiveDashboard complaints={complaints} />
+
+      {/* Análise de Sazonalidade */}
+      <SeasonalityAnalysis complaints={complaints} />
 
       {/* Informações adicionais */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
