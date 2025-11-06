@@ -37,7 +37,7 @@ x-api-token: {seu_token_aqui}
   "occurrence_type": "string",            // Tipo de ocorrência (ex: "poluicao_sonora", "construcao_irregular")
   "occurrence_address": "string",         // Endereço onde ocorreu o fato
   "occurrence_neighborhood": "string",    // Bairro da ocorrência
-  "narrative": "string",                  // Relato detalhado da ocorrência (máx 5000 caracteres)
+  "description": "string",                // Relato detalhado da ocorrência (máx 5000 caracteres)
   "classification": "string"              // Classificação da denúncia (urgente, normal, baixa)
 }
 ```
@@ -111,7 +111,7 @@ curl -X POST \
     "occurrence_reference": "Próximo ao supermercado",
     "occurrence_date": "2025-01-08",
     "occurrence_time": "22:30:00",
-    "narrative": "Estabelecimento comercial com som muito alto durante a madrugada, perturbando o sossego dos moradores da região. O problema acontece principalmente aos finais de semana.",
+    "description": "Estabelecimento comercial com som muito alto durante a madrugada, perturbando o sossego dos moradores da região. O problema acontece principalmente aos finais de semana.",
     "classification": "urgente",
     "photos": [
       "https://storage.supabase.co/object/public/complaint-media/photo1.jpg",
@@ -148,7 +148,7 @@ curl -X POST \
   "error": "Validation error",
   "details": {
     "complainant_name": "Campo obrigatório",
-    "narrative": "Narrativa muito longa (máximo 5000 caracteres)"
+    "description": "Descrição muito longa (máximo 5000 caracteres)"
   }
 }
 ```

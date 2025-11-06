@@ -300,7 +300,7 @@ async function listComplaints(searchParams: URLSearchParams, supabase: any) {
       occurrence_time,
       classification, 
       status, 
-      narrative,
+      description,
       photos,
       videos,
       user_location,
@@ -337,7 +337,7 @@ async function listComplaints(searchParams: URLSearchParams, supabase: any) {
     query = query.or(`
       complainant_name.ilike.%${search}%,
       occurrence_address.ilike.%${search}%,
-      narrative.ilike.%${search}%,
+      description.ilike.%${search}%,
       system_identifier.ilike.%${search}%
     `)
   }
@@ -470,7 +470,7 @@ async function createComplaint(req: Request, supabase: any) {
     'complainant_name', 'complainant_phone', 'complainant_type',
     'complainant_address', 'complainant_neighborhood',
     'occurrence_type', 'occurrence_address', 'occurrence_neighborhood',
-    'classification', 'narrative'
+    'classification', 'description'
   ]
 
   for (const field of requiredFields) {
