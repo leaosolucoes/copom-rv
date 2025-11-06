@@ -19,7 +19,9 @@ import {
   Download,
   AlertCircle,
   CheckCircle,
-  Settings 
+  Settings,
+  PlayCircle,
+  Loader2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -74,6 +76,9 @@ export function ApiManagement() {
   });
   const [generatedToken, setGeneratedToken] = useState<string>('');
   const [showGeneratedToken, setShowGeneratedToken] = useState(false);
+  const [testingTokenId, setTestingTokenId] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<any>(null);
+  const [showTestDialog, setShowTestDialog] = useState(false);
   const { toast } = useToast();
 
   const availableScopes = [
@@ -341,6 +346,91 @@ export function ApiManagement() {
         description: `Erro: ${error.message}`,
         variant: "destructive",
       });
+    }
+  };
+
+  const testToken = async (tokenId: string) => {
+    setTestingTokenId(tokenId);
+    setTestResult(null);
+    
+    try {
+      // Buscar o token original (não o hash)
+      const token = tokens.find(t => t.id === tokenId);
+      if (!token) {
+        toast({
+          title: "Erro",
+          description: "Token não encontrado",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      logger.info('🧪 Testando token:', tokenId);
+      
+      const startTime = Date.now();
+      
+      // Fazer uma requisição de teste para a API de complaints
+      const response = await fetch(
+        'https://doyttekxvonlwmmxfezd.supabase.co/functions/v1/api-complaints?page=1&limit=1',
+        {
+          method: 'GET',
+          headers: {
+            'x-api-token': token.token,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      const endTime = Date.now();
+      const responseTime = endTime - startTime;
+      
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (e) {
+        responseData = await response.text();
+      }
+      
+      const result = {
+        success: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        responseTime: responseTime,
+        data: responseData,
+        headers: Object.fromEntries(response.headers.entries())
+      };
+      
+      setTestResult(result);
+      setShowTestDialog(true);
+      
+      if (response.ok) {
+        toast({
+          title: "✅ Token válido!",
+          description: `Requisição bem-sucedida em ${responseTime}ms`,
+        });
+      } else {
+        toast({
+          title: "❌ Erro no teste",
+          description: `Status ${response.status}: ${response.statusText}`,
+          variant: "destructive"
+        });
+      }
+      
+    } catch (error: any) {
+      logger.error('💥 Erro ao testar token:', error);
+      setTestResult({
+        success: false,
+        error: error.message,
+        details: error.toString()
+      });
+      setShowTestDialog(true);
+      toast({
+        title: "Erro ao testar token",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setTestingTokenId(null);
     }
   };
 
@@ -627,6 +717,109 @@ export function ApiManagement() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog de Resultado do Teste */}
+      <Dialog open={showTestDialog} onOpenChange={setShowTestDialog}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {testResult?.success ? (
+                <>
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  Teste Bem-Sucedido
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-5 w-5 text-red-500" />
+                  Teste Falhou
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {testResult && (
+            <div className="space-y-4">
+              {/* Status e Tempo de Resposta */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Status HTTP</p>
+                  <p className="text-lg font-semibold">
+                    {testResult.status ? (
+                      <Badge variant={testResult.success ? "default" : "destructive"}>
+                        {testResult.status} {testResult.statusText}
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive">Erro de Conexão</Badge>
+                    )}
+                  </p>
+                </div>
+                
+                {testResult.responseTime && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-1">Tempo de Resposta</p>
+                    <p className="text-lg font-semibold">{testResult.responseTime}ms</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Resposta da API */}
+              <div>
+                <p className="text-sm font-medium mb-2">Resposta da API:</p>
+                <div className="bg-muted p-4 rounded-lg">
+                  <pre className="text-xs overflow-x-auto">
+                    {JSON.stringify(testResult.data || testResult.error, null, 2)}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Detalhes do Erro */}
+              {testResult.details && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Detalhes do Erro:</p>
+                  <div className="bg-red-50 border border-red-200 p-3 rounded-lg">
+                    <p className="text-sm text-red-800">{testResult.details}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Instruções para n8n */}
+              {testResult.success && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm font-semibold text-green-800 mb-2">
+                    ✅ Token válido! Configure no n8n assim:
+                  </p>
+                  <div className="space-y-2 text-sm text-green-700">
+                    <p>1. No nó HTTP Request, vá em "Parameters" → "Specify Headers"</p>
+                    <p>2. Adicione um header:</p>
+                    <code className="block bg-white p-2 rounded mt-1 text-xs">
+                      Name: x-api-token<br/>
+                      Value: [seu token completo]
+                    </code>
+                    <p>3. URL da API: https://doyttekxvonlwmmxfezd.supabase.co/functions/v1/api-complaints</p>
+                  </div>
+                </div>
+              )}
+
+              {!testResult.success && testResult.status === 401 && (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm font-semibold text-yellow-800 mb-2">
+                    ⚠️ Token não autorizado
+                  </p>
+                  <div className="space-y-2 text-sm text-yellow-700">
+                    <p>Possíveis causas:</p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>Token inativo ou expirado</li>
+                      <li>Token não tem a permissão <code>complaints:read</code></li>
+                      <li>Token incorreto ou mal formatado</li>
+                    </ul>
+                    <p className="mt-2">Solução: Gere um novo token com as permissões corretas.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Tabs defaultValue="tokens" className="space-y-6">
         <TabsList>
           <TabsTrigger value="tokens" className="flex items-center gap-2">
@@ -688,7 +881,25 @@ export function ApiManagement() {
                         </div>
                       </div>
                       
-                      <div className="flex-shrink-0">
+                      <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => testToken(token.id)}
+                          disabled={testingTokenId === token.id}
+                        >
+                          {testingTokenId === token.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Testando...
+                            </>
+                          ) : (
+                            <>
+                              <PlayCircle className="h-4 w-4 mr-2" />
+                              Testar Token
+                            </>
+                          )}
+                        </Button>
                         <Button 
                           variant={token.active ? "destructive" : "default"}
                           size="sm"
