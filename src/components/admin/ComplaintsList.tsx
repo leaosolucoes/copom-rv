@@ -2495,35 +2495,183 @@ export const ComplaintsList = () => {
                                  )}
                                </div>
 
-                               <div className="space-y-4">
-                                 <h3 className="text-lg font-semibold">Dados da Reclamação</h3>
+                                <div className="space-y-4">
+                                  <h3 className="text-lg font-semibold">Dados da Reclamação</h3>
+                                   
+                                   <div>
+                                     <strong>Descrição:</strong>
+                                     <p className="mt-2 p-3 bg-gray-50 rounded-md">{selectedComplaint.description}</p>
+                                   </div>
+
+                                   {/* Seção de Mídias */}
+                                   {(selectedComplaint.photos?.length || selectedComplaint.videos?.length) && (
+                                     <div className="space-y-3">
+                                       <strong>Mídias Anexadas:</strong>
+                                       
+                                       {/* Fotos */}
+                                       {selectedComplaint.photos && selectedComplaint.photos.length > 0 && (
+                                         <div className="space-y-2">
+                                           <div className="flex items-center gap-2 text-sm font-medium">
+                                             <Image className="h-4 w-4" />
+                                             Fotos ({selectedComplaint.photos.length})
+                                           </div>
+                                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                              {selectedComplaint.photos.map((photo, index) => (
+                                                <div key={index} className="relative group">
+                                                  <img 
+                                                    src={photo} 
+                                                    alt={`Foto ${index + 1}`} 
+                                                    className="w-full h-20 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                                                    onClick={() => openMediaModal(selectedComplaint.photos!, index, 'photo')}
+                                                  />
+                                                </div>
+                                              ))}
+                                            </div>
+                                         </div>
+                                       )}
+
+                                       {/* Vídeos */}
+                                        {selectedComplaint.videos && selectedComplaint.videos.length > 0 && (
+                                          <div className="space-y-2">
+                                            <div className="flex items-center gap-2 text-sm font-medium">
+                                              <Video className="h-4 w-4" />
+                                              Vídeos ({selectedComplaint.videos.length})
+                                            </div>
+                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                               {selectedComplaint.videos.map((video, index) => (
+                                                 <VideoPreview 
+                                                   key={index}
+                                                   video={video}
+                                                   index={index}
+                                                   onOpenModal={() => openMediaModal(selectedComplaint.videos!, index, 'video')}
+                                                 />
+                                               ))}
+                                             </div>
+                                          </div>
+                                        )}
+                                     </div>
+                                   )}
                                   
-                                  <div>
-                                    <strong>Descrição:</strong>
-                                    <p className="mt-2 p-3 bg-gray-50 rounded-md">{selectedComplaint.description}</p>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <strong>Classificação:</strong> {selectedComplaint.classification}
+                                    </div>
+                                    {selectedComplaint.assigned_to && (
+                                      <div>
+                                        <strong>Atribuído a:</strong> {selectedComplaint.assigned_to}
+                                      </div>
+                                    )}
                                   </div>
-                                 
-                                 <div className="grid grid-cols-2 gap-4">
-                                   <div>
-                                     <strong>Classificação:</strong> {selectedComplaint.classification}
-                                   </div>
-                                   {selectedComplaint.assigned_to && (
-                                     <div>
-                                       <strong>Atribuído a:</strong> {selectedComplaint.assigned_to}
-                                     </div>
-                                   )}
-                                 </div>
-                                 <div className="grid grid-cols-2 gap-4">
-                                   <div>
-                                     <strong>Status:</strong> {selectedComplaint.status}
-                                   </div>
-                                   {selectedComplaint.system_identifier && (
-                                     <div>
-                                       <strong>Identificador do Sistema:</strong> {selectedComplaint.system_identifier}
-                                     </div>
-                                   )}
-                                 </div>
-                               </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <strong>Status:</strong> {selectedComplaint.status}
+                                    </div>
+                                    {selectedComplaint.system_identifier && (
+                                      <div>
+                                        <strong>Identificador do Sistema:</strong> {selectedComplaint.system_identifier}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Informações do Usuário */}
+                                {(() => {
+                                  const hasUserInfo = selectedComplaint.user_location || 
+                                                    selectedComplaint.user_device_type || 
+                                                    selectedComplaint.user_browser || 
+                                                    selectedComplaint.user_ip || 
+                                                    selectedComplaint.user_agent;
+                                  
+                                  return hasUserInfo;
+                                })() && (
+                                  <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Informações do Usuário</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {selectedComplaint.user_device_type && (
+                                        <div>
+                                          <strong>Dispositivo:</strong> {selectedComplaint.user_device_type}
+                                        </div>
+                                      )}
+                                      {selectedComplaint.user_browser && (
+                                        <div>
+                                          <strong>Navegador:</strong> {selectedComplaint.user_browser}
+                                        </div>
+                                      )}
+                                      {selectedComplaint.user_ip && (
+                                        <div>
+                                          <strong>Endereço IP:</strong> {selectedComplaint.user_ip}
+                                        </div>
+                                      )}
+                                       {selectedComplaint.user_location && (
+                                         <div className="md:col-span-2">
+                                           <strong>Localização:</strong>
+                                           <div className="mt-1 text-sm bg-gray-50 p-2 rounded">
+                                             {(() => {
+                                               let latitude: number | null = null;
+                                               let longitude: number | null = null;
+                                               let accuracy: number | null = null;
+
+                                               if (typeof selectedComplaint.user_location === 'object' && selectedComplaint.user_location?.latitude) {
+                                                 latitude = selectedComplaint.user_location.latitude;
+                                                 longitude = selectedComplaint.user_location.longitude;
+                                                 accuracy = selectedComplaint.user_location.accuracy;
+                                               }
+                                               else if (typeof selectedComplaint.user_location === 'string') {
+                                                 const lines = selectedComplaint.user_location.trim().split('\n');
+                                                 if (lines.length === 2) {
+                                                   latitude = parseFloat(lines[0]);
+                                                   longitude = parseFloat(lines[1]);
+                                                 } else if (lines.length === 1) {
+                                                   const parts = lines[0].split(/[,\s]+/);
+                                                   if (parts.length >= 2) {
+                                                     latitude = parseFloat(parts[0]);
+                                                     longitude = parseFloat(parts[1]);
+                                                   }
+                                                 }
+                                               }
+
+                                               if (latitude && longitude && !isNaN(latitude) && !isNaN(longitude)) {
+                                                 return (
+                                                   <>
+                                                     <div>Latitude: {latitude}</div>
+                                                     <div>Longitude: {longitude}</div>
+                                                     {accuracy && (
+                                                       <div>Precisão: {Math.round(accuracy)}m</div>
+                                                     )}
+                                                     <div className="mt-2">
+                                                       <a 
+                                                         href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                                                         target="_blank"
+                                                         rel="noopener noreferrer"
+                                                         className="text-blue-600 hover:text-blue-800 underline"
+                                                       >
+                                                         Ver no Google Maps
+                                                       </a>
+                                                     </div>
+                                                   </>
+                                                 );
+                                               } else {
+                                                 return (
+                                                   <div className="text-gray-500">
+                                                     Dados de localização inválidos
+                                                   </div>
+                                                 );
+                                               }
+                                             })()}
+                                           </div>
+                                         </div>
+                                       )}
+                                      {selectedComplaint.user_agent && (
+                                        <div className="md:col-span-2">
+                                          <strong>User Agent:</strong>
+                                          <div className="mt-1 text-xs bg-gray-50 p-2 rounded break-all">
+                                            {selectedComplaint.user_agent}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                              </div>
                            )}
                          </DialogContent>
