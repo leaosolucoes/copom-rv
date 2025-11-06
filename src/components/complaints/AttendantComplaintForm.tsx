@@ -32,6 +32,7 @@ interface FormData {
   occurrence_date: string;
   occurrence_time: string;
   description: string;
+  narrative: string;
   classification: string;
   rural_zone: boolean;
 }
@@ -73,6 +74,7 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
         occurrence_date: '',
         occurrence_time: '',
         description: '',
+        narrative: '',
         classification: '',
     rural_zone: false,
   });
@@ -240,7 +242,8 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
         occurrence_reference: formData.occurrence_reference || '',
         occurrence_date: formData.occurrence_date || null,
         occurrence_time: formData.occurrence_time || null,
-        description: formData.description,
+        // Usar narrative se description estiver vazio (compatibilidade com config antiga)
+        description: formData.description || formData.narrative || '',
         classification: formData.classification,
         user_device_type: 'registro feito por ligação telefônica',
         user_browser: 'Sistema Interno - Atendimento',
@@ -286,6 +289,7 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
         occurrence_date: '',
         occurrence_time: '',
         description: '',
+        narrative: '',
         classification: '',
         rural_zone: false,
       });
