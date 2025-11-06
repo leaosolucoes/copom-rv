@@ -19,10 +19,11 @@ import { SoundNotificationControl } from '@/components/admin/SoundNotificationCo
 import { ApiManagement } from '@/components/admin/ApiManagement';
 import { ConsultationAuditDashboard } from '@/components/admin/ConsultationAuditDashboard';
 import { AccessAuditDashboard } from '@/components/admin/AccessAuditDashboard';
+import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, BarChart3 } from 'lucide-react';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, BarChart3, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -122,6 +123,11 @@ const SuperAdminDashboard = () => {
                 <span className="hidden sm:inline">Estatísticas</span>
                 <span className="sm:hidden">Stats</span>
               </TabsTrigger>
+              <TabsTrigger value="attendance-time" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Clock className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Tempo de Atendimento</span>
+                <span className="sm:hidden">Tempo</span>
+              </TabsTrigger>
               <TabsTrigger value="users" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Users className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Usuários</span>
@@ -198,6 +204,20 @@ const SuperAdminDashboard = () => {
 
           <TabsContent value="statistics" className="space-y-6">
             <ComplaintsStatisticsDashboard />
+          </TabsContent>
+
+          <TabsContent value="attendance-time" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Dashboard de Tempos de Atendimento</CardTitle>
+                <CardDescription>
+                  Monitore e analise os tempos de atendimento geral e por atendente
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AttendanceTimeDashboard />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">

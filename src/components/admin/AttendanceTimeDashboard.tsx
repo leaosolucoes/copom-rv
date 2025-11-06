@@ -73,7 +73,7 @@ export function AttendanceTimeDashboard() {
           end: customEndDate ? new Date(customEndDate) : now 
         };
       default:
-        return { start: subDays(now, 30), end: now }; // Mudança: aumentar período padrão para 30 dias
+        return { start: subDays(now, 30), end: now };
     }
   };
 
@@ -91,7 +91,8 @@ export function AttendanceTimeDashboard() {
           processed_at,
           attendant_id,
           complainant_name,
-          occurrence_type
+          occurrence_type,
+          verified_at
         `)
         .not('processed_at', 'is', null)
         .not('attendant_id', 'is', null)
@@ -156,8 +157,12 @@ export function AttendanceTimeDashboard() {
 
       // Calcular tempos de atendimento
       const processedComplaints = complaints.map(complaint => {
-        // Calcular tempo total desde created_at até processed_at
-        const startTime = new Date(complaint.created_at).getTime();
+        // Se a denúncia foi verificada pelo admin (tem verified_at), 
+        // calcular tempo a partir de verified_at até processed_at
+        // Caso contrário, usar o tempo total desde created_at
+        const startTime = complaint.verified_at 
+          ? new Date(complaint.verified_at).getTime()
+          : new Date(complaint.created_at).getTime();
           
         const attendanceTime = Math.round(
           (new Date(complaint.processed_at!).getTime() - startTime) / (1000 * 60)
@@ -275,7 +280,8 @@ export function AttendanceTimeDashboard() {
           complainant_name,
           occurrence_type,
           created_at,
-          processed_at
+          processed_at,
+          verified_at
         `)
         .eq('attendant_id', attendantId)
         .not('processed_at', 'is', null)
@@ -286,8 +292,12 @@ export function AttendanceTimeDashboard() {
       if (error) throw error;
 
       const details = (complaints || []).map(complaint => {
-        // Calcular tempo total desde created_at até processed_at
-        const startTime = new Date(complaint.created_at).getTime();
+        // Se a denúncia foi verificada pelo admin (tem verified_at), 
+        // calcular tempo a partir de verified_at até processed_at
+        // Caso contrário, usar o tempo total desde created_at
+        const startTime = complaint.verified_at 
+          ? new Date(complaint.verified_at).getTime()
+          : new Date(complaint.created_at).getTime();
           
         const attendanceTime = Math.round(
           (new Date(complaint.processed_at!).getTime() - startTime) / (1000 * 60)
@@ -316,7 +326,7 @@ export function AttendanceTimeDashboard() {
     if (!stats) return;
 
     try {
-      // Buscar logo do sistema (seguindo padrão do ComplaintsList)
+      // Buscar logo do sistema
       const { data: logoData, error: logoError } = await supabase
         .from('system_settings')
         .select('value')
@@ -334,19 +344,16 @@ export function AttendanceTimeDashboard() {
 
       // Criar PDF usando jsPDF
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
       
       // Configurar fontes
       pdf.setFont('helvetica', 'bold');
       
       let yPosition = 30;
       
-      // Adicionar logo se disponível (seguindo padrão do ComplaintsList)
+      // Adicionar logo se disponível
       if (logoUrl) {
         try {
           console.log('🔍 Carregando logo:', logoUrl);
-          // Converter URL da logo para base64
           const logoResponse = await fetch(logoUrl);
           console.log('🔍 Logo response status:', logoResponse.status);
           
@@ -361,23 +368,20 @@ export function AttendanceTimeDashboard() {
               reader.readAsDataURL(logoBlob);
             });
             
-            // Detectar formato da imagem
             const imageFormat = logoBlob.type.includes('png') ? 'PNG' : 
                                logoBlob.type.includes('jpeg') || logoBlob.type.includes('jpg') ? 'JPEG' : 'PNG';
             
             console.log('🔍 Image format:', imageFormat);
             console.log('🔍 Adicionando logo ao PDF...');
             
-            // Adicionar logo no cabeçalho (lado esquerdo)
             pdf.addImage(logoBase64, imageFormat, 20, 10, 30, 30);
             
             console.log('🔍 Logo adicionada com sucesso!');
           }
           
-          // Posicionar o título ao lado da logo, não em cima
           pdf.setFontSize(18);
           pdf.text('RELATÓRIO DE TEMPOS DE ATENDIMENTO', 60, 20);
-          yPosition = 50; // Aumentar a posição Y para dar espaço à logo
+          yPosition = 50;
         } catch (logoError) {
           console.error('Erro ao carregar logo:', logoError);
           pdf.setFontSize(18);
@@ -391,7 +395,6 @@ export function AttendanceTimeDashboard() {
         yPosition = 30;
       }
       
-      // Adicionar informações do relatório
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'normal');
       
@@ -411,7 +414,6 @@ export function AttendanceTimeDashboard() {
       
       yPosition += 40;
 
-      // Seção de Estatísticas Gerais
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(14);
       pdf.text('ESTATÍSTICAS GERAIS', 20, yPosition);
@@ -433,7 +435,6 @@ export function AttendanceTimeDashboard() {
         statsData.push(['Atendente mais produtivo:', `${stats.mostProductiveAttendant.name} (${stats.mostProductiveAttendant.count} atendimentos)`]);
       }
 
-      // Adicionar estatísticas usando autoTable
       autoTable(pdf, {
         body: statsData,
         startY: yPosition,
@@ -449,7 +450,6 @@ export function AttendanceTimeDashboard() {
         theme: 'plain'
       });
 
-      // Seção de Ranking de Atendentes
       const finalY = (pdf as any).lastAutoTable.finalY + 20;
       
       if (stats.attendantRanking.length > 0) {
@@ -468,7 +468,6 @@ export function AttendanceTimeDashboard() {
           `${attendant.maxTime} min`
         ]);
 
-        // Adicionar tabela de ranking
         autoTable(pdf, {
           head: [tableColumns],
           body: tableData,
@@ -489,7 +488,6 @@ export function AttendanceTimeDashboard() {
         });
       }
 
-      // Salvar PDF
       pdf.save(`relatorio-tempos-atendimento-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
       
       toast({
@@ -543,7 +541,6 @@ export function AttendanceTimeDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Filtros */}
       <div className="flex flex-wrap gap-4 items-end">
         <div>
           <Label htmlFor="period">Período</Label>
@@ -610,7 +607,6 @@ export function AttendanceTimeDashboard() {
         </Card>
       ) : (
         <>
-          {/* Cards de métricas */}
           <div className="grid gap-4 md:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -669,9 +665,7 @@ export function AttendanceTimeDashboard() {
             </Card>
           </div>
 
-          {/* Gráficos */}
           <div className="grid gap-6 md:grid-cols-2">
-            {/* Gráfico de evolução temporal */}
             <Card>
               <CardHeader>
                 <CardTitle>Evolução dos Tempos Médios</CardTitle>
@@ -699,7 +693,6 @@ export function AttendanceTimeDashboard() {
               </CardContent>
             </Card>
 
-            {/* Gráfico de comparação entre atendentes */}
             <Card>
               <CardHeader>
                 <CardTitle>Comparação Entre Atendentes</CardTitle>
@@ -733,7 +726,6 @@ export function AttendanceTimeDashboard() {
             </Card>
           </div>
 
-          {/* Ranking de atendentes */}
           <Card>
             <CardHeader>
               <CardTitle>Ranking de Atendentes</CardTitle>
