@@ -1,0 +1,261 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ComplaintsMap } from './ComplaintsMap';
+import { supabase } from '@/integrations/supabase/client';
+import { MapPin, RefreshCw, TrendingUp, AlertCircle, CheckCircle, Archive } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+
+interface Complaint {
+  id: string;
+  protocol_number: string;
+  complainant_name: string;
+  occurrence_type: string;
+  status: string;
+  user_location?: {
+    latitude: number;
+    longitude: number;
+  };
+  created_at: string;
+  attendant_id?: string;
+}
+
+export const ComplaintsMapDashboard = () => {
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    nova: 0,
+    em_andamento: 0,
+    processada: 0,
+    arquivada: 0,
+    with_location: 0,
+  });
+
+  const fetchComplaints = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('id, protocol_number, complainant_name, occurrence_type, status, user_location, created_at, attendant_id')
+        .not('status', 'eq', 'arquivada')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Converter user_location de Json para o tipo esperado
+      const processedData = (data || []).map((complaint: any) => ({
+        ...complaint,
+        user_location: complaint.user_location as { latitude: number; longitude: number } | undefined,
+      }));
+
+      setComplaints(processedData);
+
+      // Calcular estatísticas
+      const withLocation = data?.filter((c: any) => c.user_location?.latitude && c.user_location?.longitude).length || 0;
+      const nova = data?.filter((c: any) => c.status === 'nova').length || 0;
+      const em_andamento = data?.filter((c: any) => c.status === 'em_andamento').length || 0;
+      const processada = data?.filter((c: any) => c.status === 'processada').length || 0;
+      const arquivada = data?.filter((c: any) => c.status === 'arquivada').length || 0;
+
+      setStats({
+        total: data?.length || 0,
+        nova,
+        em_andamento,
+        processada,
+        arquivada,
+        with_location: withLocation,
+      });
+    } catch (error) {
+      console.error('Erro ao buscar denúncias:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível carregar as denúncias',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchComplaints();
+
+    // Supabase Realtime
+    const channel = supabase
+      .channel('complaints-map-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'complaints',
+        },
+        () => {
+          fetchComplaints();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      {/* Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Ativas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold">{stats.total}</span>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Novas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-blue-600">{stats.nova}</span>
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Em Andamento
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-orange-600">{stats.em_andamento}</span>
+              <RefreshCw className="h-4 w-4 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Processadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-green-600">{stats.processada}</span>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Com Localização
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-purple-600">{stats.with_location}</span>
+              <MapPin className="h-4 w-4 text-purple-600" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.total > 0 ? Math.round((stats.with_location / stats.total) * 100) : 0}% do total
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Mapa */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Mapa de Denúncias em Tempo Real
+              </CardTitle>
+              <CardDescription>
+                Visualização geográfica das denúncias ativas com status e informações
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchComplaints}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center h-96 bg-muted rounded-lg">
+              <div className="text-center space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                <p className="text-muted-foreground">Carregando denúncias...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <ComplaintsMap complaints={complaints} />
+              
+              {stats.with_location === 0 && (
+                <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-sm text-yellow-700">Nenhuma denúncia com localização</h4>
+                      <p className="text-sm text-yellow-600 mt-1">
+                        As denúncias precisam ter informações de localização (GPS) para aparecer no mapa.
+                        As localizações são capturadas automaticamente quando o denunciante permite o acesso à localização.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Informações adicionais */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Sobre o Mapa</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground space-y-2">
+          <p>
+            • <strong>Clique nos marcadores</strong> para ver detalhes da denúncia
+          </p>
+          <p>
+            • <strong>Cores dos marcadores</strong> indicam o status (azul: nova, laranja: em andamento, verde: processada)
+          </p>
+          <p>
+            • <strong>Atualização automática</strong> em tempo real quando há alterações
+          </p>
+          <p>
+            • <strong>Localização</strong> capturada automaticamente pelo navegador do denunciante
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
