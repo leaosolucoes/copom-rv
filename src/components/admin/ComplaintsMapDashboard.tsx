@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,11 +45,9 @@ export const ComplaintsMapDashboard = () => {
     with_location: 0,
   });
 
-  const fetchComplaints = async () => {
+  const fetchComplaints = useCallback(async () => {
     try {
       setLoading(true);
-      
-      console.log('🗺️ MAP: Iniciando busca de denúncias...');
       
       // Query principal
       let query = supabase
@@ -60,7 +58,6 @@ export const ComplaintsMapDashboard = () => {
 
       // Aplicar filtro de data se existir
       if (dateRange) {
-        console.log('🗺️ MAP: Aplicando filtro de data:', dateRange);
         query = query
           .gte('created_at', dateRange.from.toISOString())
           .lte('created_at', dateRange.to.toISOString());
@@ -68,14 +65,7 @@ export const ComplaintsMapDashboard = () => {
 
       const { data, error } = await query;
 
-      console.log('🗺️ MAP: Resultado da query:', { 
-        dataLength: data?.length, 
-        error: error?.message,
-        errorDetails: error 
-      });
-
       if (error) {
-        console.error('🗺️ MAP: Erro na query:', error);
         throw error;
       }
 
@@ -85,12 +75,10 @@ export const ComplaintsMapDashboard = () => {
         user_location: complaint.user_location as { latitude: number; longitude: number } | undefined,
       }));
 
-      console.log('🗺️ MAP: Denúncias processadas:', processedData.length);
       setComplaints(processedData);
 
       // Query de comparação se existir
       if (comparisonRange) {
-        console.log('🗺️ MAP: Buscando denúncias de comparação...');
         let comparisonQuery = supabase
           .from('complaints')
           .select('id, protocol_number, complainant_name, occurrence_type, status, user_location, created_at, attendant_id')
@@ -102,7 +90,6 @@ export const ComplaintsMapDashboard = () => {
         const { data: compData, error: compError } = await comparisonQuery;
 
         if (compError) {
-          console.error('🗺️ MAP: Erro na query de comparação:', compError);
           throw compError;
         }
 
@@ -123,15 +110,6 @@ export const ComplaintsMapDashboard = () => {
       const processada = data?.filter((c: any) => c.status === 'processada').length || 0;
       const arquivada = data?.filter((c: any) => c.status === 'arquivada').length || 0;
 
-      console.log('🗺️ MAP: Estatísticas calculadas:', {
-        total: data?.length || 0,
-        nova,
-        em_andamento,
-        processada,
-        arquivada,
-        with_location: withLocation,
-      });
-
       setStats({
         total: data?.length || 0,
         nova,
@@ -140,10 +118,8 @@ export const ComplaintsMapDashboard = () => {
         arquivada,
         with_location: withLocation,
       });
-      
-      console.log('🗺️ MAP: Busca concluída com sucesso!');
     } catch (error) {
-      console.error('🗺️ MAP: ERRO CRÍTICO ao buscar denúncias:', error);
+      console.error('Erro ao buscar denúncias:', error);
       toast({
         title: 'Erro',
         description: `Não foi possível carregar as denúncias: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
@@ -152,7 +128,7 @@ export const ComplaintsMapDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange, comparisonRange]);
 
   useEffect(() => {
     fetchComplaints();
@@ -176,7 +152,7 @@ export const ComplaintsMapDashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [dateRange, comparisonRange]);
+  }, [fetchComplaints]);
 
   return (
     <div className="space-y-6">

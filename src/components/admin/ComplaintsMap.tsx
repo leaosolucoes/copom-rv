@@ -53,7 +53,6 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
   useEffect(() => {
     const fetchMapboxToken = async () => {
       try {
-        console.log('🗺️ Buscando token do Mapbox...');
         const { data, error } = await supabase
           .from('system_settings')
           .select('value')
@@ -61,7 +60,6 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
           .maybeSingle();
 
         if (error) {
-          console.error('🗺️ Erro ao buscar token:', error);
           throw error;
         }
 
@@ -75,13 +73,10 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
               // Se não for JSON, usar como está
             }
           }
-          console.log('🗺️ Token encontrado:', tokenValue ? 'Sim (oculto)' : 'Não');
           setMapboxToken(tokenValue as string);
-        } else {
-          console.log('🗺️ Nenhum token configurado');
         }
       } catch (error) {
-        console.error('🗺️ Erro ao buscar token do Mapbox:', error);
+        console.error('Erro ao buscar token do Mapbox:', error);
       }
     };
 
@@ -91,22 +86,16 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
   // Inicializar mapa
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) {
-      console.log('🗺️ Aguardando container ou token:', { 
-        hasContainer: !!mapContainer.current, 
-        hasToken: !!mapboxToken 
-      });
       return;
     }
 
     // Se já existe um mapa, removê-lo antes de criar um novo
     if (map.current) {
-      console.log('🗺️ Removendo mapa existente...');
       map.current.remove();
       map.current = null;
     }
 
     try {
-      console.log('🗺️ Inicializando mapa com estilo:', mapStyle);
       mapboxgl.accessToken = mapboxToken;
 
       map.current = new mapboxgl.Map({
@@ -129,20 +118,18 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
       );
 
       map.current.on('load', () => {
-        console.log('🗺️ Mapa carregado com sucesso!');
         setMapLoaded(true);
       });
 
       map.current.on('error', (e) => {
-        console.error('🗺️ Erro no mapa:', e);
+        console.error('Erro no mapa:', e);
       });
 
     } catch (error) {
-      console.error('🗺️ ERRO ao inicializar mapa:', error);
+      console.error('ERRO ao inicializar mapa:', error);
     }
 
     return () => {
-      console.log('🗺️ Limpando mapa...');
       if (map.current) {
         map.current.remove();
         map.current = null;
