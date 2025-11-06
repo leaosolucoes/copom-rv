@@ -64,6 +64,75 @@ export type Database = {
           },
         ]
       }
+      alert_history: {
+        Row: {
+          alert_type: string
+          created_at: string
+          details: Json | null
+          id: string
+          message: string
+          sent_email: boolean
+          sent_whatsapp: boolean
+          severity: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          message: string
+          sent_email?: boolean
+          sent_whatsapp?: boolean
+          severity: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          message?: string
+          sent_email?: boolean
+          sent_whatsapp?: boolean
+          severity?: string
+        }
+        Relationships: []
+      }
+      alert_settings: {
+        Row: {
+          created_at: string
+          email_enabled: boolean
+          email_recipients: string[]
+          enabled: boolean
+          id: string
+          thresholds: Json
+          updated_at: string
+          whatsapp_enabled: boolean
+          whatsapp_recipients: string[]
+        }
+        Insert: {
+          created_at?: string
+          email_enabled?: boolean
+          email_recipients?: string[]
+          enabled?: boolean
+          id?: string
+          thresholds?: Json
+          updated_at?: string
+          whatsapp_enabled?: boolean
+          whatsapp_recipients?: string[]
+        }
+        Update: {
+          created_at?: string
+          email_enabled?: boolean
+          email_recipients?: string[]
+          enabled?: boolean
+          id?: string
+          thresholds?: Json
+          updated_at?: string
+          whatsapp_enabled?: boolean
+          whatsapp_recipients?: string[]
+        }
+        Relationships: []
+      }
       api_endpoints: {
         Row: {
           active: boolean | null

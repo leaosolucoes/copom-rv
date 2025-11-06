@@ -25,6 +25,7 @@ import { AttendanceTimeNotificationBadge } from '@/components/admin/AttendanceTi
 import { AttendanceTimeAlertsConfig } from '@/components/admin/AttendanceTimeAlertsConfig';
 import { ComplaintsMapDashboard } from '@/components/admin/ComplaintsMapDashboard';
 import { MapboxTokenConfig } from '@/components/admin/MapboxTokenConfig';
+import { AnomalyAlertConfig } from '@/components/admin/AnomalyAlertConfig';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
@@ -390,6 +391,8 @@ const SuperAdminDashboard = () => {
               <AttendanceTimeAlertsConfig />
               
               <MapboxTokenConfig />
+              
+              <AnomalyAlertConfig />
             </div>
           </TabsContent>
         </Tabs>
