@@ -61,12 +61,16 @@ interface FilterOptions {
 export const useComplaintsFilter = (complaints: Complaint[], options: FilterOptions) => {
   const { searchTerm, deviceFilter, activeTab, startDate, endDate, userRole } = options;
 
-  // Memoize hoje para evitar recálculos desnecessários
+  // Memoize hoje para evitar recálculos desnecessários (timezone São Paulo)
   const today = useMemo(() => {
+    // Obter data atual em São Paulo
     const now = new Date();
+    const saoPauloDateStr = now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+    const saoPauloDate = new Date(saoPauloDateStr);
+    
     return {
-      start: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-      end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+      start: new Date(saoPauloDate.getFullYear(), saoPauloDate.getMonth(), saoPauloDate.getDate(), 0, 0, 0),
+      end: new Date(saoPauloDate.getFullYear(), saoPauloDate.getMonth(), saoPauloDate.getDate(), 23, 59, 59, 999)
     };
   }, []);
 
@@ -109,10 +113,12 @@ export const useComplaintsFilter = (complaints: Complaint[], options: FilterOpti
       // Date filter for history tab
       let matchesDateFilter = true;
       if (activeTab === 'historico') {
-        const complaintDate = new Date(complaint.created_at);
+        // Converter data da denúncia para timezone São Paulo
+        const complaintDateStr = new Date(complaint.created_at).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+        const complaintDate = new Date(complaintDateStr);
         
         if (!startDate && !endDate) {
-          // Default to today's complaints
+          // Default to today's complaints in São Paulo timezone
           matchesDateFilter = complaintDate >= today.start && complaintDate <= today.end;
         } else if (dateRange) {
           // Use selected date range
