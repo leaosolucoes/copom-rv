@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ComplaintsMap } from './ComplaintsMap';
 import { CriticalAreasAnalysis } from './CriticalAreasAnalysis';
 import { TemporalFilters } from './TemporalFilters';
+import { PredictiveDashboard } from './PredictiveDashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { MapPin, RefreshCw, TrendingUp, AlertCircle, CheckCircle, Archive, ArrowUpDown } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -289,6 +290,9 @@ export const ComplaintsMapDashboard = () => {
         </CardContent>
       </Card>
 
+      {/* Dashboard Preditivo */}
+      <PredictiveDashboard complaints={complaints} />
+
       {/* Informações adicionais */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <CriticalAreasAnalysis 
@@ -342,6 +346,17 @@ export const ComplaintsMapDashboard = () => {
             </p>
             <p>
               • Identifique tendências e padrões ao longo do tempo
+            </p>
+            
+            <p className="font-semibold text-foreground pt-2">Dashboard Preditivo:</p>
+            <p>
+              • Previsões baseadas em análise de regressão linear dos dados históricos
+            </p>
+            <p>
+              • Projeções para as próximas 4 semanas por região
+            </p>
+            <p>
+              • Indicadores de tendência e confiança das estimativas
             </p>
             
             <p className="pt-2">
