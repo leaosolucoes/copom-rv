@@ -963,12 +963,23 @@ export const ComplaintsList = () => {
       
       toast({
         title: "Sucesso",
-        description: `Denúncia ${status === 'cadastrada' ? 'cadastrada com RAI' : 'atualizada'} com sucesso! Verifique na aba Histórico.`,
+        description: `Denúncia ${status === 'cadastrada' ? 'cadastrada com RAI' : 'atualizada'} com sucesso!`,
       });
       
-      // Limpar dados do formulário
+      // Limpar dados do formulário RAI
       setRaiData({ rai: '', classification: '' });
-      setSelectedComplaint(null);
+      
+      // Atualizar o selectedComplaint com os novos dados sem fechar o modal
+      if (updatedComplaint) {
+        setSelectedComplaint(prev => prev ? {
+          ...prev,
+          status: updatedComplaint.status,
+          system_identifier: updatedComplaint.system_identifier,
+          attendant_id: updatedComplaint.attendant_id,
+          processed_at: updateData.processed_at,
+          classification: updateData.classification
+        } : null);
+      }
       
       // Forçar atualização da lista múltiplas vezes para garantir
       console.log('Forçando atualização da lista...');
