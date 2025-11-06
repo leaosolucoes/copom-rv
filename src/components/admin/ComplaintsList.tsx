@@ -347,12 +347,27 @@ export const ComplaintsList = () => {
           schema: 'public',
           table: 'complaints'
         },
-        (payload) => {
-          // REMOVIDO: Log de denúncia atualizada por segurança
+        async (payload) => {
+          // IMPORTANTE: O realtime não envia campos JSONB completos (photos, videos, user_location)
+          // Por isso, precisamos recarregar a denúncia completa do banco
           
-          const updatedComplaint = payload.new as Complaint;
+          const complaintId = payload.new.id;
           
-          // Atualizar a denúncia na lista
+          // Recarregar denúncia completa com todos os campos
+          const { data: fullComplaint, error } = await supabase
+            .from('complaints')
+            .select('*')
+            .eq('id', complaintId)
+            .single();
+          
+          if (error) {
+            console.error('Erro ao recarregar denúncia atualizada:', error);
+            return;
+          }
+          
+          const updatedComplaint = fullComplaint as Complaint;
+          
+          // Atualizar a denúncia na lista COM TODOS OS DADOS
           setComplaints(prevComplaints => 
             prevComplaints.map(complaint => 
               complaint.id === updatedComplaint.id ? updatedComplaint : complaint
@@ -364,6 +379,15 @@ export const ComplaintsList = () => {
               return true;
             })
           );
+          
+          // Se esta denúncia está sendo visualizada, atualizar o modal também
+          setSelectedComplaint(prev => {
+            if (prev && prev.id === updatedComplaint.id) {
+              console.log('📋 Atualizando modal com dados completos da denúncia:', updatedComplaint);
+              return updatedComplaint;
+            }
+            return prev;
+          });
           
           // Mostrar toast para atualizações importantes
           if (payload.old && payload.new && payload.old.status !== payload.new.status) {
@@ -964,7 +988,11 @@ export const ComplaintsList = () => {
       // Limpar dados do formulário RAI
       setRaiData({ rai: '', classification: '' });
       
-      // IMPORTANTE: Recarregar os dados COMPLETOS da denúncia incluindo TODAS as informações
+      // PRIMEIRO: Forçar atualização da lista em background
+      console.log('Forçando atualização da lista em background...');
+      fetchComplaints(); // Não await - deixa rodar em background
+      
+      // SEGUNDO: Recarregar os dados COMPLETOS da denúncia incluindo TODAS as informações
       const { data: fullComplaintData, error: fetchError } = await supabase
         .from('complaints')
         .select('*')
@@ -975,35 +1003,27 @@ export const ComplaintsList = () => {
         console.log('✅ Denúncia recarregada com TODOS os dados:', fullComplaintData);
         console.log('📍 user_location:', fullComplaintData.user_location);
         console.log('🖥️ user_agent:', fullComplaintData.user_agent);
+        console.log('💻 user_device_type:', fullComplaintData.user_device_type);
+        console.log('🌐 user_browser:', fullComplaintData.user_browser);
+        console.log('🌍 user_ip:', fullComplaintData.user_ip);
         console.log('📷 photos:', fullComplaintData.photos);
         console.log('🎥 videos:', fullComplaintData.videos);
+        
+        // Setar o selectedComplaint com os dados completos
         setSelectedComplaint(fullComplaintData as Complaint);
+        
+        toast({
+          title: "Sucesso",
+          description: `Denúncia ${status === 'cadastrada' ? 'cadastrada com RAI' : 'atualizada'} com sucesso!`,
+        });
       } else {
         console.error('❌ Erro ao recarregar denúncia:', fetchError);
-        // Se falhar, manter os dados atuais e apenas atualizar o status
-        setSelectedComplaint(prev => prev ? {
-          ...prev,
-          status: status as any,
-          system_identifier: systemIdentifier,
-          classification: updateData.classification,
-          processed_at: updateData.processed_at
-        } : null);
+        toast({
+          title: "Erro",
+          description: "Erro ao recarregar dados da denúncia",
+          variant: "destructive",
+        });
       }
-      
-      toast({
-        title: "Sucesso",
-        description: `Denúncia ${status === 'cadastrada' ? 'cadastrada com RAI' : 'atualizada'} com sucesso!`,
-      });
-      
-      // Forçar atualização da lista múltiplas vezes para garantir
-      console.log('Forçando atualização da lista...');
-      await fetchComplaints();
-      
-      // Aguardar um pouco e atualizar novamente para garantir
-      setTimeout(async () => {
-        console.log('Segunda atualização da lista...');
-        await fetchComplaints();
-      }, 1000);
       
       console.log('=== FIM DA ATUALIZAÇÃO ===');
     } catch (error: any) {
