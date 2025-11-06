@@ -1,15 +1,12 @@
-import { Header } from "@/components/layout/Header";
-import { PublicComplaintForm } from "@/components/complaints/PublicComplaintForm";
-
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Header showLoginButton={false} logoUrl="" />
-      <main className="py-8">
-        <div className="container mx-auto">
-          <PublicComplaintForm />
-        </div>
-      </main>
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      <h1>Sistema VINNAX - 2º BPM</h1>
+      <p>Sistema de Denúncias - Rio Verde/GO</p>
+      <div style={{ marginTop: '20px', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
+        <h2>Página Inicial</h2>
+        <p>O sistema está funcionando corretamente.</p>
+      </div>
     </div>
   );
 };
