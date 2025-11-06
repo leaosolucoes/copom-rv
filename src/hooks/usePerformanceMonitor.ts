@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from './useSupabaseAuth';
 
@@ -15,25 +15,64 @@ interface PerformanceMetric {
 
 export const usePerformanceMonitor = () => {
   const { user } = useSupabaseAuth();
+  const [enabled, setEnabled] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
 
-  // Função para registrar métrica
+  // Aguardar inicialização completa antes de começar a monitorar
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('🔧 Performance Monitor inicializado');
+      setIsInitialized(true);
+    }, 3000); // 3 segundos de delay para garantir que a app carregou
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Função para registrar métrica com proteções robustas
   const logMetric = useCallback(async (metric: PerformanceMetric) => {
+    // Não fazer nada se desabilitado ou não inicializado
+    if (!enabled || !isInitialized) {
+      return;
+    }
+    
+    // Não tentar inserir se não houver usuário (exceto page_load que pode ser anônimo)
+    if (!user && metric.metric_type !== 'page_load') {
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('performance_metrics')
         .insert({
           ...metric,
-          user_id: user?.id,
+          user_id: user?.id || null,
           timestamp: new Date().toISOString(),
         });
 
       if (error) {
-        console.error('Erro ao registrar métrica:', error);
+        console.warn('⚠️ Erro ao registrar métrica (não crítico):', error.message);
+        setErrorCount(prev => prev + 1);
+        
+        // Desabilitar após 3 erros consecutivos para não impactar a aplicação
+        if (errorCount >= 2) {
+          console.warn('🚫 Performance Monitor desabilitado após múltiplos erros');
+          setEnabled(false);
+        }
+      } else {
+        // Resetar contador de erros em caso de sucesso
+        setErrorCount(0);
       }
     } catch (error) {
-      console.error('Erro ao registrar métrica:', error);
+      console.warn('⚠️ Erro ao registrar métrica (não crítico):', error);
+      setErrorCount(prev => prev + 1);
+      
+      if (errorCount >= 2) {
+        console.warn('🚫 Performance Monitor desabilitado após múltiplos erros');
+        setEnabled(false);
+      }
     }
-  }, [user]);
+  }, [user, enabled, isInitialized, errorCount]);
 
   // Monitorar carregamento da página
   useEffect(() => {

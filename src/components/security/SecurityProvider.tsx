@@ -55,7 +55,7 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
     // 4. Rate limiting moderado
     const setupRateLimit = () => {
       const requests = new Map();
-      const GLOBAL_LIMIT = 500; // Máximo 500 requests por minuto
+      const GLOBAL_LIMIT = 1000; // Máximo 1000 requests por minuto (aumentado para produção)
       
       window.addEventListener('beforeunload', () => {
         requests.clear();
@@ -96,7 +96,7 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
     };
 
 
-    // EXECUTAR PROTEÇÕES SIMPLIFICADAS
+    // EXECUTAR PROTEÇÕES SIMPLIFICADAS COM MODO SEGURO
     try {
       addBasicSecurityHeaders();
       enforceHTTPS();
@@ -106,8 +106,10 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
       
       logger.info('🛡️ Proteções básicas de segurança ativadas');
     } catch (error) {
-      logger.error('Erro ao ativar proteções:', error);
-      // Não bloquear a aplicação em caso de erro
+      // MODO SEGURO: Em caso de erro, apenas logar e permitir que a aplicação continue
+      console.error('⚠️ Erro ao ativar proteções de segurança:', error);
+      logger.error('Erro ao ativar proteções (modo seguro ativado):', error);
+      // Aplicação continua funcionando normalmente sem as proteções
     }
   }, []);
 

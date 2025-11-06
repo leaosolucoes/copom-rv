@@ -37,8 +37,8 @@ const App = () => {
   // Proteções ativadas para produção
   useDevToolsProtection();
   
-  // Monitoramento de performance
-  usePerformanceMonitor();
+  // Performance monitoring DESABILITADO temporariamente para evitar crash em produção
+  // usePerformanceMonitor();
   
   useEffect(() => {
     console.log('✅ App montado com sucesso');
