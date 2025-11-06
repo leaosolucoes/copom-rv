@@ -17,15 +17,23 @@ import {
   Database,
   Loader2,
   Info,
-  ArrowLeft
+  ArrowLeft,
+  TrendingUp
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface DiagnosticTest {
   name: string;
   status: 'pending' | 'running' | 'success' | 'warning' | 'error';
   message: string;
   details?: string;
+}
+
+interface SpeedDataPoint {
+  timestamp: string;
+  supabase?: number;
+  mapbox?: number;
 }
 
 export default function SystemDiagnostics() {
@@ -41,6 +49,7 @@ export default function SystemDiagnostics() {
     { name: 'Permissões de Geolocalização', status: 'pending', message: '' },
   ]);
   const [running, setRunning] = useState(false);
+  const [speedHistory, setSpeedHistory] = useState<SpeedDataPoint[]>([]);
 
   const updateTest = (name: string, updates: Partial<DiagnosticTest>) => {
     setTests(prev => prev.map(test => 
@@ -235,6 +244,10 @@ export default function SystemDiagnostics() {
         message,
         details
       });
+
+      // Adicionar ao histórico
+      const timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setSpeedHistory(prev => [...prev.slice(-19), { timestamp, supabase: avgLatency }]);
     } catch (error) {
       updateTest('Velocidade Supabase', {
         status: 'error',
@@ -397,6 +410,16 @@ export default function SystemDiagnostics() {
         status,
         message,
         details
+      });
+
+      // Adicionar ao histórico
+      const timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setSpeedHistory(prev => {
+        const existing = prev.find(p => p.timestamp === timestamp);
+        if (existing) {
+          return prev.map(p => p.timestamp === timestamp ? { ...p, mapbox: avgLatency } : p);
+        }
+        return [...prev.slice(-19), { timestamp, mapbox: avgLatency }];
       });
     } catch (error) {
       updateTest('Velocidade Mapbox', {
@@ -634,6 +657,77 @@ export default function SystemDiagnostics() {
             ))}
           </CardContent>
         </Card>
+
+        {/* Gráfico de Histórico de Velocidade */}
+        {speedHistory.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Histórico de Velocidade
+              </CardTitle>
+              <CardDescription>
+                Evolução da latência ao longo do tempo (últimas 20 medições)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={speedHistory}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="timestamp" 
+                    className="text-xs"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <YAxis 
+                    className="text-xs"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    label={{ value: 'Latência (ms)', angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))' } }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number) => `${value.toFixed(2)}ms`}
+                  />
+                  <Legend 
+                    wrapperStyle={{ color: 'hsl(var(--foreground))' }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="supabase" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    name="Supabase"
+                    dot={{ fill: 'hsl(var(--primary))' }}
+                    connectNulls
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="mapbox" 
+                    stroke="hsl(var(--chart-2))" 
+                    strokeWidth={2}
+                    name="Mapbox"
+                    dot={{ fill: 'hsl(var(--chart-2))' }}
+                    connectNulls
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+              <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-primary" />
+                  <span className="text-muted-foreground">Supabase (BD)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--chart-2))' }} />
+                  <span className="text-muted-foreground">Mapbox (Mapas)</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Recomendações */}
         {allTestsComplete && (hasErrors || hasWarnings) && (
