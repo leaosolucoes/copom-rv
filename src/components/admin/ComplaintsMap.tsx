@@ -105,48 +105,51 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
       map.current = null;
     }
 
-    try {
-      setMapInitializing(true);
-      mapboxgl.accessToken = mapboxToken;
+    // Adicionar um pequeno delay para garantir que o container está pronto
+    const initMap = setTimeout(() => {
+      try {
+        setMapInitializing(true);
+        mapboxgl.accessToken = mapboxToken;
 
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: `mapbox://styles/mapbox/${mapStyle}`,
-        center: [-47.9292, -15.7801],
-        zoom: 4,
-      });
-      
-      console.log('✅ Mapa inicializado');
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current!,
+          style: `mapbox://styles/mapbox/${mapStyle}`,
+          center: [-47.9292, -15.7801],
+          zoom: 4,
+          preserveDrawingBuffer: true,
+          antialias: true,
+        });
 
-      map.current.addControl(
-        new mapboxgl.NavigationControl({
-          visualizePitch: true,
-        }),
-        'top-right'
-      );
+        map.current.addControl(
+          new mapboxgl.NavigationControl({
+            visualizePitch: true,
+          }),
+          'top-right'
+        );
 
-      map.current.addControl(
-        new mapboxgl.FullscreenControl(),
-        'top-right'
-      );
+        map.current.addControl(
+          new mapboxgl.FullscreenControl(),
+          'top-right'
+        );
 
-      map.current.on('load', () => {
-        setMapLoaded(true);
+        map.current.on('load', () => {
+          setMapLoaded(true);
+          setMapInitializing(false);
+        });
+
+        map.current.on('error', (e) => {
+          console.error('❌ Erro no mapa:', e);
+          setMapInitializing(false);
+        });
+
+      } catch (error) {
+        console.error('❌ ERRO ao inicializar mapa:', error);
         setMapInitializing(false);
-        console.log('✅ Mapa carregado');
-      });
-
-      map.current.on('error', (e) => {
-        console.error('❌ Erro no mapa:', e);
-        setMapInitializing(false);
-      });
-
-    } catch (error) {
-      console.error('❌ ERRO ao inicializar mapa:', error);
-      setMapInitializing(false);
-    }
+      }
+    }, 100);
 
     return () => {
+      clearTimeout(initMap);
       if (map.current) {
         map.current.remove();
         map.current = null;
