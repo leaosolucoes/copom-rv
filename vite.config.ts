@@ -21,22 +21,9 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     sourcemap: false,
-    minify: 'terser',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-select'],
-        },
-      },
-    },
+    minify: 'esbuild',
   },
   define: {
-    // Proteção - Remove informações sensíveis em produção
-    __DEV__: mode === 'development',
     'process.env.NODE_ENV': JSON.stringify(mode),
-    'process.env.DEBUG': JSON.stringify(mode === 'development'),
-    'globalThis.__DEV__': mode === 'development',
   },
 }));
