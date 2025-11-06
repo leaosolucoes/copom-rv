@@ -29,7 +29,7 @@ import { AnomalyAlertConfig } from '@/components/admin/AnomalyAlertConfig';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, BarChart3, Clock, Map } from 'lucide-react';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, BarChart3, Clock, Map, Activity } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -393,6 +393,39 @@ const SuperAdminDashboard = () => {
               <MapboxTokenConfig />
               
               <AnomalyAlertConfig />
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Diagnóstico do Sistema
+                  </CardTitle>
+                  <CardDescription>
+                    Verifique a integridade e funcionamento de todos os componentes do sistema
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="bg-muted/50 border border-muted rounded-lg p-4 space-y-2">
+                    <h4 className="font-semibold text-sm">ℹ️ O que será verificado:</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• Informações do navegador e compatibilidade</li>
+                      <li>• Suporte a WebGL (necessário para mapas)</li>
+                      <li>• Content Security Policy (CSP)</li>
+                      <li>• Conectividade com Supabase</li>
+                      <li>• Conectividade com Mapbox (se configurado)</li>
+                      <li>• Permissões de geolocalização</li>
+                    </ul>
+                  </div>
+
+                  <Button 
+                    onClick={() => navigate('/diagnostico')}
+                    className="w-full"
+                  >
+                    <Activity className="h-4 w-4 mr-2" />
+                    Executar Diagnóstico Completo
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
