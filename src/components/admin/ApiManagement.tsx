@@ -79,6 +79,7 @@ export function ApiManagement() {
   const [testingTokenId, setTestingTokenId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<any>(null);
   const [showTestDialog, setShowTestDialog] = useState(false);
+  const [tokenToTest, setTokenToTest] = useState<string>('');
   const { toast } = useToast();
 
   const availableScopes = [
@@ -351,21 +352,24 @@ export function ApiManagement() {
 
   const testToken = async (tokenId: string) => {
     setTestingTokenId(tokenId);
+    setTokenToTest('');
+    setShowTestDialog(true);
+  };
+
+  const executeTokenTest = async () => {
+    if (!tokenToTest.trim()) {
+      toast({
+        title: "Erro",
+        description: "Cole o token que você deseja testar",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setTestResult(null);
     
     try {
-      // Buscar o token original (não o hash)
-      const token = tokens.find(t => t.id === tokenId);
-      if (!token) {
-        toast({
-          title: "Erro",
-          description: "Token não encontrado",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      logger.info('🧪 Testando token:', tokenId);
+      logger.info('🧪 Testando token...');
       
       const startTime = Date.now();
       
@@ -375,7 +379,7 @@ export function ApiManagement() {
         {
           method: 'GET',
           headers: {
-            'x-api-token': token.token,
+            'x-api-token': tokenToTest.trim(),
             'Content-Type': 'application/json'
           }
         }
@@ -401,7 +405,6 @@ export function ApiManagement() {
       };
       
       setTestResult(result);
-      setShowTestDialog(true);
       
       if (response.ok) {
         toast({
@@ -423,7 +426,6 @@ export function ApiManagement() {
         error: error.message,
         details: error.toString()
       });
-      setShowTestDialog(true);
       toast({
         title: "Erro ao testar token",
         description: error.message,
@@ -717,26 +719,76 @@ export function ApiManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de Resultado do Teste */}
+      {/* Dialog de Teste de Token */}
       <Dialog open={showTestDialog} onOpenChange={setShowTestDialog}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {testResult?.success ? (
-                <>
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  Teste Bem-Sucedido
-                </>
+              {testResult ? (
+                testResult.success ? (
+                  <>
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    Teste Bem-Sucedido
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-5 w-5 text-red-500" />
+                    Teste Falhou
+                  </>
+                )
               ) : (
                 <>
-                  <AlertCircle className="h-5 w-5 text-red-500" />
-                  Teste Falhou
+                  <PlayCircle className="h-5 w-5" />
+                  Testar Token da API
                 </>
               )}
             </DialogTitle>
           </DialogHeader>
           
-          {testResult && (
+          {!testResult ? (
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800 mb-2">
+                  ℹ️ Por segurança, o token original não é armazenado no sistema (apenas seu hash).
+                </p>
+                <p className="text-sm text-blue-700">
+                  Cole abaixo o token completo que você salvou quando o gerou para testá-lo.
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="token-test">Token da API</Label>
+                <Input
+                  id="token-test"
+                  type="text"
+                  placeholder="Cole seu token aqui (ex: tok_xxxxxxxxxxxxx)"
+                  value={tokenToTest}
+                  onChange={(e) => setTokenToTest(e.target.value)}
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowTestDialog(false);
+                    setTokenToTest('');
+                    setTestingTokenId(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={executeTokenTest}
+                  disabled={!tokenToTest.trim()}
+                >
+                  <PlayCircle className="h-4 w-4 mr-2" />
+                  Testar Token
+                </Button>
+              </div>
+            </div>
+          ) : (
             <div className="space-y-4">
               {/* Status e Tempo de Resposta */}
               <div className="grid grid-cols-2 gap-4">
@@ -815,6 +867,28 @@ export function ApiManagement() {
                   </div>
                 </div>
               )}
+
+              <div className="flex gap-2 justify-end mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowTestDialog(false);
+                    setTestResult(null);
+                    setTokenToTest('');
+                    setTestingTokenId(null);
+                  }}
+                >
+                  Fechar
+                </Button>
+                <Button
+                  onClick={() => {
+                    setTestResult(null);
+                    setTokenToTest('');
+                  }}
+                >
+                  Testar Outro Token
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
