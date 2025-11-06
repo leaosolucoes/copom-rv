@@ -8,12 +8,12 @@ const corsHeaders = {
 interface ComplaintData {
   complainant_name: string
   complainant_phone: string
-  complainant_type: string
-  complainant_address: string
+  complainant_type?: string
+  complainant_address?: string
   complainant_number?: string
   complainant_block?: string
   complainant_lot?: string
-  complainant_neighborhood: string
+  complainant_neighborhood?: string
   occurrence_type: string
   occurrence_address: string
   occurrence_number?: string
@@ -24,7 +24,7 @@ interface ComplaintData {
   description: string
   occurrence_date?: string
   occurrence_time?: string
-  classification: string
+  classification?: string
   photos?: string[]
   videos?: string[]
   user_location?: any
