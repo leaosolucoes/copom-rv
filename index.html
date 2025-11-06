@@ -61,7 +61,19 @@
 </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Fallback enquanto carrega -->
+      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f5f5f5; font-family: Arial, sans-serif;">
+        <div style="text-align: center; padding: 40px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 600px;">
+          <h1 style="color: #2d5016; margin-bottom: 20px;">🚨 Sistema VINNAX - 2º BPM</h1>
+          <p style="color: #666; font-size: 18px; margin-bottom: 30px;">Sistema de Denúncias - Rio Verde/GO</p>
+          <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="color: #2d5016; margin: 0;">⏳ Carregando sistema...</p>
+          </div>
+          <p style="color: #999; font-size: 14px;">Se esta mensagem não desaparecer em 5 segundos, <a href="/diagnostico.html" style="color: #2d5016;">clique aqui para diagnóstico</a></p>
+        </div>
+      </div>
+    </div>
     <noscript>
       <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
         <h1>JavaScript Required</h1>
