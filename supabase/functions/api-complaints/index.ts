@@ -198,33 +198,55 @@ async function validateApiToken(req: Request, supabase: any): Promise<{ valid: t
     }
   }
 
-  const { data: tokenData, error } = await supabase
-    .rpc('validate_api_token', { token_string: apiToken })
+  // Gerar hash do token usando o mesmo método da api-auth
+  console.log('Gerando hash do token...')
+  const encoder = new TextEncoder()
+  const tokenData = encoder.encode(apiToken)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', tokenData)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const tokenHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  console.log('Hash gerado:', tokenHash.substring(0, 20) + '...')
 
-  if (error || !tokenData || tokenData.length === 0) {
+  // Buscar token pelo hash diretamente na tabela
+  const { data: tokens, error } = await supabase
+    .from('api_tokens')
+    .select('id, active, permissions')
+    .eq('token', tokenHash)
+    .limit(1)
+
+  console.log('Resultado da busca:', { found: !!tokens?.length, error: error?.message })
+
+  if (error || !tokens || tokens.length === 0) {
+    console.log('Token não encontrado ou erro na busca')
     return {
       valid: false,
       response: new Response(
-        JSON.stringify({ error: 'Token da API inválido ou expirado' }),
+        JSON.stringify({ error: 'Token da API inválido ou expirado', details: error?.message }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
   }
 
-  const token = tokenData[0]
-  if (!token.is_valid) {
+  const token = tokens[0]
+  if (!token.active) {
+    console.log('Token inativo')
     return {
       valid: false,
       response: new Response(
-        JSON.stringify({ error: 'Token da API inválido ou expirado' }),
+        JSON.stringify({ error: 'Token da API inativo' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
   }
 
+  console.log('Token válido e ativo!')
   return {
     valid: true,
-    tokenData: token
+    tokenData: {
+      token_id: token.id,
+      is_valid: token.active,
+      scopes: token.permissions || []
+    }
   }
 }
 
