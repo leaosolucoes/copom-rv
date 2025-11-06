@@ -49,11 +49,11 @@ export const ComplaintsMapDashboard = () => {
     try {
       setLoading(true);
       
-      // Query principal
+      // Query principal - buscar todas as denúncias ativas (exceto excluídas/deletadas)
       let query = supabase
         .from('complaints')
         .select('id, protocol_number, complainant_name, occurrence_type, status, user_location, created_at, attendant_id')
-        .not('status', 'eq', 'arquivada')
+        .eq('deleted', false)
         .order('created_at', { ascending: false });
 
       // Aplicar filtro de data se existir
@@ -82,7 +82,7 @@ export const ComplaintsMapDashboard = () => {
         let comparisonQuery = supabase
           .from('complaints')
           .select('id, protocol_number, complainant_name, occurrence_type, status, user_location, created_at, attendant_id')
-          .not('status', 'eq', 'arquivada')
+          .eq('deleted', false)
           .gte('created_at', comparisonRange.from.toISOString())
           .lte('created_at', comparisonRange.to.toISOString())
           .order('created_at', { ascending: false });
