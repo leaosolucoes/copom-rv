@@ -116,7 +116,7 @@ _Este é um teste - sistema funcionando corretamente!_`
       .replace(/\{occurrence_date\}/g, new Date().toLocaleDateString('pt-BR'))
       .replace(/\{occurrence_time\}/g, new Date().toLocaleTimeString('pt-BR'))
       .replace(/\{occurrence_type\}/g, 'Teste de Integração WhatsApp')
-      .replace(/\{narrative\}/g, 'Esta é uma mensagem de teste do sistema de posturas de Rio Verde para verificar a integração com WhatsApp.')
+      .replace(/\{description\}/g, 'Esta é uma mensagem de teste do sistema de posturas de Rio Verde para verificar a integração com WhatsApp.')
 
     console.log('📝 Mensagem de teste preparada (100 primeiros chars):', testMessage.substring(0, 100))
 

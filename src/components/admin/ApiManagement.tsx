@@ -1358,7 +1358,7 @@ X-RateLimit-Reset: 1640995200`}
     "occurrence_type": "poluicao_sonora",
     "occurrence_address": "Rua do Barulho, 456",
     "occurrence_neighborhood": "Vila Nova",
-    "narrative": "Som muito alto durante a madrugada",
+    "description": "Som muito alto durante a madrugada",
     "classification": "urgente"
   }'`}
                     </pre>

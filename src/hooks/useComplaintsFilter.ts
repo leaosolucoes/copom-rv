@@ -24,7 +24,7 @@ interface Complaint {
   occurrence_reference?: string;
   
   // Dados da reclamação
-  narrative: string;
+  description: string;
   occurrence_date?: string;
   occurrence_time?: string;
   classification: string;

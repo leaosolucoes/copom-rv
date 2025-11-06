@@ -153,7 +153,7 @@ interface Complaint {
   occurrence_reference?: string;
   
   // Dados da reclamação
-  narrative: string;
+  description: string;
   occurrence_date?: string;
   occurrence_time?: string;
   classification: string;
@@ -1747,11 +1747,11 @@ export const ComplaintsList = () => {
 
                                    <div className="space-y-4">
                                      <h3 className="text-lg font-semibold">Dados da Reclamação</h3>
-                                     
-                                      <div>
-                                        <strong>Narrativa:</strong>
-                                        <p className="mt-2 p-3 bg-gray-50 rounded-md">{selectedComplaint.narrative}</p>
-                                      </div>
+                                      
+                                       <div>
+                                         <strong>Descrição:</strong>
+                                         <p className="mt-2 p-3 bg-gray-50 rounded-md">{selectedComplaint.description}</p>
+                                       </div>
 
                                       {/* Seção de Mídias */}
                                       {(selectedComplaint.photos?.length || selectedComplaint.videos?.length) && (
@@ -2460,11 +2460,11 @@ export const ComplaintsList = () => {
 
                                <div className="space-y-4">
                                  <h3 className="text-lg font-semibold">Dados da Reclamação</h3>
-                                 
-                                 <div>
-                                   <strong>Narrativa:</strong>
-                                   <p className="mt-2 p-3 bg-gray-50 rounded-md">{selectedComplaint.narrative}</p>
-                                 </div>
+                                  
+                                  <div>
+                                    <strong>Descrição:</strong>
+                                    <p className="mt-2 p-3 bg-gray-50 rounded-md">{selectedComplaint.description}</p>
+                                  </div>
                                  
                                  <div className="grid grid-cols-2 gap-4">
                                    <div>

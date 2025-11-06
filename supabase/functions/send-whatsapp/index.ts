@@ -139,7 +139,7 @@ serve(async (req) => {
       '{occurrence_time}': complaint.occurrence_time || 'Não informado',
       '{classification}': complaint.classification || 'Não informado',
       '{assigned_to}': complaint.assigned_to || 'Não atribuído',
-      '{narrative}': complaint.narrative || ''
+      '{description}': complaint.description || ''
     }
 
     for (const [key, value] of Object.entries(replacements)) {

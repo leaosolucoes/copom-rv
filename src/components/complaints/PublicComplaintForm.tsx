@@ -30,7 +30,7 @@ interface FormData {
   occurrence_reference: string;
   
   // Dados da reclamação
-  narrative: string;
+  description: string;
   occurrence_date: string;
   occurrence_time: string;
   classification: string;
@@ -94,7 +94,7 @@ export const PublicComplaintForm = () => {
     occurrence_lot: "",
     occurrence_neighborhood: "",
     occurrence_reference: "",
-    narrative: "",
+    description: "",
     occurrence_date: "",
     occurrence_time: "",
     classification: "",
@@ -687,7 +687,7 @@ export const PublicComplaintForm = () => {
         occurrence_lot: formData.occurrence_lot?.trim() || null,
         occurrence_neighborhood: formData.occurrence_neighborhood,
         occurrence_reference: formData.occurrence_reference?.trim() || null,
-        narrative: formData.narrative.trim(),
+        description: formData.description.trim(),
         occurrence_date: formData.occurrence_date || null,
         occurrence_time: formData.occurrence_time || null,
         classification: formData.classification,
@@ -742,7 +742,7 @@ export const PublicComplaintForm = () => {
         occurrence_lot: "",
         occurrence_neighborhood: "",
         occurrence_reference: "",
-        narrative: "",
+        description: "",
         occurrence_date: "",
         occurrence_time: "",
         classification: "",

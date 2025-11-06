@@ -104,8 +104,8 @@ export const WhatsAppConfig = () => {
 👤 *ATRIBUÍDO PARA:*
 {assigned_to}
 
-📝 *NARRATIVA COMPLETA:*
-{narrative}
+📝 *DESCRIÇÃO COMPLETA:*
+{description}
 
 🏛️ *Secretaria Municipal de Posturas*
 _Acesse o sistema para mais detalhes e acompanhamento._`,
@@ -443,7 +443,7 @@ _Acesse o sistema para acompanhamento._`
               placeholder="Digite o template da mensagem..."
             />
             <p className="text-sm text-gray-500 mt-1">
-              Variáveis disponíveis: {'{complainant_name}'}, {'{complainant_phone}'}, {'{complainant_type}'}, {'{complainant_address}'}, {'{complainant_number}'}, {'{complainant_block}'}, {'{complainant_lot}'}, {'{complainant_neighborhood}'}, {'{occurrence_type}'}, {'{occurrence_address}'}, {'{occurrence_number}'}, {'{occurrence_block}'}, {'{occurrence_lot}'}, {'{occurrence_neighborhood}'}, {'{occurrence_reference}'}, {'{occurrence_date}'}, {'{occurrence_time}'}, {'{classification}'}, {'{assigned_to}'}, {'{narrative}'}
+              Variáveis disponíveis: {'{complainant_name}'}, {'{complainant_phone}'}, {'{complainant_type}'}, {'{complainant_address}'}, {'{complainant_number}'}, {'{complainant_block}'}, {'{complainant_lot}'}, {'{complainant_neighborhood}'}, {'{occurrence_type}'}, {'{occurrence_address}'}, {'{occurrence_number}'}, {'{occurrence_block}'}, {'{occurrence_lot}'}, {'{occurrence_neighborhood}'}, {'{occurrence_reference}'}, {'{occurrence_date}'}, {'{occurrence_time}'}, {'{classification}'}, {'{assigned_to}'}, {'{description}'}
             </p>
           </div>
         </CardContent>

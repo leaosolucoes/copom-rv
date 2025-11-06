@@ -21,7 +21,7 @@ interface ComplaintData {
   occurrence_lot?: string
   occurrence_neighborhood: string
   occurrence_reference?: string
-  narrative: string
+  description: string
   occurrence_date?: string
   occurrence_time?: string
   classification: string

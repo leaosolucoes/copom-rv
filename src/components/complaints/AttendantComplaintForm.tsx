@@ -342,7 +342,7 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
       occurrence_reference: 'Ponto de Referência',
       occurrence_date: 'Data da Ocorrência',
       occurrence_time: 'Horário da Ocorrência',
-      narrative: 'Relato da Ocorrência',
+      description: 'Relato da Ocorrência',
       classification: 'Classificação',
     };
     

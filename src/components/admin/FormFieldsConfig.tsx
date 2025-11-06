@@ -66,7 +66,7 @@ export const FormFieldsConfig = () => {
             required: true, visible: true, order_index: 1, section: 'occurrence' 
           },
           { 
-            id: '3', name: 'narrative', label: 'Narrativa da Denúncia', 
+            id: '3', name: 'description', label: 'Descrição da Denúncia', 
             type: 'textarea', required: true, visible: true, order_index: 1, section: 'complaint' 
           }
         ];
@@ -209,7 +209,7 @@ export const FormFieldsConfig = () => {
         
         // DADOS DA DENÚNCIA
         { 
-          id: '18', name: 'narrative', label: 'Narrativa da Denúncia', 
+          id: '18', name: 'description', label: 'Descrição da Denúncia', 
           type: 'textarea', required: true, visible: true, order_index: 1, section: 'complaint' 
         },
         { 
