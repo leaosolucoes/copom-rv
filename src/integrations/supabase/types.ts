@@ -573,15 +573,26 @@ export type Database = {
           user_id: string
         }[]
       }
-      create_user_secure: {
-        Args: {
-          p_email: string
-          p_full_name: string
-          p_password: string
-          p_role?: string
-        }
-        Returns: Json
-      }
+      create_user_secure:
+        | {
+            Args: {
+              p_email: string
+              p_full_name: string
+              p_password: string
+              p_role?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_email: string
+              p_full_name: string
+              p_is_active?: boolean
+              p_password: string
+              p_role?: string
+            }
+            Returns: Json
+          }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
