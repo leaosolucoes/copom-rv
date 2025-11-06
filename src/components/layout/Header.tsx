@@ -1,6 +1,5 @@
 import { Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo2bpm from "@/assets/logo-2bpm.png";
 
 interface HeaderProps {
   showLoginButton?: boolean;
@@ -8,13 +7,16 @@ interface HeaderProps {
 }
 
 export const Header = ({ showLoginButton = true, logoUrl }: HeaderProps) => {
+  // Usar logo do index.html ao invés de importar
+  const defaultLogo = "https://storage.googleapis.com/gpt-engineer-file-uploads/4uXswqzJLiaTm5vJMhIP1odvtru2/uploads/1762222738013-2º BPM RIO VERDE (1).png";
+  
   return (
     <header className="bg-gradient-header shadow-header border-b border-border">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-3">
-              <img src={logoUrl || logo2bpm} alt="Logo 2º BPM" className="h-24 w-auto" />
+              <img src={logoUrl || defaultLogo} alt="Logo 2º BPM" className="h-24 w-auto" />
               <div className="text-white">
                 <h1 className="text-xl font-bold">2º BPM - PMGO - COPOM - RIO VERDE</h1>
                 <p className="text-sm opacity-90">Sistema de Denúncias</p>

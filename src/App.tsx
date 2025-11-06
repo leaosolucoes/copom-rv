@@ -23,6 +23,8 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  console.log('🚀 App iniciando...');
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

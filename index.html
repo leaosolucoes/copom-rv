@@ -62,6 +62,30 @@
 
   <body>
     <div id="root"></div>
+    <noscript>
+      <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+        <h1>JavaScript Required</h1>
+        <p>Este aplicativo requer JavaScript para funcionar. Por favor, habilite JavaScript em seu navegador.</p>
+      </div>
+    </noscript>
+    <script>
+      // Verificação de inicialização
+      console.log('✅ HTML carregado');
+      console.log('✅ Root element:', document.getElementById('root'));
+      
+      // Detectar erros não capturados
+      window.addEventListener('error', function(e) {
+        console.error('❌ Erro global capturado:', e.error);
+        console.error('Mensagem:', e.message);
+        console.error('Linha:', e.lineno);
+        console.error('Coluna:', e.colno);
+      });
+      
+      // Detectar promises rejeitadas não tratadas
+      window.addEventListener('unhandledrejection', function(e) {
+        console.error('❌ Promise rejeitada não tratada:', e.reason);
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
     
   </body>

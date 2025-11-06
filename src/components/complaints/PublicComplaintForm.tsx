@@ -105,6 +105,15 @@ export const PublicComplaintForm = () => {
     setTimeout(() => {
       collectUserInfo();
     }, 100);
+    
+    // TIMEOUT DE SEGURANÇA: Garantir que após 10 segundos o loading acaba
+    // Isso previne tela branca em produção se houver erro de rede
+    const safetyTimeout = setTimeout(() => {
+      console.warn('⚠️ Timeout de segurança ativado - forçando fim do loading');
+      setIsLoading(false);
+    }, 10000);
+    
+    return () => clearTimeout(safetyTimeout);
   }, []);
 
   // Adicionar efeito para recarregar quando houver mudanças nos tipos
@@ -174,7 +183,12 @@ export const PublicComplaintForm = () => {
 
   const loadSystemSettings = async () => {
     try {
-      const { data, error } = await supabase
+      // Timeout de 5 segundos para não travar a página
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout ao carregar configurações')), 5000)
+      );
+      
+      const fetchPromise = supabase
         .from('system_settings')
         .select('key, value')
         .in('key', [
@@ -186,8 +200,11 @@ export const PublicComplaintForm = () => {
           'public_logo_url'
         ]);
 
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
       if (error) {
         console.error('Erro ao carregar configurações:', error);
+        setIsLoading(false);
         return;
       }
 
@@ -221,8 +238,12 @@ export const PublicComplaintForm = () => {
       setFieldConfig(fieldsConfig);
       setIsLoading(false); // Definir carregamento como concluído
     } catch (error) {
-      console.error('Erro ao processar configurações:', error);
-      setIsLoading(false); // Definir carregamento como concluído mesmo em caso de erro
+      console.error('❌ Erro ao processar configurações:', error);
+      // SEMPRE definir isLoading como false, mesmo em erro
+      setIsLoading(false);
+    } finally {
+      // Garantia extra: sempre desativar loading
+      setIsLoading(false);
     }
   };
 
