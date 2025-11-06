@@ -11,35 +11,12 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
     const isLovableEnv = location.hostname.includes('lovableproject.com') || location.hostname.includes('lovable.app');
     const isIframed = window.top !== window.self;
     
-    // 1. Headers de segurança ULTRA restritivos
-    const addMaxSecurityHeaders = () => {
-      // Content Security Policy MÁXIMO
-      const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-      if (!cspMeta) {
-        const meta = document.createElement('meta');
-        meta.httpEquiv = 'Content-Security-Policy';
-        const cspAllowedAncestors = (isLovableEnv && isIframed)
-          ? "frame-ancestors 'self' https://*.lovableproject.com https://*.lovable.app;"
-          : "frame-ancestors 'none';";
-        meta.content = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.gpteng.co https://*.lovableproject.com https://*.lovable.app; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.gpteng.co https://*.lovableproject.com https://*.lovable.app; object-src 'none'; base-uri 'self'; form-action 'self'; " + cspAllowedAncestors;
-        document.head.appendChild(meta);
-      }
-
-      // X-Frame-Options ULTRA restritivo
-      const frameMeta = document.querySelector('meta[http-equiv="X-Frame-Options"]');
-      if (!frameMeta && !(isLovableEnv && isIframed)) {
-        const meta = document.createElement('meta');
-        meta.httpEquiv = 'X-Frame-Options';
-        meta.content = 'DENY';
-        document.head.appendChild(meta);
-      }
-
-      // Outros headers de segurança
+    // 1. Headers de segurança básicos (CSP já definido no index.html)
+    const addBasicSecurityHeaders = () => {
+      // Apenas adicionar headers complementares, não sobrescrever CSP
       const headers = [
         ['X-Content-Type-Options', 'nosniff'],
-        ['X-XSS-Protection', '1; mode=block'],
         ['Referrer-Policy', 'no-referrer'],
-        ['Permissions-Policy', 'geolocation=(), microphone=(), camera=()'],
       ];
 
       headers.forEach(([name, content]) => {
@@ -64,40 +41,21 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
       }
     };
 
-    // 3. PROTEÇÃO CONTRA DEVTOOLS (apenas em produção)
-    const setupDevToolsProtection = () => {
+    // 3. Proteções básicas de devtools (não bloquear console para debugging)
+    const setupBasicDevToolsProtection = () => {
       if (process.env.NODE_ENV !== 'production') {
-        return; // Não bloquear em desenvolvimento
-      }
-      
-      // Disable todas as ferramentas de debug
-      (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
-      (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
-      
-      // Sobrescrever console methods apenas em produção
-      const blockConsole = () => {
-        ['log', 'debug', 'info', 'warn', 'error', 'trace', 'dir', 'dirxml', 'table', 'group', 'groupEnd', 'clear'].forEach(method => {
-          (console as any)[method] = () => {};
-        });
-      };
-      
-      blockConsole();
-      
-      // Mobile compatibility - disable aggressive anti-debug
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      if (isMobile) {
-        console.log('📱 Mobile detected - skipping aggressive security measures');
         return;
       }
       
-      // Console blocking disabled to prevent production issues
-      // This was causing JavaScript errors and breaking functionality
+      // Apenas desabilitar hooks de devtools, mas manter console ativo
+      (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
+      (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
     };
 
-    // 4. Rate limiting ULTRA restritivo
-    const setupUltraRateLimit = () => {
+    // 4. Rate limiting moderado
+    const setupRateLimit = () => {
       const requests = new Map();
-      const GLOBAL_LIMIT = 100; // Máximo 100 requests por minuto
+      const GLOBAL_LIMIT = 500; // Máximo 500 requests por minuto
       
       window.addEventListener('beforeunload', () => {
         requests.clear();
@@ -124,61 +82,32 @@ export const SecurityProvider = ({ children }: SecurityProviderProps) => {
       };
     };
 
-    // 5. PROTEÇÃO CONTRA IFRAME/CLICKJACKING ULTRA
-    const setupUltraClickjackingProtection = () => {
+    // 5. Proteção básica contra iframe/clickjacking
+    const setupClickjackingProtection = () => {
       // Permitir embed no preview do Lovable
       if (isLovableEnv && (window.top !== window.self)) {
-        return; // não bloquear quando em iframe do Lovable
+        return;
       }
-      // Verificação contínua
-      const checkFraming = () => {
-        if (window.top !== window.self) {
-          logger.error('Carregamento em iframe detectado - Bloqueando');
-          // Forçar saída do iframe
-          window.top!.location.href = window.self.location.href;
-          // Bloquear completamente se não conseguir sair
-          document.body.innerHTML = '<h1>🚫 ACESSO NEGADO</h1><p>Esta aplicação não pode ser carregada em iframe.</p>';
-        }
-      };
       
-      checkFraming();
-      // Removed interval that was causing mobile issues
+      // Apenas log de aviso, sem bloquear aplicação
+      if (window.top !== window.self) {
+        logger.warn('Aplicação carregada em iframe - monitorando');
+      }
     };
 
-    // 6. PROTEÇÃO CONTRA VIEW SOURCE
-    const setupSourceProtection = () => {
-      // Bloquear Ctrl+U (View Source)
-      document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey && (e.keyCode === 85 || e.key === 'u')) {
-          e.preventDefault();
-          e.stopPropagation();
-          logger.error('Tentativa de visualizar código fonte bloqueada');
-          return false;
-        }
-      });
-      
-      // Adicionar texto falso para confundir
-      const script = document.createElement('script');
-      script.textContent = `
-        // Sistema de proteção ativo
-        // Código fonte protegido
-        // Tentativas de acesso são monitoradas
-      `;
-      document.head.appendChild(script);
-    };
 
-    // EXECUTAR PROTEÇÕES BASEADAS NO AMBIENTE
+    // EXECUTAR PROTEÇÕES SIMPLIFICADAS
     try {
-      addMaxSecurityHeaders();
+      addBasicSecurityHeaders();
       enforceHTTPS();
-      setupDevToolsProtection(); // Renomeado e ajustado
-      setupUltraRateLimit();
-      setupUltraClickjackingProtection();
-      setupSourceProtection();
+      setupBasicDevToolsProtection();
+      setupRateLimit();
+      setupClickjackingProtection();
       
-      logger.debug('🛡️ Proteções de segurança ativadas');
+      logger.info('🛡️ Proteções básicas de segurança ativadas');
     } catch (error) {
       logger.error('Erro ao ativar proteções:', error);
+      // Não bloquear a aplicação em caso de erro
     }
   }, []);
 

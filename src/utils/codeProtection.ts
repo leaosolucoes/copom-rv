@@ -16,6 +16,8 @@ export const validateDomain = (): boolean => {
     '668e639d-dc0b-4b7a-ab49-c9f19cc751b2.lovableproject.com',
     'conectarioverde.com.br',
     'posturas.conectarioverde.com.br',
+    'copomrv.vinnax.app',
+    'vinnax.app',
     // Domínios oficiais do sistema
   ];
 
@@ -88,31 +90,27 @@ export const clearSensitiveData = () => {
   }
 };
 
-// Anti-tamper básico
+// Anti-tamper simplificado
 export const initAntiTamper = () => {
   if (process.env.NODE_ENV !== 'production') {
-    return;
+    return () => {};
   }
 
-  // Protege contra modificação do console
-  const originalConsole = { ...console };
-  
-  // Monitora mudanças suspeitas no DOM
+  // Apenas monitorar scripts suspeitos sem ser muito agressivo
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       if (mutation.type === 'childList') {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             const element = node as Element;
-            // Permitir elementos de mídia (vídeo/áudio) mas bloquear scripts suspeitos
             if (element.tagName === 'SCRIPT') {
               const scriptElement = element as HTMLScriptElement;
-              if (!element.getAttribute('data-app-script') &&
-                  scriptElement.src &&
+              // Apenas log de scripts externos não autorizados
+              if (scriptElement.src && 
                   !scriptElement.src.includes('lovable') &&
-                  !scriptElement.src.includes('supabase')) {
-                // Script suspeito injetado
-                element.remove();
+                  !scriptElement.src.includes('supabase') &&
+                  !scriptElement.src.includes('mapbox')) {
+                console.warn('Script externo detectado:', scriptElement.src);
               }
             }
           }
@@ -121,14 +119,16 @@ export const initAntiTamper = () => {
     });
   });
 
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
+  // Observar apenas se body já existe
+  if (document.body) {
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
 
   // Limpar quando necessário
   return () => {
     observer.disconnect();
-    Object.assign(console, originalConsole);
   };
 };

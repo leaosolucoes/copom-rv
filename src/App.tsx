@@ -23,6 +23,13 @@ import { useEffect } from "react";
 const queryClient = new QueryClient();
 
 const App = () => {
+  // Log de inicialização para debug em produção
+  console.log('🚀 App iniciando...', {
+    env: process.env.NODE_ENV,
+    hostname: window.location.hostname,
+    timestamp: new Date().toISOString()
+  });
+  
   // Carregar e aplicar cores do sistema
   useSystemColors();
   
@@ -30,6 +37,26 @@ const App = () => {
   useDevToolsProtection();
   
   useEffect(() => {
+    console.log('✅ App montado com sucesso');
+    
+    // Tratamento de erros global
+    const handleError = (event: ErrorEvent) => {
+      console.error('❌ Erro global capturado:', {
+        message: event.message,
+        filename: event.filename,
+        line: event.lineno,
+        column: event.colno,
+        error: event.error
+      });
+    };
+    
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('❌ Promise rejeitada não tratada:', event.reason);
+    };
+    
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
     // Production security initialization - simplified for stability
     const initSecurity = async () => {
       try {
@@ -40,12 +67,17 @@ const App = () => {
         
         return cleanup;
       } catch (error) {
-        logger.error("Erro não crítico na inicialização");
+        logger.error("Erro não crítico na inicialização", error);
         // Don't redirect on errors - let the app continue
       }
     };
     
     initSecurity();
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   return (
