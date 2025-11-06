@@ -141,7 +141,7 @@ serve(async (req): Promise<Response> => {
 
     // Log da requisição
     if (result) {
-      await logApiRequest(req, tokenData.token_id, statusCode, executionTime, result.data, supabase)
+      await logApiRequest(req, tokenData.token_id, statusCode, executionTime, result.data, supabase, null)
     }
 
     return new Response(
@@ -158,7 +158,7 @@ serve(async (req): Promise<Response> => {
 
     // Log do erro
     if (tokenValidation.tokenData) {
-      await logApiRequest(req, tokenValidation.tokenData.token_id, 500, executionTime, { error: error?.message || String(error) }, supabase)
+      await logApiRequest(req, tokenValidation.tokenData.token_id, 500, executionTime, { error: error?.message || String(error) }, supabase, null)
     }
 
     return new Response(
@@ -652,23 +652,39 @@ async function logApiRequest(
   statusCode: number,
   executionTime: number,
   responseData: any,
-  supabase: any
+  supabase: any,
+  requestBody: any = null
 ) {
   try {
     const url = new URL(req.url)
     
-    await supabase
+    const logData = {
+      token_id: tokenId,
+      endpoint: url.pathname,
+      method: req.method,
+      status_code: statusCode,
+      ip_address: req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown',
+      user_agent: req.headers.get('user-agent') || 'unknown',
+      request_body: requestBody,
+      response_body: responseData
+    }
+    
+    console.log('📊 Registrando log da API:', {
+      endpoint: logData.endpoint,
+      method: logData.method,
+      status: logData.status_code
+    })
+    
+    const { error } = await supabase
       .from('api_logs')
-      .insert({
-        token_id: tokenId,
-        endpoint: url.pathname,
-        method: req.method,
-        status_code: statusCode,
-        execution_time_ms: executionTime,
-        ip_address: req.headers.get('x-forwarded-for') || 'unknown',
-        user_agent: req.headers.get('user-agent') || 'unknown'
-      })
+      .insert(logData)
+    
+    if (error) {
+      console.error('❌ Erro ao inserir log na tabela:', error)
+    } else {
+      console.log('✅ Log registrado com sucesso')
+    }
   } catch (error) {
-    console.error('Erro ao registrar log da API:', error)
+    console.error('💥 Erro ao registrar log da API:', error)
   }
 }
