@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
     }
     
     console.log('📡 Inserindo denúncia no banco de dados...')
+    console.log('🔍 DADOS COMPLETOS QUE SERÃO ENVIADOS AO BANCO:', JSON.stringify(dataWithIP, null, 2))
 
     // Inserir denúncia no banco
     const { data, error } = await supabase
