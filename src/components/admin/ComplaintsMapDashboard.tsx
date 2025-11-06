@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ComplaintsMap } from './ComplaintsMap';
+import { CriticalAreasAnalysis } from './CriticalAreasAnalysis';
 import { supabase } from '@/integrations/supabase/client';
 import { MapPin, RefreshCw, TrendingUp, AlertCircle, CheckCircle, Archive } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -237,25 +238,50 @@ export const ComplaintsMapDashboard = () => {
       </Card>
 
       {/* Informações adicionais */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Sobre o Mapa</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>
-            • <strong>Clique nos marcadores</strong> para ver detalhes da denúncia
-          </p>
-          <p>
-            • <strong>Cores dos marcadores</strong> indicam o status (azul: nova, laranja: em andamento, verde: processada)
-          </p>
-          <p>
-            • <strong>Atualização automática</strong> em tempo real quando há alterações
-          </p>
-          <p>
-            • <strong>Localização</strong> capturada automaticamente pelo navegador do denunciante
-          </p>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <CriticalAreasAnalysis complaints={complaints} />
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Sobre o Mapa e Heatmap</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-2">
+            <p className="font-semibold text-foreground">Visualização de Marcadores:</p>
+            <p>
+              • <strong>Clique nos marcadores</strong> para ver detalhes da denúncia
+            </p>
+            <p>
+              • <strong>Cores</strong> indicam status (azul: nova, laranja: em andamento, verde: processada)
+            </p>
+            
+            <p className="font-semibold text-foreground pt-2">Heatmap de Densidade:</p>
+            <p>
+              • <strong>Cores quentes</strong> (vermelho/laranja) indicam alta concentração de denúncias
+            </p>
+            <p>
+              • <strong>Cores frias</strong> (azul/verde) indicam baixa concentração
+            </p>
+            <p>
+              • <strong>Ajuste a intensidade</strong> e raio para melhor visualização
+            </p>
+            
+            <p className="font-semibold text-foreground pt-2">Análise de Áreas Críticas:</p>
+            <p>
+              • Identifica automaticamente regiões com 3+ denúncias em raio de ~500m
+            </p>
+            <p>
+              • Mostra tipos de ocorrência mais comuns por área
+            </p>
+            <p>
+              • Prioriza áreas por severidade (crítica, alta, média, baixa)
+            </p>
+            
+            <p className="pt-2">
+              • <strong>Atualização automática</strong> em tempo real quando há alterações
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

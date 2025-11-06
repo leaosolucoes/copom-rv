@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Layers, Flame } from 'lucide-react';
 
 interface Complaint {
   id: string;
@@ -26,6 +31,11 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
   const [mapboxToken, setMapboxToken] = useState<string>('');
+  const [showHeatmap, setShowHeatmap] = useState<boolean>(false);
+  const [heatmapIntensity, setHeatmapIntensity] = useState<number>(1);
+  const [heatmapRadius, setHeatmapRadius] = useState<number>(30);
+  const [showMarkers, setShowMarkers] = useState<boolean>(true);
+  const [mapLoaded, setMapLoaded] = useState<boolean>(false);
 
   // Buscar token do Mapbox
   useEffect(() => {
@@ -75,18 +85,128 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
       'top-right'
     );
 
+    map.current.on('load', () => {
+      setMapLoaded(true);
+    });
+
     return () => {
       map.current?.remove();
     };
   }, [mapboxToken]);
 
+  // Adicionar/atualizar camada de heatmap
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const complaintsWithLocation = complaints.filter(
+      (c) => c.user_location?.latitude && c.user_location?.longitude
+    );
+
+    if (complaintsWithLocation.length === 0) return;
+
+    // Criar GeoJSON para o heatmap
+    const geojson: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features: complaintsWithLocation.map((complaint) => ({
+        type: 'Feature',
+        properties: {
+          id: complaint.id,
+          protocol: complaint.protocol_number,
+          status: complaint.status,
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [
+            complaint.user_location!.longitude,
+            complaint.user_location!.latitude,
+          ],
+        },
+      })),
+    };
+
+    // Remover fonte e camada existentes se já existirem
+    if (map.current.getSource('complaints-heat')) {
+      map.current.removeLayer('complaints-heatmap');
+      map.current.removeSource('complaints-heat');
+    }
+
+    // Adicionar fonte de dados
+    map.current.addSource('complaints-heat', {
+      type: 'geojson',
+      data: geojson,
+    });
+
+    // Adicionar camada de heatmap
+    map.current.addLayer({
+      id: 'complaints-heatmap',
+      type: 'heatmap',
+      source: 'complaints-heat',
+      maxzoom: 15,
+      paint: {
+        // Aumentar peso baseado no zoom
+        'heatmap-weight': heatmapIntensity,
+        
+        // Aumentar intensidade conforme o zoom
+        'heatmap-intensity': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          0, 1,
+          15, 3
+        ],
+        
+        // Raio do heatmap em pixels
+        'heatmap-radius': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          0, heatmapRadius / 2,
+          15, heatmapRadius * 2
+        ],
+        
+        // Transição de opacidade baseada no zoom
+        'heatmap-opacity': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          7, 0.8,
+          15, 0.6
+        ],
+        
+        // Cores do heatmap (azul -> verde -> amarelo -> laranja -> vermelho)
+        'heatmap-color': [
+          'interpolate',
+          ['linear'],
+          ['heatmap-density'],
+          0, 'rgba(33,102,172,0)',
+          0.2, 'rgb(103,169,207)',
+          0.4, 'rgb(209,229,240)',
+          0.6, 'rgb(253,219,199)',
+          0.8, 'rgb(239,138,98)',
+          1, 'rgb(178,24,43)'
+        ],
+      },
+    });
+
+    // Controlar visibilidade do heatmap
+    map.current.setLayoutProperty(
+      'complaints-heatmap',
+      'visibility',
+      showHeatmap ? 'visible' : 'none'
+    );
+
+  }, [complaints, mapLoaded, showHeatmap, heatmapIntensity, heatmapRadius]);
+
   // Atualizar marcadores quando as denúncias mudarem
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !mapLoaded) return;
 
     // Remover marcadores antigos
     markers.current.forEach((marker) => marker.remove());
     markers.current = [];
+
+    // Se showMarkers estiver desabilitado, não adicionar marcadores
+    if (!showMarkers) return;
 
     // Filtrar denúncias com localização válida
     const complaintsWithLocation = complaints.filter(
@@ -205,7 +325,7 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
         maxZoom: 15,
       });
     }
-  }, [complaints]);
+  }, [complaints, mapLoaded, showMarkers]);
 
   if (!mapboxToken) {
     return (
@@ -223,30 +343,127 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
   }
 
   return (
-    <div className="relative w-full h-96 rounded-lg overflow-hidden shadow-lg">
-      <div ref={mapContainer} className="absolute inset-0" />
-      
-      {/* Legenda */}
-      <div className="absolute bottom-4 left-4 bg-background/95 backdrop-blur-sm rounded-lg shadow-lg p-3 space-y-2">
-        <h4 className="font-semibold text-sm mb-2">Status</h4>
-        <div className="space-y-1 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#3b82f6] border-2 border-white"></div>
-            <span>Nova</span>
+    <div className="space-y-4">
+      {/* Controles do Heatmap */}
+      <div className="bg-muted/50 border border-muted rounded-lg p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h4 className="font-semibold text-sm flex items-center gap-2">
+            <Layers className="h-4 w-4" />
+            Controles de Visualização
+          </h4>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="show-heatmap" className="flex items-center gap-2">
+              <Flame className="h-4 w-4 text-orange-500" />
+              <span>Heatmap de Densidade</span>
+            </Label>
+            <Switch
+              id="show-heatmap"
+              checked={showHeatmap}
+              onCheckedChange={setShowHeatmap}
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#f59e0b] border-2 border-white"></div>
-            <span>Em Andamento</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#10b981] border-2 border-white"></div>
-            <span>Processada</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#6b7280] border-2 border-white"></div>
-            <span>Arquivada</span>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="show-markers">Mostrar Marcadores</Label>
+            <Switch
+              id="show-markers"
+              checked={showMarkers}
+              onCheckedChange={setShowMarkers}
+            />
           </div>
         </div>
+
+        {showHeatmap && (
+          <div className="space-y-4 pt-2 border-t">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="heatmap-intensity" className="text-xs">
+                  Intensidade do Heatmap
+                </Label>
+                <span className="text-xs text-muted-foreground">{heatmapIntensity.toFixed(1)}</span>
+              </div>
+              <Slider
+                id="heatmap-intensity"
+                min={0.1}
+                max={3}
+                step={0.1}
+                value={[heatmapIntensity]}
+                onValueChange={(value) => setHeatmapIntensity(value[0])}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="heatmap-radius" className="text-xs">
+                  Raio do Heatmap (px)
+                </Label>
+                <span className="text-xs text-muted-foreground">{heatmapRadius}</span>
+              </div>
+              <Slider
+                id="heatmap-radius"
+                min={10}
+                max={100}
+                step={5}
+                value={[heatmapRadius]}
+                onValueChange={(value) => setHeatmapRadius(value[0])}
+              />
+            </div>
+
+            <div className="bg-background/50 rounded p-2 space-y-1">
+              <p className="text-xs font-semibold">Legenda do Heatmap:</p>
+              <div className="flex items-center gap-2 text-xs">
+                <div className="flex-1 h-4 rounded" style={{
+                  background: 'linear-gradient(to right, rgb(103,169,207), rgb(209,229,240), rgb(253,219,199), rgb(239,138,98), rgb(178,24,43))'
+                }}></div>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Baixa densidade</span>
+                <span>Alta densidade</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mapa */}
+      <div className="relative w-full h-96 rounded-lg overflow-hidden shadow-lg">
+        <div ref={mapContainer} className="absolute inset-0" />
+        
+        {/* Legenda de Status (apenas se marcadores visíveis) */}
+        {showMarkers && (
+          <div className="absolute bottom-4 left-4 bg-background/95 backdrop-blur-sm rounded-lg shadow-lg p-3 space-y-2">
+            <h4 className="font-semibold text-sm mb-2">Status</h4>
+            <div className="space-y-1 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#3b82f6] border-2 border-white"></div>
+                <span>Nova</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#f59e0b] border-2 border-white"></div>
+                <span>Em Andamento</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#10b981] border-2 border-white"></div>
+                <span>Processada</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#6b7280] border-2 border-white"></div>
+                <span>Arquivada</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Indicador de Heatmap ativo */}
+        {showHeatmap && (
+          <div className="absolute top-4 left-4 bg-orange-500/90 text-white px-3 py-1.5 rounded-full shadow-lg text-xs font-semibold flex items-center gap-2">
+            <Flame className="h-3 w-3" />
+            Heatmap Ativo
+          </div>
+        )}
       </div>
     </div>
   );
