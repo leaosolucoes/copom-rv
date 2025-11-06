@@ -61,15 +61,28 @@ Deno.serve(async (req) => {
     } else if (realIP) {
       clientIP = realIP
     }
+    
+    console.log('🌐 IP do cliente capturado:', clientIP)
 
     // Pegar dados da denúncia do body
     const complaintData: ComplaintData = await req.json()
+    
+    console.log('📝 Dados recebidos do formulário')
+    console.log('Nome do denunciante:', complaintData.complainant_name)
+    console.log('Telefone:', complaintData.complainant_phone)
+    console.log('Tipo de ocorrência:', complaintData.occurrence_type)
+    console.log('Classificação:', complaintData.classification)
+    console.log('Descrição:', complaintData.description?.substring(0, 50) + '...')
+    console.log('Fotos:', complaintData.photos?.length || 0)
+    console.log('Vídeos:', complaintData.videos?.length || 0)
     
     // Adicionar IP aos dados
     const dataWithIP = {
       ...complaintData,
       user_ip: clientIP
     }
+    
+    console.log('📡 Inserindo denúncia no banco de dados...')
 
     // Inserir denúncia no banco
     const { data, error } = await supabase
@@ -78,8 +91,11 @@ Deno.serve(async (req) => {
       .select()
 
     if (error) {
-      console.error('Erro ao inserir denúncia')
-      throw error
+      console.error('❌ Erro ao inserir denúncia no Supabase')
+      console.error('Código do erro:', error.code)
+      console.error('Mensagem do erro:', error.message)
+      console.error('Detalhes:', JSON.stringify(error, null, 2))
+      throw new Error(`Erro ao inserir denúncia: ${error.message}`)
     }
 
     return new Response(JSON.stringify({ 
@@ -94,9 +110,22 @@ Deno.serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('Erro na edge function')
+    console.error('❌ Erro na edge function capture-user-ip:', error)
+    console.error('Detalhes do erro:', JSON.stringify(error, null, 2))
+    
+    // Se for um erro do Supabase, pegar detalhes
+    const errorDetails = error instanceof Error ? {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    } : String(error)
+    
+    console.error('Erro detalhado:', errorDetails)
+    
     return new Response(JSON.stringify({ 
-      error: 'Erro interno do servidor' 
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro interno do servidor',
+      details: errorDetails
     }), {
       status: 400,
       headers: { 

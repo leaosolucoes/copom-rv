@@ -710,15 +710,20 @@ export const PublicComplaintForm = () => {
       });
 
       if (error) {
-        console.error('Erro da edge function:', error);
+        console.error('❌ Erro da edge function:', error);
+        console.error('Detalhes:', JSON.stringify(error, null, 2));
         throw error;
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erro desconhecido');
+      if (!data || !data.success) {
+        const errorMessage = data?.error || 'Erro desconhecido';
+        const errorDetails = data?.details ? JSON.stringify(data.details) : 'Sem detalhes';
+        console.error('❌ Resposta de erro da edge function:', errorMessage);
+        console.error('Detalhes:', errorDetails);
+        throw new Error(errorMessage);
       }
 
-      console.log('Denúncia enviada com sucesso!');
+      console.log('✅ Denúncia enviada com sucesso!');
       toast({
         title: "Denúncia enviada com sucesso!",
         description: "Sua denúncia foi registrada e será analisada pela equipe responsável.",
@@ -753,11 +758,16 @@ export const PublicComplaintForm = () => {
       setUploadedPhotos([]);
       setUploadedVideos([]);
 
-    } catch (error) {
-      console.error('Erro ao enviar denúncia:', error);
+    } catch (error: any) {
+      console.error('❌ Erro ao enviar denúncia:', error);
+      console.error('Tipo do erro:', typeof error);
+      console.error('Detalhes do erro:', JSON.stringify(error, null, 2));
+      
+      const errorMessage = error?.message || 'Ocorreu um erro ao processar sua denúncia. Tente novamente.';
+      
       toast({
         title: "Erro ao enviar denúncia",
-        description: "Ocorreu um erro ao processar sua denúncia. Tente novamente.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
