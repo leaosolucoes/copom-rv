@@ -38,6 +38,7 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
   const [showMarkers, setShowMarkers] = useState<boolean>(true);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
   const [mapStyle, setMapStyle] = useState<string>('streets-v12');
+  const [mapInitializing, setMapInitializing] = useState<boolean>(false);
 
   const mapStyles = [
     { value: 'streets-v12', label: 'Ruas', icon: '🗺️' },
@@ -53,7 +54,6 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
   useEffect(() => {
     const fetchMapboxToken = async () => {
       try {
-        console.log('🔍 Buscando token do Mapbox...');
         const { data, error } = await supabase
           .from('system_settings')
           .select('value')
@@ -61,34 +61,28 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
           .maybeSingle();
 
         if (error) {
-          console.error('❌ Erro ao buscar token:', error);
-          throw error;
+          console.error('Erro ao buscar token do Mapbox:', error);
+          return;
         }
 
-        console.log('📦 Dados recebidos:', data);
-
         if (data?.value) {
-          // O valor pode vir como string JSON, então precisamos fazer o parse
+          // O valor pode vir como string JSON
           let tokenValue = data.value;
-          console.log('🔑 Token original (tipo:', typeof tokenValue, '):', tokenValue);
           
           if (typeof tokenValue === 'string') {
             try {
               tokenValue = JSON.parse(tokenValue);
-              console.log('✅ Token após JSON.parse:', tokenValue);
             } catch {
-              console.log('ℹ️ Token não é JSON, usando como está');
+              // Se não for JSON, usar como está
             }
           }
           
           const finalToken = tokenValue as string;
-          console.log('✅ Token final configurado:', finalToken);
+          console.log('✅ Token do Mapbox configurado');
           setMapboxToken(finalToken);
-        } else {
-          console.warn('⚠️ Nenhum token encontrado no banco de dados');
         }
       } catch (error) {
-        console.error('❌ Erro ao buscar token do Mapbox:', error);
+        console.error('Erro ao buscar token do Mapbox:', error);
       }
     };
 
@@ -98,39 +92,31 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
   // Inicializar mapa
   useEffect(() => {
     if (!mapContainer.current) {
-      console.log('⚠️ Container do mapa não está pronto');
       return;
     }
     
     if (!mapboxToken) {
-      console.log('⚠️ Token do Mapbox não está configurado');
       return;
     }
 
-    console.log('🗺️ Inicializando mapa...');
-    console.log('📍 Container:', mapContainer.current);
-    console.log('🔑 Token:', mapboxToken);
-    console.log('🎨 Estilo:', mapStyle);
-
     // Se já existe um mapa, removê-lo antes de criar um novo
     if (map.current) {
-      console.log('🔄 Removendo mapa existente');
       map.current.remove();
       map.current = null;
     }
 
     try {
+      setMapInitializing(true);
       mapboxgl.accessToken = mapboxToken;
-      console.log('✅ Token do Mapbox configurado');
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: `mapbox://styles/mapbox/${mapStyle}`,
-        center: [-47.9292, -15.7801], // Brasília como centro padrão
+        center: [-47.9292, -15.7801],
         zoom: 4,
       });
       
-      console.log('✅ Mapa criado com sucesso');
+      console.log('✅ Mapa inicializado');
 
       map.current.addControl(
         new mapboxgl.NavigationControl({
@@ -145,16 +131,19 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
       );
 
       map.current.on('load', () => {
-        console.log('✅ Mapa carregado completamente');
         setMapLoaded(true);
+        setMapInitializing(false);
+        console.log('✅ Mapa carregado');
       });
 
       map.current.on('error', (e) => {
         console.error('❌ Erro no mapa:', e);
+        setMapInitializing(false);
       });
 
     } catch (error) {
-      console.error('ERRO ao inicializar mapa:', error);
+      console.error('❌ ERRO ao inicializar mapa:', error);
+      setMapInitializing(false);
     }
 
     return () => {
@@ -163,6 +152,7 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
         map.current = null;
       }
       setMapLoaded(false);
+      setMapInitializing(false);
     };
   }, [mapboxToken, mapStyle]);
 
@@ -272,11 +262,8 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
   // Atualizar marcadores quando as denúncias mudarem
   useEffect(() => {
     if (!map.current || !mapLoaded) {
-      console.log('⚠️ Mapa não está pronto para adicionar marcadores');
       return;
     }
-
-    console.log('📍 Processando marcadores para', complaints.length, 'denúncias');
 
     // Remover marcadores antigos
     markers.current.forEach((marker) => marker.remove());
@@ -284,7 +271,6 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
 
     // Se showMarkers estiver desabilitado, não adicionar marcadores
     if (!showMarkers) {
-      console.log('ℹ️ Marcadores desabilitados pelo usuário');
       return;
     }
 
@@ -293,20 +279,11 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
       (c) => c.user_location?.latitude && c.user_location?.longitude
     );
 
-    console.log('📌 Denúncias com localização válida:', complaintsWithLocation.length);
-    
-    if (complaintsWithLocation.length > 0) {
-      console.log('📊 Primeira denúncia com localização:', {
-        id: complaintsWithLocation[0].id,
-        protocol: complaintsWithLocation[0].protocol_number,
-        location: complaintsWithLocation[0].user_location
-      });
-    }
-
     if (complaintsWithLocation.length === 0) {
-      console.warn('⚠️ Nenhuma denúncia possui localização válida');
       return;
     }
+
+    console.log('📍 Adicionando', complaintsWithLocation.length, 'marcadores');
 
     // Adicionar novos marcadores
     complaintsWithLocation.forEach((complaint) => {
@@ -422,7 +399,7 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
 
   if (!mapboxToken) {
     return (
-      <div className="flex items-center justify-center h-96 bg-muted rounded-lg border-2 border-dashed">
+      <div className="flex items-center justify-center h-[500px] bg-muted rounded-lg border-2 border-dashed">
         <div className="text-center space-y-4 p-8">
           <MapIcon className="h-12 w-12 mx-auto text-muted-foreground" />
           <div>
@@ -549,8 +526,16 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
       </div>
 
       {/* Mapa */}
-      <div className="relative w-full h-96 rounded-lg overflow-hidden shadow-lg">
-        <div ref={mapContainer} className="absolute inset-0" />
+      <div className="relative w-full h-[500px] rounded-lg overflow-hidden shadow-lg border">
+        {mapInitializing && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="text-center space-y-3">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"></div>
+              <p className="text-sm font-medium">Carregando mapa...</p>
+            </div>
+          </div>
+        )}
+        <div ref={mapContainer} className="w-full h-full" />
         
         {/* Legenda de Status (apenas se marcadores visíveis) */}
         {showMarkers && (
