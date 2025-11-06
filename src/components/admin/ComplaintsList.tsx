@@ -969,16 +969,18 @@ export const ComplaintsList = () => {
       // Limpar dados do formulário RAI
       setRaiData({ rai: '', classification: '' });
       
-      // Atualizar o selectedComplaint com os novos dados sem fechar o modal
-      if (updatedComplaint) {
-        setSelectedComplaint(prev => prev ? {
-          ...prev,
-          status: updatedComplaint.status,
-          system_identifier: updatedComplaint.system_identifier,
-          attendant_id: updatedComplaint.attendant_id,
-          processed_at: updateData.processed_at,
-          classification: updateData.classification
-        } : null);
+      // Recarregar os dados completos da denúncia do banco para garantir que tudo está atualizado
+      const { data: fullComplaintData, error: fetchError } = await supabase
+        .from('complaints')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (!fetchError && fullComplaintData) {
+        console.log('✅ Denúncia recarregada com todos os dados:', fullComplaintData);
+        setSelectedComplaint(fullComplaintData as Complaint);
+      } else {
+        console.error('Erro ao recarregar denúncia:', fetchError);
       }
       
       // Forçar atualização da lista múltiplas vezes para garantir
