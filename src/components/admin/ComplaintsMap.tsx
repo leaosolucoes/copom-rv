@@ -53,19 +53,35 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
   useEffect(() => {
     const fetchMapboxToken = async () => {
       try {
+        console.log('🗺️ Buscando token do Mapbox...');
         const { data, error } = await supabase
           .from('system_settings')
           .select('value')
           .eq('key', 'mapbox_public_token')
           .maybeSingle();
 
-        if (error) throw error;
+        if (error) {
+          console.error('🗺️ Erro ao buscar token:', error);
+          throw error;
+        }
 
         if (data?.value) {
-          setMapboxToken(data.value as string);
+          // O valor pode vir como string JSON, então precisamos fazer o parse
+          let tokenValue = data.value;
+          if (typeof tokenValue === 'string') {
+            try {
+              tokenValue = JSON.parse(tokenValue);
+            } catch {
+              // Se não for JSON, usar como está
+            }
+          }
+          console.log('🗺️ Token encontrado:', tokenValue ? 'Sim (oculto)' : 'Não');
+          setMapboxToken(tokenValue as string);
+        } else {
+          console.log('🗺️ Nenhum token configurado');
         }
       } catch (error) {
-        console.error('Erro ao buscar token do Mapbox:', error);
+        console.error('🗺️ Erro ao buscar token do Mapbox:', error);
       }
     };
 
@@ -74,35 +90,64 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
 
   // Inicializar mapa
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken) return;
+    if (!mapContainer.current || !mapboxToken) {
+      console.log('🗺️ Aguardando container ou token:', { 
+        hasContainer: !!mapContainer.current, 
+        hasToken: !!mapboxToken 
+      });
+      return;
+    }
 
-    mapboxgl.accessToken = mapboxToken;
+    // Se já existe um mapa, removê-lo antes de criar um novo
+    if (map.current) {
+      console.log('🗺️ Removendo mapa existente...');
+      map.current.remove();
+      map.current = null;
+    }
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: `mapbox://styles/mapbox/${mapStyle}`,
-      center: [-47.9292, -15.7801], // Brasília como centro padrão
-      zoom: 4,
-    });
+    try {
+      console.log('🗺️ Inicializando mapa com estilo:', mapStyle);
+      mapboxgl.accessToken = mapboxToken;
 
-    map.current.addControl(
-      new mapboxgl.NavigationControl({
-        visualizePitch: true,
-      }),
-      'top-right'
-    );
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: `mapbox://styles/mapbox/${mapStyle}`,
+        center: [-47.9292, -15.7801], // Brasília como centro padrão
+        zoom: 4,
+      });
 
-    map.current.addControl(
-      new mapboxgl.FullscreenControl(),
-      'top-right'
-    );
+      map.current.addControl(
+        new mapboxgl.NavigationControl({
+          visualizePitch: true,
+        }),
+        'top-right'
+      );
 
-    map.current.on('load', () => {
-      setMapLoaded(true);
-    });
+      map.current.addControl(
+        new mapboxgl.FullscreenControl(),
+        'top-right'
+      );
+
+      map.current.on('load', () => {
+        console.log('🗺️ Mapa carregado com sucesso!');
+        setMapLoaded(true);
+      });
+
+      map.current.on('error', (e) => {
+        console.error('🗺️ Erro no mapa:', e);
+      });
+
+    } catch (error) {
+      console.error('🗺️ ERRO ao inicializar mapa:', error);
+    }
 
     return () => {
-      map.current?.remove();
+      console.log('🗺️ Limpando mapa...');
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+      setMapLoaded(false);
     };
   }, [mapboxToken, mapStyle]);
 
@@ -341,14 +386,18 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
 
   if (!mapboxToken) {
     return (
-      <div className="flex items-center justify-center h-96 bg-muted rounded-lg">
-        <div className="text-center space-y-4">
-          <p className="text-muted-foreground">
-            Configure o token do Mapbox nas configurações do sistema
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Chave de configuração: <code className="bg-muted-foreground/20 px-2 py-1 rounded">mapbox_public_token</code>
-          </p>
+      <div className="flex items-center justify-center h-96 bg-muted rounded-lg border-2 border-dashed">
+        <div className="text-center space-y-4 p-8">
+          <MapIcon className="h-12 w-12 mx-auto text-muted-foreground" />
+          <div>
+            <p className="text-lg font-semibold mb-2">Token do Mapbox não configurado</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Configure o token do Mapbox nas configurações do sistema para visualizar o mapa
+            </p>
+            <code className="bg-muted px-3 py-1.5 rounded text-xs">
+              mapbox_public_token
+            </code>
+          </div>
         </div>
       </div>
     );
