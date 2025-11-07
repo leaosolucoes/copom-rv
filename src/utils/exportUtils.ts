@@ -274,6 +274,23 @@ export const exportComplaintToPDF = async (complaint: any): Promise<void> => {
   const margin = 15;
   const contentWidth = pageWidth - (margin * 2);
 
+  // Função para converter imagem URL para base64
+  const getImageDataURL = async (url: string): Promise<string | null> => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Erro ao carregar imagem:', error);
+      return null;
+    }
+  };
+
   // Função auxiliar para adicionar texto com quebra de linha
   const addText = (text: string, isBold: boolean = false, fontSize: number = 10) => {
     doc.setFont('helvetica', isBold ? 'bold' : 'normal');
@@ -385,12 +402,52 @@ export const exportComplaintToPDF = async (complaint: any): Promise<void> => {
     
     if (complaint.photos && complaint.photos.length > 0) {
       addText(`Fotos: ${complaint.photos.length} arquivo(s)`, true);
-      complaint.photos.forEach((photo: string, index: number) => {
-        addText(`  ${index + 1}. ${photo.split('/').pop()}`);
-      });
+      yPosition += 2;
+      
+      // Carregar e adicionar cada foto
+      for (let index = 0; index < complaint.photos.length; index++) {
+        const photoUrl = complaint.photos[index];
+        
+        try {
+          // Buscar a imagem
+          const imageData = await getImageDataURL(photoUrl);
+          
+          if (imageData) {
+            // Verificar se precisa de nova página
+            if (yPosition + 60 > doc.internal.pageSize.height - 20) {
+              doc.addPage();
+              yPosition = 15;
+            }
+            
+            // Adicionar nome do arquivo
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`${index + 1}. ${photoUrl.split('/').pop()}`, margin, yPosition);
+            yPosition += 5;
+            
+            // Calcular dimensões da imagem mantendo proporção
+            const maxWidth = contentWidth - 20;
+            const maxHeight = 70;
+            
+            // Adicionar imagem ao PDF
+            doc.addImage(imageData, 'JPEG', margin + 10, yPosition, maxWidth, maxHeight);
+            yPosition += maxHeight + 8;
+            
+            doc.setTextColor(0, 0, 0);
+          } else {
+            // Se não conseguir carregar a imagem, mostrar apenas o link
+            addText(`  ${index + 1}. ${photoUrl.split('/').pop()}`);
+          }
+        } catch (error) {
+          console.error('Erro ao processar foto:', error);
+          addText(`  ${index + 1}. ${photoUrl.split('/').pop()} (erro ao carregar)`);
+        }
+      }
     }
     
     if (complaint.videos && complaint.videos.length > 0) {
+      yPosition += 3;
       addText(`Vídeos: ${complaint.videos.length} arquivo(s)`, true);
       complaint.videos.forEach((video: string, index: number) => {
         addText(`  ${index + 1}. ${video.split('/').pop()}`);
