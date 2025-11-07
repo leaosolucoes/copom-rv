@@ -429,8 +429,10 @@ export const PublicComplaintForm = () => {
     console.log('Campos obrigatórios visíveis:', requiredVisibleFields);
     
     for (const field of requiredVisibleFields) {
-      const fieldValue = formData[field.name as keyof FormData];
-      console.log(`Validando campo ${field.name}:`, fieldValue);
+      // Mapear 'narrative' para 'description' ao validar
+      const fieldName = field.name === 'narrative' ? 'description' : field.name;
+      const fieldValue = formData[fieldName as keyof FormData];
+      console.log(`Validando campo ${field.name} (mapeado para ${fieldName}):`, fieldValue);
       
       if (!fieldValue || fieldValue.toString().trim() === '') {
         console.log(`Campo ${field.name} está vazio!`);
