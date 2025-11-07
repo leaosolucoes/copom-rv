@@ -820,7 +820,7 @@ export const PublicComplaintForm = () => {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Preencha todos os campos obrigatórios para registrar sua denúncia de perturbação do sossego.
+            Preencha todos os campos obrigatórios para registrar sua denúncia.
             Todas as informações serão tratadas com confidencialidade.
           </p>
           <div className="mt-3 p-3 bg-muted rounded-md">
