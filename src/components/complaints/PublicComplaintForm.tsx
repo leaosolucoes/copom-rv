@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Send, AlertTriangle, Upload, X, Image, Video } from "lucide-react";
+import { obterDataBrasilFormatada } from "@/utils/dataBrasil";
 
 interface FormData {
   // Dados do reclamante
@@ -105,6 +106,20 @@ export const PublicComplaintForm = () => {
     setTimeout(() => {
       collectUserInfo();
     }, 100);
+    
+    // Preencher data e hora automaticamente com timezone do Brasil
+    const dataAtual = obterDataBrasilFormatada();
+    const horaAtual = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'America/Sao_Paulo',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date());
+    
+    setFormData(prev => ({
+      ...prev,
+      occurrence_date: dataAtual,
+      occurrence_time: horaAtual
+    }));
     
     // TIMEOUT DE SEGURANÇA: Garantir que após 10 segundos o loading acaba
     // Isso previne tela branca em produção se houver erro de rede
@@ -521,6 +536,8 @@ export const PublicComplaintForm = () => {
               value={fieldValue}
               onChange={(e) => handleInputChange(field.name as keyof FormData, e.target.value)}
               required={isRequired}
+              disabled={field.name === 'occurrence_date'}
+              className={field.name === 'occurrence_date' ? 'bg-muted cursor-not-allowed' : ''}
             />
           </div>
         );
@@ -535,6 +552,8 @@ export const PublicComplaintForm = () => {
               value={fieldValue}
               onChange={(e) => handleInputChange(field.name as keyof FormData, e.target.value)}
               required={isRequired}
+              disabled={field.name === 'occurrence_time'}
+              className={field.name === 'occurrence_time' ? 'bg-muted cursor-not-allowed' : ''}
             />
           </div>
         );
