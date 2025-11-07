@@ -1,8 +1,17 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Activity, AlertTriangle, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TrendingUp, TrendingDown, Activity, AlertTriangle, Calendar, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { exportPredictiveToPDF, exportPredictiveToExcel } from '@/utils/predictiveExportUtils';
+import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Complaint {
   id: string;
@@ -219,8 +228,56 @@ export const PredictiveDashboard = ({ complaints }: PredictiveDashboardProps) =>
   const totalHistorical = predictions.reduce((sum, p) => sum + p.historical.reduce((a, b) => a + b, 0), 0);
   const avgConfidence = Math.round(predictions.reduce((sum, p) => sum + p.confidence, 0) / predictions.length);
 
+  const handleExportPDF = () => {
+    try {
+      exportPredictiveToPDF(predictions);
+      toast.success('Relatório PDF exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao exportar relatório PDF');
+    }
+  };
+
+  const handleExportExcel = () => {
+    try {
+      exportPredictiveToExcel(predictions);
+      toast.success('Relatório Excel exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar Excel:', error);
+      toast.error('Erro ao exportar relatório Excel');
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Cabeçalho com botão de exportação */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Dashboard Preditivo</h2>
+          <p className="text-muted-foreground">
+            Análise e previsão de tendências baseadas em dados históricos
+          </p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar Relatório
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExportPDF}>
+              <FileText className="h-4 w-4 mr-2" />
+              Exportar como PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportExcel}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Exportar como Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {/* Métricas Gerais */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
