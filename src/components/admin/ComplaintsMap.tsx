@@ -394,17 +394,6 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
       el.style.border = '2px solid white';
       el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       el.style.cursor = 'pointer';
-      el.style.transition = 'scale 0.2s ease, z-index 0.2s ease';
-
-      el.addEventListener('mouseenter', () => {
-        (el.style as any).scale = '1.2';
-        el.style.zIndex = '10';
-      });
-
-      el.addEventListener('mouseleave', () => {
-        (el.style as any).scale = '1';
-        el.style.zIndex = '1';
-      });
 
       // Criar popup com informações da denúncia
       const getStatusText = (status: string): string => {
