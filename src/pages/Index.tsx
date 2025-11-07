@@ -39,21 +39,6 @@ const Index = () => {
       <Header showLoginButton={false} />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-4">
-              Sistema de Denúncias - 2º BPM
-            </h1>
-            <p className="text-lg text-muted-foreground mb-2">
-              PMGO - COPOM - Rio Verde/GO
-            </p>
-            <a 
-              href="/login" 
-              className="text-sm text-primary hover:underline"
-            >
-              Acesso para funcionários →
-            </a>
-          </div>
-          
           <div className="bg-card rounded-lg shadow-lg p-6">
             <h2 className="text-2xl font-semibold text-card-foreground mb-6">
               Registrar Denúncia
