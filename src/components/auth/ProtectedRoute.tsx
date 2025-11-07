@@ -75,25 +75,3 @@ export const ProtectedRoute = ({
   logger.debug('✅ ProtectedRoute allowing access');
   return <>{children}</>;
 };
-
-// Domain validation for additional security
-const validateDomain = () => {
-  const allowedDomains = [
-    'posturas.conectarioverde.com.br',
-    'localhost',
-    '127.0.0.1'
-  ];
-  
-  // Allow Lovable domains for development
-  const hostname = window.location.hostname;
-  const isLovableDomain = hostname.includes('lovableproject.com') || hostname.includes('lovable.app');
-  
-  if (!allowedDomains.includes(hostname) && !isLovableDomain) {
-    throw new Error('Domínio não autorizado');
-  }
-};
-
-// Run domain validation
-if (typeof window !== 'undefined') {
-  validateDomain();
-}
