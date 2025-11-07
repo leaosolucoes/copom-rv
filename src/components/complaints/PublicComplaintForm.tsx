@@ -121,6 +121,33 @@ export const PublicComplaintForm = () => {
       occurrence_time: horaAtual
     }));
     
+    // Capturar localização GPS automaticamente
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: new Date().toISOString()
+          };
+          setFormData(prev => ({
+            ...prev,
+            user_location: location
+          }));
+          console.log('Localização capturada:', location);
+        },
+        (error) => {
+          console.warn('Erro ao capturar localização:', error.message);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      );
+    }
+    
     // TIMEOUT DE SEGURANÇA: Garantir que após 10 segundos o loading acaba
     // Isso previne tela branca em produção se houver erro de rede
     const safetyTimeout = setTimeout(() => {
