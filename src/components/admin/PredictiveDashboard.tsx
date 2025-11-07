@@ -37,7 +37,12 @@ export const PredictiveDashboard = ({ complaints }: PredictiveDashboardProps) =>
       c => c.user_location?.latitude && c.user_location?.longitude
     );
 
-    if (complaintsWithLocation.length < 10) return [];
+    console.log('[PredictiveDashboard] Denúncias com localização:', complaintsWithLocation.length);
+    
+    if (complaintsWithLocation.length < 10) {
+      console.log('[PredictiveDashboard] Dados insuficientes - mínimo 10 denúncias');
+      return [];
+    }
 
     // Agrupar por região
     const regions: Map<string, Complaint[]> = new Map();
@@ -68,8 +73,13 @@ export const PredictiveDashboard = ({ complaints }: PredictiveDashboardProps) =>
     // Calcular previsões para cada região
     const regionPredictions: RegionPrediction[] = [];
 
+    console.log('[PredictiveDashboard] Regiões encontradas:', regions.size);
+    
     regions.forEach((regionComplaints, key) => {
-      if (regionComplaints.length < 5) return;
+      if (regionComplaints.length < 3) {
+        console.log('[PredictiveDashboard] Região ignorada - poucos dados:', regionComplaints.length);
+        return;
+      }
 
       const [centerLat, centerLng] = key.split(',').map(Number);
       
@@ -87,7 +97,12 @@ export const PredictiveDashboard = ({ complaints }: PredictiveDashboardProps) =>
         .sort((a, b) => a[0].localeCompare(b[0]))
         .slice(-8); // Últimas 8 semanas
 
-      if (weeks.length < 4) return;
+      console.log('[PredictiveDashboard] Semanas de dados na região:', weeks.length);
+      
+      if (weeks.length < 2) {
+        console.log('[PredictiveDashboard] Região ignorada - poucas semanas de dados');
+        return;
+      }
 
       const historical = weeks.map(([_, count]) => count);
       
@@ -146,6 +161,8 @@ export const PredictiveDashboard = ({ complaints }: PredictiveDashboardProps) =>
       });
     });
 
+    console.log('[PredictiveDashboard] Previsões calculadas:', regionPredictions.length);
+    
     return regionPredictions.sort((a, b) => b.avgPerWeek - a.avgPerWeek).slice(0, 5);
   }, [complaints]);
 
