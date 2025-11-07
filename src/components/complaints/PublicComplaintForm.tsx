@@ -388,9 +388,13 @@ export const PublicComplaintForm = () => {
   };
 
   const handleInputChange = (field: keyof FormData, value: string) => {
+    // Mapear 'narrative' para 'description' pois o campo configurável usa 'narrative'
+    const fieldName = field as string;
+    const mappedField = (fieldName === 'narrative' ? 'description' : field) as keyof FormData;
+    
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [mappedField]: value
     }));
   };
 
