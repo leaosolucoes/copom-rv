@@ -504,7 +504,9 @@ export const PublicComplaintForm = () => {
   const renderField = (field: FormField) => {
     if (!field.visible) return null;
 
-    const fieldValue = formData[field.name as keyof FormData] || '';
+    // Mapear 'narrative' para 'description' ao buscar o valor
+    const fieldName = field.name === 'narrative' ? 'description' : field.name;
+    const fieldValue = formData[fieldName as keyof FormData] || '';
     const isZonaRural = formData.complainant_type === 'Zona Rural';
     
     // Verificar se o campo se torna opcional em zona rural
