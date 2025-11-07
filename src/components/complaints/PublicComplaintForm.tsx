@@ -292,6 +292,22 @@ export const PublicComplaintForm = () => {
   const handleFileUpload = async (files: FileList, type: 'photo' | 'video') => {
     if (!files || files.length === 0) return;
 
+    // Validar limite de 5 fotos
+    if (type === 'photo') {
+      const currentPhotos = uploadedPhotos.length;
+      const newPhotosCount = files.length;
+      const totalPhotos = currentPhotos + newPhotosCount;
+      
+      if (totalPhotos > 5) {
+        toast({
+          title: "Limite de fotos excedido",
+          description: `Você só pode adicionar até 5 fotos. Você já tem ${currentPhotos} foto(s) e está tentando adicionar ${newPhotosCount}.`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     setUploadingMedia(true);
     
     try {
@@ -632,10 +648,10 @@ export const PublicComplaintForm = () => {
                       accept="image/*"
                       multiple
                       onChange={(e) => e.target.files && handleFileUpload(e.target.files, 'photo')}
-                      disabled={uploadingMedia}
+                      disabled={uploadingMedia || uploadedPhotos.length >= 5}
                       className="flex-1"
                     />
-                    <span className="text-xs text-muted-foreground">Máx: 5MB cada</span>
+                    <span className="text-xs text-muted-foreground">Máx: 5 fotos (5MB cada)</span>
                   </div>
                   
                   {/* Preview das fotos */}
