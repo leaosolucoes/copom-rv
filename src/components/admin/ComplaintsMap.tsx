@@ -374,7 +374,7 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
           case 'nova':
             return '#3b82f6'; // Azul
           case 'em_andamento':
-            return '#f59e0b'; // Laranja
+            return '#ef4444'; // Vermelho
           case 'processada':
             return '#10b981'; // Verde
           case 'arquivada':
