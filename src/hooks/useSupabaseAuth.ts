@@ -293,6 +293,9 @@ export const useSupabaseAuth = () => {
       localStorage.removeItem('user');
       localStorage.removeItem('login_timestamp');
       
+      // Redirect to login page
+      window.location.href = '/login';
+      
       return { error: null };
     } catch (error: any) {
       logger.error('Error in signOut:', error);
