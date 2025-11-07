@@ -374,7 +374,11 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
     const showOptionalText = !isZonaRural && optionalFieldsInRural.includes(field.name) && field.required;
     const label = `${fieldLabel}${isRequired ? ' *' : ''}${showOptionalText ? ' (opcional em zona rural)' : ''}`;
 
-    if (options.length > 0) {
+    // Campos de bairro sempre como input de texto livre
+    const neighborhoodFields = ['complainant_neighborhood', 'occurrence_neighborhood'];
+    const isNeighborhoodField = neighborhoodFields.includes(field.name);
+
+    if (options.length > 0 && !isNeighborhoodField) {
       return (
         <div key={field.name} className="space-y-2">
           <Label htmlFor={field.name}>{label}</Label>
