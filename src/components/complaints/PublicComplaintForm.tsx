@@ -58,7 +58,7 @@ interface SystemSettings {
 export const PublicComplaintForm = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Estado de carregamento
+  const [isLoading, setIsLoading] = useState(false); // Estado de carregamento
   const [logoUrl, setLogoUrl] = useState<string>('');
   const [settings, setSettings] = useState<SystemSettings>({
     public_neighborhoods: [],
