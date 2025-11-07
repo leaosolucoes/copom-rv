@@ -40,9 +40,6 @@ const Index = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="bg-card rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold text-card-foreground mb-6">
-              Registrar Denúncia
-            </h2>
             <PublicComplaintForm />
           </div>
         </div>
