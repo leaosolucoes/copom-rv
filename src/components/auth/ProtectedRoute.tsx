@@ -12,7 +12,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ 
   children, 
   allowedRoles, 
-  redirectTo = '/acesso' 
+  redirectTo = '/login' 
 }: ProtectedRouteProps) => {
   const { isAuthenticated, hasRole, isLoading, profile } = useSupabaseAuth();
 

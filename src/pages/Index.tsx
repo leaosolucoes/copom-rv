@@ -43,9 +43,15 @@ const Index = () => {
             <h1 className="text-4xl font-bold text-foreground mb-4">
               Sistema de Denúncias - 2º BPM
             </h1>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg text-muted-foreground mb-2">
               PMGO - COPOM - Rio Verde/GO
             </p>
+            <a 
+              href="/login" 
+              className="text-sm text-primary hover:underline"
+            >
+              Acesso para funcionários →
+            </a>
           </div>
           
           <div className="bg-card rounded-lg shadow-lg p-6">
