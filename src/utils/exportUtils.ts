@@ -261,6 +261,201 @@ export const exportToPDF = (options: ExportOptions): void => {
   doc.save(`${filename}.pdf`);
 };
 
+// Exportar denúncia individual para PDF
+export const exportComplaintToPDF = async (complaint: any): Promise<void> => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  let yPosition = 15;
+  const pageWidth = doc.internal.pageSize.width;
+  const margin = 15;
+  const contentWidth = pageWidth - (margin * 2);
+
+  // Função auxiliar para adicionar texto com quebra de linha
+  const addText = (text: string, isBold: boolean = false, fontSize: number = 10) => {
+    doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+    doc.setFontSize(fontSize);
+    const lines = doc.splitTextToSize(text, contentWidth);
+    
+    // Verificar se precisa de nova página
+    if (yPosition + (lines.length * 5) > doc.internal.pageSize.height - 20) {
+      doc.addPage();
+      yPosition = 15;
+    }
+    
+    doc.text(lines, margin, yPosition);
+    yPosition += lines.length * 5 + 2;
+  };
+
+  // Função auxiliar para adicionar seção
+  const addSection = (title: string) => {
+    if (yPosition > 20) {
+      yPosition += 3;
+    }
+    doc.setFillColor(59, 130, 246);
+    doc.rect(margin, yPosition, contentWidth, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text(title, margin + 2, yPosition + 5.5);
+    doc.setTextColor(0, 0, 0);
+    yPosition += 12;
+  };
+
+  // Cabeçalho
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('DETALHES DA DENÚNCIA', pageWidth / 2, yPosition, { align: 'center' });
+  yPosition += 10;
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Gerado em: ${formatDate(new Date(), 'dd/MM/yyyy HH:mm')}`, pageWidth / 2, yPosition, { align: 'center' });
+  yPosition += 8;
+
+  // Protocolo
+  if (complaint.protocol_number || complaint.id) {
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Protocolo: ${complaint.protocol_number || complaint.id.slice(0, 8).toUpperCase()}`, margin, yPosition);
+    yPosition += 8;
+  }
+
+  // Dados do Denunciante
+  addSection('DADOS DO DENUNCIANTE');
+  addText(`Nome: ${complaint.complainant_name || 'Não informado'}`);
+  addText(`Telefone: ${complaint.complainant_phone || 'Não informado'}`);
+  addText(`Tipo: ${complaint.complainant_type || 'Não informado'}`);
+  addText(`Bairro: ${complaint.complainant_neighborhood || 'Não informado'}`);
+  
+  let enderecoDenunciante = complaint.complainant_address || 'Não informado';
+  if (complaint.complainant_number) enderecoDenunciante += ` nº ${complaint.complainant_number}`;
+  if (complaint.complainant_block) enderecoDenunciante += `, Quadra ${complaint.complainant_block}`;
+  if (complaint.complainant_lot) enderecoDenunciante += `, Lote ${complaint.complainant_lot}`;
+  addText(`Endereço: ${enderecoDenunciante}`);
+
+  // Dados da Ocorrência
+  addSection('DADOS DA OCORRÊNCIA');
+  addText(`Tipo de Ocorrência: ${complaint.occurrence_type || 'Não informado'}`);
+  addText(`Bairro: ${complaint.occurrence_neighborhood || 'Não informado'}`);
+  
+  let enderecoOcorrencia = complaint.occurrence_address || 'Não informado';
+  if (complaint.occurrence_number) enderecoOcorrencia += ` nº ${complaint.occurrence_number}`;
+  if (complaint.occurrence_block) enderecoOcorrencia += `, Quadra ${complaint.occurrence_block}`;
+  if (complaint.occurrence_lot) enderecoOcorrencia += `, Lote ${complaint.occurrence_lot}`;
+  addText(`Endereço: ${enderecoOcorrencia}`);
+  
+  if (complaint.occurrence_reference) {
+    addText(`Referência: ${complaint.occurrence_reference}`);
+  }
+  
+  if (complaint.occurrence_date) {
+    addText(`Data da Ocorrência: ${formatDate(new Date(complaint.occurrence_date), 'dd/MM/yyyy')}`);
+  }
+  
+  if (complaint.occurrence_time) {
+    addText(`Horário: ${complaint.occurrence_time}`);
+  }
+
+  // Descrição da Denúncia
+  addSection('DESCRIÇÃO DA DENÚNCIA');
+  addText(complaint.description || 'Não informado');
+
+  // Informações Adicionais
+  addSection('INFORMAÇÕES ADICIONAIS');
+  addText(`Classificação: ${complaint.classification || 'Não informado'}`);
+  addText(`Status: ${complaint.status || 'Não informado'}`);
+  
+  if (complaint.system_identifier) {
+    addText(`Identificador do Sistema: ${complaint.system_identifier}`);
+  }
+  
+  addText(`Data de Criação: ${formatDate(new Date(complaint.created_at), 'dd/MM/yyyy HH:mm')}`);
+  
+  if (complaint.whatsapp_sent) {
+    addText(`WhatsApp Enviado: Sim${complaint.whatsapp_sent_at ? ` em ${formatDate(new Date(complaint.whatsapp_sent_at), 'dd/MM/yyyy HH:mm')}` : ''}`);
+  }
+
+  // Mídias Anexadas
+  if ((complaint.photos && complaint.photos.length > 0) || (complaint.videos && complaint.videos.length > 0)) {
+    addSection('MÍDIAS ANEXADAS');
+    
+    if (complaint.photos && complaint.photos.length > 0) {
+      addText(`Fotos: ${complaint.photos.length} arquivo(s)`, true);
+      complaint.photos.forEach((photo: string, index: number) => {
+        addText(`  ${index + 1}. ${photo.split('/').pop()}`);
+      });
+    }
+    
+    if (complaint.videos && complaint.videos.length > 0) {
+      addText(`Vídeos: ${complaint.videos.length} arquivo(s)`, true);
+      complaint.videos.forEach((video: string, index: number) => {
+        addText(`  ${index + 1}. ${video.split('/').pop()}`);
+      });
+    }
+  }
+
+  // Informações do Usuário
+  const hasUserInfo = complaint.user_location || complaint.user_device_type || 
+                     complaint.user_browser || complaint.user_ip || complaint.user_agent;
+  
+  if (hasUserInfo) {
+    addSection('INFORMAÇÕES DO USUÁRIO');
+    
+    if (complaint.user_device_type) {
+      addText(`Dispositivo: ${complaint.user_device_type}`);
+    }
+    
+    if (complaint.user_browser) {
+      addText(`Navegador: ${complaint.user_browser}`);
+    }
+    
+    if (complaint.user_ip) {
+      addText(`IP: ${complaint.user_ip}`);
+    }
+    
+    if (complaint.user_agent) {
+      addText(`User Agent: ${complaint.user_agent}`);
+    }
+    
+    if (complaint.user_location) {
+      const location = typeof complaint.user_location === 'string' 
+        ? JSON.parse(complaint.user_location) 
+        : complaint.user_location;
+      
+      if (location.latitude && location.longitude) {
+        addText(`Localização: Lat ${location.latitude}, Long ${location.longitude}`);
+      }
+      
+      if (location.accuracy) {
+        addText(`Precisão: ${location.accuracy}m`);
+      }
+    }
+  }
+
+  // Rodapé em todas as páginas
+  const pageCount = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(128, 128, 128);
+    doc.text(
+      `Página ${i} de ${pageCount}`,
+      pageWidth / 2,
+      doc.internal.pageSize.height - 10,
+      { align: 'center' }
+    );
+  }
+
+  // Download
+  const fileName = `denuncia_${complaint.protocol_number || complaint.id.slice(0, 8)}_${formatDate(new Date(), 'yyyyMMdd_HHmmss')}.pdf`;
+  doc.save(fileName);
+};
+
 // Função principal que detecta o formato
 export const exportData = (options: ExportOptions): void => {
   switch (options.format) {

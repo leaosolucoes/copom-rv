@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, UserCheck, RefreshCw, Smartphone, Search } from 'lucide-react';
+import { Eye, Download, MessageSquare, Calendar, Send, Archive, Check, CalendarIcon, Image, Video, Play, AlertCircle, UserCheck, RefreshCw, Smartphone, Search, FileDown } from 'lucide-react';
 import { MediaModal } from "@/components/ui/media-modal";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
+import { exportComplaintToPDF } from '@/utils/exportUtils';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useComplaintsFilter } from '@/hooks/useComplaintsFilter';
 import { useLazyRender } from '@/hooks/useLazyRender';
@@ -1736,7 +1737,20 @@ export const ComplaintsList = () => {
                               </DialogTrigger>
                               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
-                                  <DialogTitle>Detalhes da Denúncia</DialogTitle>
+                                  <div className="flex items-center justify-between">
+                                    <DialogTitle>Detalhes da Denúncia</DialogTitle>
+                                    {(userRole === 'admin' || userRole === 'super_admin') && selectedComplaint && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => exportComplaintToPDF(selectedComplaint)}
+                                        className="ml-4"
+                                      >
+                                        <FileDown className="h-4 w-4 mr-2" />
+                                        Exportar PDF
+                                      </Button>
+                                    )}
+                                  </div>
                                 </DialogHeader>
                                {selectedComplaint && (
                                  <div className="space-y-6">
@@ -2414,10 +2428,23 @@ export const ComplaintsList = () => {
                              Ver
                            </Button>
                          </DialogTrigger>
-                         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                           <DialogHeader>
-                             <DialogTitle>Detalhes da Denúncia</DialogTitle>
-                           </DialogHeader>
+                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                              <div className="flex items-center justify-between">
+                                <DialogTitle>Detalhes da Denúncia</DialogTitle>
+                                {(userRole === 'admin' || userRole === 'super_admin') && selectedComplaint && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => exportComplaintToPDF(selectedComplaint)}
+                                    className="ml-4"
+                                  >
+                                    <FileDown className="h-4 w-4 mr-2" />
+                                    Exportar PDF
+                                  </Button>
+                                )}
+                              </div>
+                            </DialogHeader>
                             {selectedComplaint && (
                               <div className="space-y-6">
                                 {/* Informações do topo para histórico */}
