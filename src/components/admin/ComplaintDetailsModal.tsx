@@ -204,15 +204,18 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
 
       // Função para adicionar marca d'água de segurança
       const addWatermark = (pageNum: number, logoBase64: string | null) => {
+        // Salvar estado atual
+        doc.saveGraphicsState();
+        
         // Marca d'água de texto "CONFIDENCIAL" em vermelho bem clarinho
-        doc.setTextColor(255, 230, 230); // Vermelho bem clarinho
+        doc.setTextColor(255, 240, 240); // Vermelho MUITO clarinho
         doc.setFontSize(50);
         doc.setFont("helvetica", "bold");
         
         // Calcular posição central e rotacionar
         const text = "CONFIDENCIAL";
         const centerX = pageWidth / 2;
-        const centerY = pageHeight / 2;
+        const centerY = pageHeight / 2 + 30; // Mover mais para baixo para não cobrir cabeçalho
         
         // Rotacionar 45 graus
         doc.text(text, centerX, centerY, {
@@ -220,8 +223,8 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
           align: "center"
         });
         
-        // Restaurar cor do texto para o restante do conteúdo
-        doc.setTextColor(0, 0, 0);
+        // Restaurar estado (cor, fonte, etc)
+        doc.restoreGraphicsState();
       };
 
       // Função auxiliar para verificar espaço e adicionar nova página se necessário
@@ -230,7 +233,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
           await addFooter(currentPageNumber, complaint.protocol_number || complaint.system_identifier || "SEM PROTOCOLO");
           doc.addPage();
           currentPageNumber++;
-          addWatermark(currentPageNumber, logoBase64); // Marca d'água PRIMEIRO na nova página
+          addWatermark(currentPageNumber, logoBase64); // Marca d'água nas páginas seguintes
           yPos = 20;
           return true;
         }
@@ -264,10 +267,6 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       };
 
       // Cabeçalho personalizado com logo
-      
-      // Adicionar marca d'água PRIMEIRO (para ficar atrás de tudo)
-      addWatermark(currentPageNumber, logoBase64);
-      
       doc.setFillColor(41, 128, 185); // Azul institucional
       doc.rect(0, 0, pageWidth, 50, "F");
 
@@ -318,6 +317,9 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       doc.setLineWidth(0.5);
       doc.line(margin, 45, pageWidth - margin, 45);
 
+      // Adicionar marca d'água DEPOIS do cabeçalho (para não interferir)
+      addWatermark(currentPageNumber, logoBase64);
+      
       doc.setTextColor(0, 0, 0);
       yPos = 60;
 
