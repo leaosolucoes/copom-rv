@@ -142,10 +142,42 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
 
       const logoBase64 = await loadLogo();
 
+      // Função para adicionar rodapé personalizado
+      let currentPageNumber = 1;
+      const addFooter = (pageNum: number) => {
+        const footerY = pageHeight - 20;
+        
+        // Linha decorativa superior do rodapé
+        doc.setDrawColor(41, 128, 185);
+        doc.setLineWidth(0.5);
+        doc.line(margin, footerY - 8, pageWidth - margin, footerY - 8);
+        
+        // Informações da instituição
+        doc.setFontSize(8);
+        doc.setTextColor(60, 60, 60);
+        doc.setFont('helvetica', 'bold');
+        doc.text('2º Batalhão da Polícia Militar', margin, footerY - 2);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(80, 80, 80);
+        doc.text('Contato: (62) 3201-1190 | E-mail: ouvidoria@pm.go.gov.br', margin, footerY + 3);
+        
+        // Número da página e data (alinhado à direita)
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(7);
+        doc.setTextColor(100, 100, 100);
+        const pageText = `Página ${pageNum} | ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })}`;
+        const textWidth = doc.getTextWidth(pageText);
+        doc.text(pageText, pageWidth - margin - textWidth, footerY + 3);
+      };
+
       // Função auxiliar para verificar espaço e adicionar nova página se necessário
       const checkPageBreak = (spaceNeeded: number) => {
-        if (yPos + spaceNeeded > pageHeight - 30) {
+        if (yPos + spaceNeeded > pageHeight - 40) {
+          addFooter(currentPageNumber);
           doc.addPage();
+          currentPageNumber++;
           yPos = 20;
           return true;
         }
@@ -413,19 +445,8 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         doc.setTextColor(0, 0, 0);
       }
 
-      // Rodapé em todas as páginas
-      const pageCount = doc.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text(
-          `Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - Página ${i} de ${pageCount}`,
-          pageWidth / 2,
-          pageHeight - 10,
-          { align: 'center' }
-        );
-      }
+      // Adicionar rodapé na última página
+      addFooter(currentPageNumber);
 
       // Salvar PDF
       doc.save(`denuncia-${complaint.protocol_number || complaint.system_identifier}.pdf`);
