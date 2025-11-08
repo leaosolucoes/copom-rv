@@ -205,7 +205,7 @@ const ValidarDenuncia = () => {
 
       // QR Code
       yPos += 20;
-      const qrCodeUrl = `${window.location.origin}/validar/${complaint.protocol_number || complaint.system_identifier}`;
+      const qrCodeUrl = `https://copomrv.vinnax.app/validar/${complaint.protocol_number || complaint.system_identifier}`;
       const qrCodeDataUrl = await QRCodeLib.toDataURL(qrCodeUrl, { width: 200, margin: 1 });
       doc.addImage(qrCodeDataUrl, "PNG", pageWidth / 2 - 25, yPos, 50, 50);
 
