@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { MediaModal } from "@/components/ui/media-modal";
 import { 
   Calendar, 
   Clock, 
@@ -12,10 +13,12 @@ import {
   Hash,
   Building,
   Image as ImageIcon,
-  Video
+  Video,
+  Eye
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useState } from "react";
 
 interface ComplaintDetails {
   id: string;
@@ -70,7 +73,36 @@ interface ComplaintDetailsModalProps {
 }
 
 export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: ComplaintDetailsModalProps) => {
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+  const [selectedMediaType, setSelectedMediaType] = useState<'photo' | 'video'>('photo');
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+
   if (!complaint) return null;
+
+  // Processar fotos e vídeos
+  const photos = Array.isArray(complaint.photos) 
+    ? complaint.photos.map((p: any) => typeof p === 'string' ? p : p?.url || p?.path)
+    : complaint.photos 
+      ? [typeof complaint.photos === 'string' ? complaint.photos : complaint.photos?.url || complaint.photos?.path]
+      : [];
+  
+  const videos = Array.isArray(complaint.videos)
+    ? complaint.videos.map((v: any) => typeof v === 'string' ? v : v?.url || v?.path)
+    : complaint.videos
+      ? [typeof complaint.videos === 'string' ? complaint.videos : complaint.videos?.url || complaint.videos?.path]
+      : [];
+
+  const handlePhotoClick = (index: number) => {
+    setSelectedMediaIndex(index);
+    setSelectedMediaType('photo');
+    setMediaModalOpen(true);
+  };
+
+  const handleVideoClick = (index: number) => {
+    setSelectedMediaIndex(index);
+    setSelectedMediaType('video');
+    setMediaModalOpen(true);
+  };
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -302,7 +334,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
             )}
 
             {/* Mídias */}
-            {(complaint.photos || complaint.videos) && (
+            {(photos.length > 0 || videos.length > 0) && (
               <>
                 <Separator />
                 <div>
@@ -310,30 +342,69 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
                     <ImageIcon className="h-4 w-4" />
                     Mídias Anexadas
                   </h3>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    {complaint.photos && (
-                      <div>
-                        <span className="text-muted-foreground flex items-center gap-1">
-                          <ImageIcon className="h-3 w-3" />
-                          Fotos:
-                        </span>
-                        <p className="font-medium">
-                          {Array.isArray(complaint.photos) ? complaint.photos.length : 0} foto(s)
-                        </p>
+
+                  {/* Fotos */}
+                  {photos.length > 0 && (
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <ImageIcon className="h-4 w-4" />
+                        <span>Fotos ({photos.length})</span>
                       </div>
-                    )}
-                    {complaint.videos && (
-                      <div>
-                        <span className="text-muted-foreground flex items-center gap-1">
-                          <Video className="h-3 w-3" />
-                          Vídeos:
-                        </span>
-                        <p className="font-medium">
-                          {Array.isArray(complaint.videos) ? complaint.videos.length : 0} vídeo(s)
-                        </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {photos.map((photoUrl: string, index: number) => (
+                          <div
+                            key={index}
+                            className="relative group cursor-pointer aspect-square rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-all"
+                            onClick={() => handlePhotoClick(index)}
+                          >
+                            <img
+                              src={photoUrl}
+                              alt={`Foto ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EImagem%3C/text%3E%3C/svg%3E';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Eye className="h-6 w-6 text-white" />
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* Vídeos */}
+                  {videos.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Video className="h-4 w-4" />
+                        <span>Vídeos ({videos.length})</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {videos.map((videoUrl: string, index: number) => (
+                          <div
+                            key={index}
+                            className="relative group cursor-pointer aspect-video rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-all bg-black"
+                            onClick={() => handleVideoClick(index)}
+                          >
+                            <video
+                              src={videoUrl}
+                              className="w-full h-full object-contain"
+                              preload="metadata"
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Eye className="h-8 w-8 text-white" />
+                            </div>
+                            <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                              <Video className="h-3 w-3" />
+                              Vídeo {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -378,6 +449,19 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
           </div>
         </ScrollArea>
       </DialogContent>
+
+      {/* Modal de visualização de mídia */}
+      {mediaModalOpen && (
+        <MediaModal
+          isOpen={mediaModalOpen}
+          onClose={() => {
+            setMediaModalOpen(false);
+          }}
+          media={selectedMediaType === 'photo' ? photos : videos}
+          initialIndex={selectedMediaIndex}
+          type={selectedMediaType}
+        />
+      )}
     </Dialog>
   );
 };
