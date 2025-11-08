@@ -13,6 +13,7 @@ import { Layers, Flame, Map as MapIcon, AlertCircle, ExternalLink } from 'lucide
 interface Complaint {
   id: string;
   protocol_number: string;
+  system_identifier?: string;
   complainant_name: string;
   occurrence_type: string;
   status: string;
@@ -414,7 +415,7 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
       const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
         <div style="padding: 8px; min-width: 200px;">
           <h3 style="margin: 0 0 8px 0; font-weight: bold; font-size: 14px;">
-            Protocolo #${complaint.protocol_number}
+            Protocolo #${complaint.protocol_number || complaint.system_identifier || 'N/A'}
           </h3>
           <div style="font-size: 12px; color: #666;">
             <p style="margin: 4px 0;"><strong>Denunciante:</strong> ${complaint.complainant_name}</p>

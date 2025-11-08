@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast';
 interface Complaint {
   id: string;
   protocol_number: string;
+  system_identifier?: string;
   complainant_name: string;
   occurrence_type: string;
   status: string;
@@ -52,7 +53,7 @@ export const ComplaintsMapDashboard = () => {
       // Query principal - buscar todas as denúncias ativas (exceto excluídas/deletadas)
       let query = supabase
         .from('complaints')
-        .select('id, protocol_number, complainant_name, occurrence_type, status, user_location, created_at, attendant_id')
+        .select('id, protocol_number, system_identifier, complainant_name, occurrence_type, status, user_location, created_at, attendant_id')
         .eq('deleted', false)
         .order('created_at', { ascending: false });
 
@@ -81,7 +82,7 @@ export const ComplaintsMapDashboard = () => {
       if (comparisonRange) {
         let comparisonQuery = supabase
           .from('complaints')
-          .select('id, protocol_number, complainant_name, occurrence_type, status, user_location, created_at, attendant_id')
+          .select('id, protocol_number, system_identifier, complainant_name, occurrence_type, status, user_location, created_at, attendant_id')
           .eq('deleted', false)
           .gte('created_at', comparisonRange.from.toISOString())
           .lte('created_at', comparisonRange.to.toISOString())
