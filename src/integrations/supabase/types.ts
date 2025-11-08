@@ -543,6 +543,57 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          block_duration_seconds: number | null
+          blocked: boolean
+          captcha_completed: boolean
+          captcha_required: boolean
+          created_at: string
+          device_info: Json | null
+          email_attempted: string
+          failed_reason: string | null
+          geolocation: Json | null
+          id: string
+          ip_address: string | null
+          success: boolean
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          block_duration_seconds?: number | null
+          blocked?: boolean
+          captcha_completed?: boolean
+          captcha_required?: boolean
+          created_at?: string
+          device_info?: Json | null
+          email_attempted: string
+          failed_reason?: string | null
+          geolocation?: Json | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          block_duration_seconds?: number | null
+          blocked?: boolean
+          captcha_completed?: boolean
+          captcha_required?: boolean
+          created_at?: string
+          device_info?: Json | null
+          email_attempted?: string
+          failed_reason?: string | null
+          geolocation?: Json | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       performance_metrics: {
         Row: {
           created_at: string | null

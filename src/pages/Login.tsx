@@ -13,6 +13,7 @@ import { LogIn, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { CaptchaVerification, CaptchaVerificationRef } from '@/components/auth/CaptchaVerification';
 import { LoginAttemptsManager } from '@/utils/loginAttempts';
+import { logLoginAttempt } from '@/utils/loginAttemptsLogger';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -125,6 +126,17 @@ const Login = () => {
     // Verificar se está bloqueado
     if (LoginAttemptsManager.isLocked()) {
       setError(LoginAttemptsManager.getErrorMessage());
+      
+      // Registrar tentativa bloqueada
+      await logLoginAttempt({
+        email,
+        success: false,
+        failedReason: 'Bloqueado por rate limiting',
+        blocked: true,
+        blockDurationSeconds: LoginAttemptsManager.getLockedTimeRemaining(),
+        captchaRequired: showCaptcha
+      });
+      
       return;
     }
 
@@ -147,6 +159,15 @@ const Login = () => {
         
         // Registrar tentativa falhada
         LoginAttemptsManager.recordFailedAttempt();
+        
+        // Registrar no banco
+        await logLoginAttempt({
+          email,
+          success: false,
+          failedReason: 'Credenciais inválidas',
+          captchaRequired: showCaptcha,
+          captchaCompleted: showCaptcha && !!captchaToken
+        });
         
         // Verificar se agora deve mostrar CAPTCHA
         if (LoginAttemptsManager.shouldShowCaptcha()) {
@@ -175,6 +196,15 @@ const Login = () => {
       
       // Login bem-sucedido - resetar tentativas
       LoginAttemptsManager.reset();
+      
+      // Registrar sucesso no banco
+      await logLoginAttempt({
+        email,
+        success: true,
+        captchaRequired: showCaptcha,
+        captchaCompleted: showCaptcha && !!captchaToken
+      });
+      
       setShowCaptcha(false);
       setCaptchaToken(null);
       
@@ -195,6 +225,14 @@ const Login = () => {
     } catch (error: any) {
       console.error('💥 LOGIN: Erro inesperado:', error);
       setError('Erro ao fazer login');
+      
+      // Registrar erro no banco
+      await logLoginAttempt({
+        email,
+        success: false,
+        failedReason: 'Erro inesperado no sistema'
+      });
+      
       setLoading(false);
     }
   };

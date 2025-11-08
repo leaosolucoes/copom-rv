@@ -30,7 +30,8 @@ import { PerformanceMonitorDashboard } from '@/components/admin/PerformanceMonit
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
 import { CEPLookup } from '@/components/cep/CEPLookup';
-import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, BarChart3, Clock, Map, Activity, Zap } from 'lucide-react';
+import { LoginAttemptsMonitor } from '@/components/admin/LoginAttemptsMonitor';
+import { Users, FileText, Settings, MessageSquare, Layout, Image, List, Code, Search, Shield, BarChart3, Clock, Map, Activity, Zap, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
@@ -186,6 +187,11 @@ const SuperAdminDashboard = () => {
                 <Shield className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Auditoria</span>
                 <span className="sm:hidden">Audit</span>
+              </TabsTrigger>
+              <TabsTrigger value="login-security" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
+                <Lock className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Tentativas de Login</span>
+                <span className="sm:hidden">Login</span>
               </TabsTrigger>
               <TabsTrigger value="performance" className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3">
                 <Zap className="h-3 w-3 md:h-4 md:w-4" />
@@ -393,6 +399,10 @@ const SuperAdminDashboard = () => {
                 <PerformanceMonitorDashboard />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="login-security" className="space-y-6">
+            <LoginAttemptsMonitor />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
