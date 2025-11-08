@@ -9,6 +9,8 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Layers, Flame, Map as MapIcon, AlertCircle, ExternalLink } from 'lucide-react';
+import { ComplaintDetailsModal } from './ComplaintDetailsModal';
+import { toast } from '@/hooks/use-toast';
 
 interface Complaint {
   id: string;
@@ -42,6 +44,8 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
   const [mapStyle, setMapStyle] = useState<string>('streets-v12');
   const [mapInitializing, setMapInitializing] = useState<boolean>(false);
   const [webglError, setWebglError] = useState<boolean>(false);
+  const [selectedComplaint, setSelectedComplaint] = useState<any>(null);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
 
   // Verificar suporte a WebGL
   const checkWebGLSupport = () => {
@@ -412,7 +416,9 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
         }
       };
 
-      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+      // Criar elemento para o botão de ver detalhes
+      const popupContainer = document.createElement('div');
+      popupContainer.innerHTML = `
         <div style="padding: 8px; min-width: 200px;">
           <h3 style="margin: 0 0 8px 0; font-weight: bold; font-size: 14px;">
             Protocolo #${complaint.protocol_number || complaint.system_identifier || 'N/A'}
@@ -434,14 +440,66 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
             </p>
             <p style="margin: 4px 0;"><strong>Data:</strong> ${new Date(complaint.created_at).toLocaleDateString('pt-BR')}</p>
           </div>
+          <button 
+            id="view-complaint-${complaint.id}"
+            style="
+              margin-top: 8px;
+              width: 100%;
+              padding: 6px 12px;
+              background-color: #3b82f6;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 12px;
+              font-weight: 500;
+            "
+            onmouseover="this.style.backgroundColor='#2563eb'"
+            onmouseout="this.style.backgroundColor='#3b82f6'"
+          >
+            📋 Ver Denúncia Completa
+          </button>
         </div>
-      `);
+      `;
+
+      const popup = new mapboxgl.Popup({ offset: 25 })
+        .setDOMContent(popupContainer);
 
       // Criar marcador
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([longitude, latitude])
         .setPopup(popup)
         .addTo(map.current!);
+
+      // Adicionar event listener ao botão quando o popup abrir
+      popup.on('open', () => {
+        const button = document.getElementById(`view-complaint-${complaint.id}`);
+        if (button) {
+          button.addEventListener('click', async () => {
+            try {
+              // Buscar dados completos da denúncia
+              const { data, error } = await supabase
+                .from('complaints')
+                .select('*')
+                .eq('id', complaint.id)
+                .single();
+
+              if (error) throw error;
+
+              setSelectedComplaint(data);
+              setModalOpen(true);
+              popup.remove(); // Fechar popup ao abrir modal
+            } catch (error) {
+              console.error('Erro ao buscar detalhes da denúncia:', error);
+              toast({
+                title: "Erro",
+                description: "Não foi possível carregar os detalhes da denúncia",
+                variant: "destructive"
+              });
+            }
+          });
+        }
+      });
 
       markers.current.push(marker);
     });
@@ -554,7 +612,7 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
                       complaint.status === 'nova'
                         ? 'bg-blue-100 text-blue-700'
                         : complaint.status === 'em_andamento'
-                        ? 'bg-yellow-100 text-yellow-700'
+                        ? 'bg-red-100 text-red-700'
                         : 'bg-green-100 text-green-700'
                     }`}
                   >
@@ -703,7 +761,7 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
                 <span>Nova</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#f59e0b] border-2 border-white"></div>
+                <div className="w-3 h-3 rounded-full bg-[#ef4444] border-2 border-white"></div>
                 <span>Em Andamento</span>
               </div>
               <div className="flex items-center gap-2">
@@ -726,6 +784,13 @@ export const ComplaintsMap = ({ complaints }: ComplaintsMapProps) => {
           </div>
         )}
       </div>
+
+      {/* Modal de detalhes da denúncia */}
+      <ComplaintDetailsModal
+        complaint={selectedComplaint}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
     </div>
   );
 };
