@@ -23,6 +23,7 @@ import { ptBR } from "date-fns/locale";
 import { useState } from "react";
 import jsPDF from "jspdf";
 import { toast } from "@/hooks/use-toast";
+import QRCode from "qrcode";
 
 interface ComplaintDetails {
   id: string;
@@ -142,9 +143,9 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
 
       const logoBase64 = await loadLogo();
 
-      // Função para adicionar rodapé personalizado
+      // Função para adicionar rodapé personalizado com QR code
       let currentPageNumber = 1;
-      const addFooter = (pageNum: number) => {
+      const addFooter = async (pageNum: number, protocolNumber: string) => {
         const footerY = pageHeight - 20;
 
         // Linha decorativa superior do rodapé
@@ -152,16 +153,42 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         doc.setLineWidth(0.5);
         doc.line(margin, footerY - 8, pageWidth - margin, footerY - 8);
 
-        // Informações da instituição
+        // Gerar QR Code com o número do protocolo
+        try {
+          const qrCodeDataUrl = await QRCode.toDataURL(protocolNumber, {
+            width: 50,
+            margin: 1,
+            color: {
+              dark: '#000000',
+              light: '#FFFFFF'
+            }
+          });
+          
+          // Adicionar QR code no canto esquerdo do rodapé
+          const qrSize = 12;
+          doc.addImage(qrCodeDataUrl, 'PNG', margin, footerY - 7, qrSize, qrSize);
+          
+          // Texto ao lado do QR code
+          doc.setFontSize(6);
+          doc.setTextColor(80, 80, 80);
+          doc.setFont("helvetica", "italic");
+          doc.text("Validação", margin + qrSize + 2, footerY - 3);
+          doc.text(protocolNumber, margin + qrSize + 2, footerY + 1);
+        } catch (error) {
+          console.error("Erro ao gerar QR code:", error);
+        }
+
+        // Informações da instituição (centralizado)
+        const centerX = pageWidth / 2;
         doc.setFontSize(8);
         doc.setTextColor(60, 60, 60);
         doc.setFont("helvetica", "bold");
-        doc.text("2º Batalhão da Polícia Militar do Estado de Goíás", margin, footerY - 2);
+        doc.text("2º Batalhão da Polícia Militar do Estado de Goíás", centerX, footerY - 2, { align: 'center' });
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(7);
         doc.setTextColor(80, 80, 80);
-        doc.text("Contato: (64) 3620-0910 | E-mail: 2bpmrioverde@gmail.com", margin, footerY + 3);
+        doc.text("Contato: (64) 3620-0910 | E-mail: 2bpmrioverde@gmail.com", centerX, footerY + 3, { align: 'center' });
 
         // Número da página e data (alinhado à direita)
         doc.setFont("helvetica", "italic");
@@ -195,9 +222,9 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       };
 
       // Função auxiliar para verificar espaço e adicionar nova página se necessário
-      const checkPageBreak = (spaceNeeded: number) => {
+      const checkPageBreak = async (spaceNeeded: number) => {
         if (yPos + spaceNeeded > pageHeight - 40) {
-          addFooter(currentPageNumber);
+          await addFooter(currentPageNumber, complaint.protocol_number || complaint.system_identifier || "SEM PROTOCOLO");
           doc.addPage();
           currentPageNumber++;
           addWatermark(currentPageNumber, logoBase64); // Marca d'água PRIMEIRO na nova página
@@ -331,7 +358,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       yPos += 10;
 
       // Verificar se precisa de nova página
-      checkPageBreak(50);
+      await checkPageBreak(50);
 
       // Linha separadora
       doc.line(margin, yPos, pageWidth - margin, yPos);
@@ -370,7 +397,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       yPos += 10;
 
       // Verificar se precisa de nova página
-      checkPageBreak(50);
+      await checkPageBreak(50);
 
       // Linha separadora
       doc.line(margin, yPos, pageWidth - margin, yPos);
@@ -384,7 +411,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
 
       // Localização GPS
       if (complaint.user_location) {
-        checkPageBreak(60);
+        await checkPageBreak(60);
         doc.line(margin, yPos, pageWidth - margin, yPos);
         yPos += 10;
         yPos = addText("LOCALIZAÇÃO GPS", margin, yPos, 12, true);
@@ -403,7 +430,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
 
       // Fotos
       if (photos.length > 0) {
-        checkPageBreak(80);
+        await checkPageBreak(80);
         doc.line(margin, yPos, pageWidth - margin, yPos);
         yPos += 10;
         yPos = addText("FOTOS ANEXADAS", margin, yPos, 12, true);
@@ -420,7 +447,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
 
             if (base64Image) {
               // Verificar se precisa de nova página (imagem + legenda precisa de ~85mm)
-              checkPageBreak(90);
+              await checkPageBreak(90);
 
               // Adicionar imagem (máximo 150x150)
               const imgWidth = 80;
@@ -452,7 +479,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
 
       // Vídeos
       if (videos.length > 0) {
-        checkPageBreak(40);
+        await checkPageBreak(40);
         doc.line(margin, yPos, pageWidth - margin, yPos);
         yPos += 10;
         yPos = addText("VÍDEOS ANEXADOS", margin, yPos, 12, true);
@@ -463,7 +490,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
 
       // Informações do Sistema e Dados Técnicos
       if (complaint.user_device_type || complaint.user_browser || complaint.user_ip || complaint.system_identifier) {
-        checkPageBreak(60);
+        await checkPageBreak(60);
         doc.line(margin, yPos, pageWidth - margin, yPos);
         yPos += 10;
         yPos = addText("INFORMAÇÕES DO SISTEMA E DADOS TÉCNICOS", margin, yPos, 12, true);
@@ -499,7 +526,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       }
 
       // Adicionar rodapé na última página
-      addFooter(currentPageNumber);
+      await addFooter(currentPageNumber, complaint.protocol_number || complaint.system_identifier || "SEM PROTOCOLO");
 
       // Salvar PDF
       doc.save(`denuncia-${complaint.protocol_number || complaint.system_identifier}.pdf`);
