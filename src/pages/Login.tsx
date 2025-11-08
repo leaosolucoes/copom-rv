@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -11,6 +11,8 @@ import { Header } from '@/components/layout/Header';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LogIn, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { CaptchaVerification, CaptchaVerificationRef } from '@/components/auth/CaptchaVerification';
+import { LoginAttemptsManager } from '@/utils/loginAttempts';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -22,6 +24,11 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [logoUrl, setLogoUrl] = useState<string>('');
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockTimeRemaining, setLockTimeRemaining] = useState(0);
+  const captchaRef = useRef<CaptchaVerificationRef>(null);
 
   // Mobile-optimized authentication redirection
   useEffect(() => {
@@ -47,6 +54,35 @@ const Login = () => {
   }, [isAuthenticated, profile, authLoading]);
 
 
+  // Verificar tentativas ao carregar
+  useEffect(() => {
+    const checkAttempts = () => {
+      const locked = LoginAttemptsManager.isLocked();
+      const shouldShow = LoginAttemptsManager.shouldShowCaptcha();
+      
+      setIsLocked(locked);
+      setShowCaptcha(shouldShow);
+      
+      if (locked) {
+        setLockTimeRemaining(LoginAttemptsManager.getLockedTimeRemaining());
+      }
+    };
+
+    checkAttempts();
+
+    // Atualizar a cada segundo se estiver bloqueado
+    const interval = setInterval(() => {
+      if (LoginAttemptsManager.isLocked()) {
+        setLockTimeRemaining(LoginAttemptsManager.getLockedTimeRemaining());
+      } else {
+        setIsLocked(false);
+        setLockTimeRemaining(0);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const fetchLogo = async () => {
       try {
@@ -69,9 +105,34 @@ const Login = () => {
     fetchLogo();
   }, []);
 
+  const handleCaptchaVerify = (token: string) => {
+    setCaptchaToken(token);
+  };
+
+  const handleCaptchaError = () => {
+    setError('Erro ao verificar CAPTCHA. Tente novamente.');
+    setCaptchaToken(null);
+  };
+
+  const handleCaptchaExpire = () => {
+    setCaptchaToken(null);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
+
+    // Verificar se está bloqueado
+    if (LoginAttemptsManager.isLocked()) {
+      setError(LoginAttemptsManager.getErrorMessage());
+      return;
+    }
+
+    // Verificar CAPTCHA se necessário
+    if (showCaptcha && !captchaToken) {
+      setError('Por favor, complete a verificação CAPTCHA');
+      return;
+    }
     
     setLoading(true);
     setError('');
@@ -83,12 +144,39 @@ const Login = () => {
       
       if (result?.error) {
         console.log('❌ MOBILE LOGIN: Erro na autenticação:', result.error);
-        setError('Email ou senha incorretos');
+        
+        // Registrar tentativa falhada
+        LoginAttemptsManager.recordFailedAttempt();
+        
+        // Verificar se agora deve mostrar CAPTCHA
+        if (LoginAttemptsManager.shouldShowCaptcha()) {
+          setShowCaptcha(true);
+        }
+
+        // Verificar se foi bloqueado
+        if (LoginAttemptsManager.isLocked()) {
+          setIsLocked(true);
+          setLockTimeRemaining(LoginAttemptsManager.getLockedTimeRemaining());
+        }
+
+        setError(LoginAttemptsManager.getErrorMessage());
+        
+        // Resetar CAPTCHA se houver
+        if (captchaRef.current) {
+          captchaRef.current.reset();
+          setCaptchaToken(null);
+        }
+        
         setLoading(false);
         return;
       }
 
       console.log('✅ MOBILE LOGIN: SignIn successful, iniciando verificação...');
+      
+      // Login bem-sucedido - resetar tentativas
+      LoginAttemptsManager.reset();
+      setShowCaptcha(false);
+      setCaptchaToken(null);
       
       // Aguardar sincronização
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -146,6 +234,16 @@ const Login = () => {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
+
+              {isLocked && (
+                <Alert className="border-red-500/50 bg-red-500/10">
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  <AlertDescription className="text-sm">
+                    Muitas tentativas falhadas. Aguarde {Math.floor(lockTimeRemaining / 60)}:
+                    {(lockTimeRemaining % 60).toString().padStart(2, '0')} para tentar novamente.
+                  </AlertDescription>
+                </Alert>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
@@ -156,7 +254,7 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Digite seu e-mail"
                   required
-                  disabled={loading}
+                  disabled={loading || isLocked}
                   autoComplete="email"
                 />
               </div>
@@ -170,15 +268,24 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Digite sua senha"
                   required
-                  disabled={loading}
+                  disabled={loading || isLocked}
                   autoComplete="current-password"
                 />
               </div>
+
+              {showCaptcha && !isLocked && (
+                <CaptchaVerification
+                  ref={captchaRef}
+                  onVerify={handleCaptchaVerify}
+                  onError={handleCaptchaError}
+                  onExpire={handleCaptchaExpire}
+                />
+              )}
               
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={loading}
+                disabled={loading || isLocked || (showCaptcha && !captchaToken)}
                 variant="government"
               >
                 {loading ? (
@@ -193,6 +300,12 @@ const Login = () => {
                   </>
                 )}
               </Button>
+
+              {showCaptcha && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Após 3 tentativas falhadas, é necessário verificar que você não é um robô.
+                </p>
+              )}
               
             </form>
           </CardContent>
