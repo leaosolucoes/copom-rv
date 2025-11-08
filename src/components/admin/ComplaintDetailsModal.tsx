@@ -157,24 +157,26 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         try {
           const validationUrl = `${window.location.origin}/validar/${protocolNumber}`;
           const qrCodeDataUrl = await QRCode.toDataURL(validationUrl, {
-            width: 50,
-            margin: 1,
+            width: 512,
+            margin: 2,
+            errorCorrectionLevel: 'H',
             color: {
               dark: '#000000',
               light: '#FFFFFF'
             }
           });
           
-          // Adicionar QR code no canto esquerdo do rodapé
-          const qrSize = 12;
-          doc.addImage(qrCodeDataUrl, 'PNG', margin, footerY - 7, qrSize, qrSize);
+          // Adicionar QR code no canto esquerdo do rodapé - AUMENTADO para melhor leitura
+          const qrSize = 35;
+          doc.addImage(qrCodeDataUrl, 'PNG', margin, footerY - 30, qrSize, qrSize);
           
           // Texto ao lado do QR code
-          doc.setFontSize(6);
+          doc.setFontSize(7);
           doc.setTextColor(80, 80, 80);
           doc.setFont("helvetica", "italic");
-          doc.text("Validação", margin + qrSize + 2, footerY - 3);
-          doc.text(protocolNumber, margin + qrSize + 2, footerY + 1);
+          doc.text("Validação Online", margin + qrSize + 3, footerY - 22);
+          doc.setFontSize(6);
+          doc.text(protocolNumber, margin + qrSize + 3, footerY - 17);
         } catch (error) {
           console.error("Erro ao gerar QR code:", error);
         }
