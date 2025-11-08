@@ -21,7 +21,20 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     sourcemap: false,
-    minify: 'esbuild',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
+      },
+      mangle: {
+        toplevel: true,
+      },
+      format: {
+        comments: false,
+      },
+    },
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode),
