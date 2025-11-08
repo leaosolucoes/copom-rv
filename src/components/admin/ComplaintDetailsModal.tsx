@@ -108,13 +108,29 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
     setMediaModalOpen(true);
   };
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
     try {
+      toast({
+        title: "Gerando PDF...",
+        description: "Por favor aguarde",
+      });
+
       const doc = new jsPDF();
       let yPos = 20;
       const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
       const margin = 20;
       const maxWidth = pageWidth - (margin * 2);
+
+      // Função auxiliar para verificar espaço e adicionar nova página se necessário
+      const checkPageBreak = (spaceNeeded: number) => {
+        if (yPos + spaceNeeded > pageHeight - 30) {
+          doc.addPage();
+          yPos = 20;
+          return true;
+        }
+        return false;
+      };
 
       // Função auxiliar para adicionar texto com quebra de linha
       const addText = (text: string, x: number, y: number, fontSize: number = 10, isBold: boolean = false) => {
@@ -123,6 +139,23 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         const lines = doc.splitTextToSize(text, maxWidth);
         doc.text(lines, x, y);
         return y + (lines.length * (fontSize * 0.5));
+      };
+
+      // Função para converter imagem URL para base64
+      const getImageBase64 = async (url: string): Promise<string | null> => {
+        try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        } catch (error) {
+          console.error('Erro ao carregar imagem:', error);
+          return null;
+        }
       };
 
       // Cabeçalho
@@ -166,10 +199,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       yPos += 10;
 
       // Verificar se precisa de nova página
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
-      }
+      checkPageBreak(50);
 
       // Linha separadora
       doc.line(margin, yPos, pageWidth - margin, yPos);
@@ -200,10 +230,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       yPos += 10;
 
       // Verificar se precisa de nova página
-      if (yPos > 230) {
-        doc.addPage();
-        yPos = 20;
-      }
+      checkPageBreak(50);
 
       // Linha separadora
       doc.line(margin, yPos, pageWidth - margin, yPos);
@@ -217,38 +244,84 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
 
       // Localização GPS
       if (complaint.user_location) {
-        if (yPos > 250) {
-          doc.addPage();
-          yPos = 20;
-        }
+        checkPageBreak(60);
         doc.line(margin, yPos, pageWidth - margin, yPos);
         yPos += 10;
         yPos = addText('LOCALIZAÇÃO GPS', margin, yPos, 12, true);
         yPos += 5;
         yPos = addText(`Latitude: ${complaint.user_location.latitude}`, margin, yPos);
         yPos = addText(`Longitude: ${complaint.user_location.longitude}`, margin, yPos + 5);
-        yPos += 10;
+        yPos += 5;
+        
+        // Link para Google Maps
+        const mapsUrl = `https://www.google.com/maps?q=${complaint.user_location.latitude},${complaint.user_location.longitude}`;
+        doc.setTextColor(59, 130, 246);
+        doc.textWithLink('Ver localização no Google Maps', margin, yPos + 5, { url: mapsUrl });
+        doc.setTextColor(0, 0, 0);
+        yPos += 15;
       }
 
-      // Mídias
-      if (photos.length > 0 || videos.length > 0) {
-        if (yPos > 250) {
-          doc.addPage();
-          yPos = 20;
-        }
+      // Fotos
+      if (photos.length > 0) {
+        checkPageBreak(80);
         doc.line(margin, yPos, pageWidth - margin, yPos);
         yPos += 10;
-        yPos = addText('MÍDIAS ANEXADAS', margin, yPos, 12, true);
+        yPos = addText('FOTOS ANEXADAS', margin, yPos, 12, true);
         yPos += 5;
-        if (photos.length > 0) {
-          yPos = addText(`Fotos: ${photos.length} arquivo(s)`, margin, yPos);
+        yPos = addText(`Total de ${photos.length} foto(s)`, margin, yPos, 9);
+        yPos += 10;
+
+        // Adicionar cada foto
+        for (let i = 0; i < Math.min(photos.length, 6); i++) {
+          const photoUrl = photos[i];
+          
+          try {
+            const base64Image = await getImageBase64(photoUrl);
+            
+            if (base64Image) {
+              // Verificar se precisa de nova página (imagem + legenda precisa de ~85mm)
+              checkPageBreak(90);
+              
+              // Adicionar imagem (máximo 150x150)
+              const imgWidth = 80;
+              const imgHeight = 80;
+              
+              try {
+                doc.addImage(base64Image, 'JPEG', margin, yPos, imgWidth, imgHeight);
+                yPos += imgHeight + 5;
+                yPos = addText(`Foto ${i + 1}`, margin, yPos, 8);
+                yPos += 10;
+              } catch (imgError) {
+                console.error('Erro ao adicionar imagem ao PDF:', imgError);
+                yPos = addText(`Foto ${i + 1}: Erro ao carregar`, margin, yPos, 8);
+                yPos += 10;
+              }
+            }
+          } catch (error) {
+            console.error(`Erro ao processar foto ${i + 1}:`, error);
+            yPos = addText(`Foto ${i + 1}: Não disponível`, margin, yPos, 8);
+            yPos += 10;
+          }
         }
-        if (videos.length > 0) {
-          yPos = addText(`Vídeos: ${videos.length} arquivo(s)`, margin, yPos + 5);
+
+        if (photos.length > 6) {
+          yPos = addText(`+ ${photos.length - 6} foto(s) adicional(is) não exibida(s)`, margin, yPos, 8);
+          yPos += 10;
         }
       }
 
-      // Rodapé
+      // Vídeos
+      if (videos.length > 0) {
+        checkPageBreak(40);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 10;
+        yPos = addText('VÍDEOS ANEXADOS', margin, yPos, 12, true);
+        yPos += 5;
+        yPos = addText(`Total de ${videos.length} vídeo(s)`, margin, yPos, 9);
+        yPos += 10;
+      }
+
+      // Rodapé em todas as páginas
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -257,7 +330,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         doc.text(
           `Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - Página ${i} de ${pageCount}`,
           pageWidth / 2,
-          doc.internal.pageSize.getHeight() - 10,
+          pageHeight - 10,
           { align: 'center' }
         );
       }
@@ -273,7 +346,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       console.error('Erro ao gerar PDF:', error);
       toast({
         title: "Erro ao gerar PDF",
-        description: "Não foi possível criar o relatório",
+        description: "Não foi possível criar o relatório. Tente novamente.",
         variant: "destructive"
       });
     }
