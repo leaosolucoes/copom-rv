@@ -123,6 +123,25 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       const margin = 20;
       const maxWidth = pageWidth - (margin * 2);
 
+      // Carregar logo da instituição
+      const loadLogo = async (): Promise<string | null> => {
+        try {
+          const response = await fetch('/src/assets/logo-2bpm.png');
+          const blob = await response.blob();
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        } catch (error) {
+          console.error('Erro ao carregar logo:', error);
+          return null;
+        }
+      };
+
+      const logoBase64 = await loadLogo();
+
       // Função auxiliar para verificar espaço e adicionar nova página se necessário
       const checkPageBreak = (spaceNeeded: number) => {
         if (yPos + spaceNeeded > pageHeight - 30) {
@@ -159,15 +178,55 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         }
       };
 
-      // Cabeçalho
-      doc.setFillColor(59, 130, 246);
-      doc.rect(0, 0, pageWidth, 40, 'F');
-      doc.setTextColor(255, 255, 255);
-      yPos = addText('RELATÓRIO DE DENÚNCIA', margin, 15, 18, true);
-      yPos = addText(`Protocolo #${complaint.protocol_number || complaint.system_identifier}`, margin, yPos + 5, 12);
+      // Cabeçalho personalizado com logo
+      doc.setFillColor(41, 128, 185); // Azul institucional
+      doc.rect(0, 0, pageWidth, 50, 'F');
+      
+      // Adicionar logo se carregado com sucesso
+      if (logoBase64) {
+        try {
+          const logoWidth = 35;
+          const logoHeight = 35;
+          doc.addImage(logoBase64, 'PNG', margin, 7, logoWidth, logoHeight);
+          
+          // Textos ao lado do logo
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(20);
+          doc.setFont('helvetica', 'bold');
+          doc.text('RELATÓRIO DE DENÚNCIA', margin + logoWidth + 10, 18);
+          
+          doc.setFontSize(11);
+          doc.setFont('helvetica', 'normal');
+          doc.text('2º Batalhão da Polícia Militar', margin + logoWidth + 10, 26);
+          
+          doc.setFontSize(9);
+          doc.setTextColor(220, 220, 220);
+          doc.text(`Protocolo: ${complaint.protocol_number || complaint.system_identifier}`, margin + logoWidth + 10, 33);
+        } catch (logoError) {
+          console.error('Erro ao adicionar logo ao PDF:', logoError);
+        }
+      } else {
+        // Fallback caso logo não carregue
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('RELATÓRIO DE DENÚNCIA', margin, 18);
+        
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.text('2º Batalhão da Polícia Militar', margin, 28);
+        
+        doc.setFontSize(9);
+        doc.text(`Protocolo: ${complaint.protocol_number || complaint.system_identifier}`, margin, 38);
+      }
+      
+      // Linha decorativa
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.5);
+      doc.line(margin, 45, pageWidth - margin, 45);
       
       doc.setTextColor(0, 0, 0);
-      yPos = 50;
+      yPos = 60;
 
       // Status e Data
       yPos = addText(`Status: ${getStatusText(complaint.status)}`, margin, yPos, 11, true);
