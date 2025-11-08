@@ -174,8 +174,8 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
 
       // Função para adicionar marca d'água de segurança
       const addWatermark = (pageNum: number, logoBase64: string | null) => {
-        // Marca d'água de texto "CONFIDENCIAL" com cor clara
-        doc.setTextColor(220, 220, 220); // Cinza muito claro
+        // Marca d'água de texto "CONFIDENCIAL" em vermelho bem clarinho
+        doc.setTextColor(255, 230, 230); // Vermelho bem clarinho
         doc.setFontSize(50);
         doc.setFont("helvetica", "bold");
         
@@ -197,11 +197,10 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       // Função auxiliar para verificar espaço e adicionar nova página se necessário
       const checkPageBreak = (spaceNeeded: number) => {
         if (yPos + spaceNeeded > pageHeight - 40) {
-          addWatermark(currentPageNumber, logoBase64);
           addFooter(currentPageNumber);
           doc.addPage();
           currentPageNumber++;
-          addWatermark(currentPageNumber, logoBase64);
+          addWatermark(currentPageNumber, logoBase64); // Marca d'água PRIMEIRO na nova página
           yPos = 20;
           return true;
         }
@@ -235,6 +234,10 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       };
 
       // Cabeçalho personalizado com logo
+      
+      // Adicionar marca d'água PRIMEIRO (para ficar atrás de tudo)
+      addWatermark(currentPageNumber, logoBase64);
+      
       doc.setFillColor(41, 128, 185); // Azul institucional
       doc.rect(0, 0, pageWidth, 50, "F");
 
@@ -287,9 +290,6 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
 
       doc.setTextColor(0, 0, 0);
       yPos = 60;
-
-      // Adicionar marca d'água na primeira página
-      addWatermark(currentPageNumber, logoBase64);
 
       // Status e Data
       yPos = addText(`Status: ${getStatusText(complaint.status)}`, margin, yPos, 11, true);
@@ -498,8 +498,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         doc.setTextColor(0, 0, 0);
       }
 
-      // Adicionar marca d'água e rodapé na última página
-      addWatermark(currentPageNumber, logoBase64);
+      // Adicionar rodapé na última página
       addFooter(currentPageNumber);
 
       // Salvar PDF
