@@ -68,6 +68,7 @@ interface ComplaintDetails {
   user_device_type?: string;
   user_browser?: string;
   user_ip?: string;
+  user_agent?: string;
 }
 
 interface ComplaintDetailsModalProps {
@@ -319,6 +320,38 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         yPos += 5;
         yPos = addText(`Total de ${videos.length} vídeo(s)`, margin, yPos, 9);
         yPos += 10;
+      }
+
+      // Informações do Sistema e Dados Técnicos
+      if (complaint.user_device_type || complaint.user_browser || complaint.user_ip || complaint.system_identifier) {
+        checkPageBreak(60);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 10;
+        yPos = addText('INFORMAÇÕES DO SISTEMA E DADOS TÉCNICOS', margin, yPos, 12, true);
+        yPos += 5;
+        
+        if (complaint.system_identifier) {
+          yPos = addText(`Identificador do Sistema: ${complaint.system_identifier}`, margin, yPos, 9);
+        }
+        if (complaint.user_device_type) {
+          yPos = addText(`Dispositivo: ${complaint.user_device_type}`, margin, yPos + 5, 9);
+        }
+        if (complaint.user_browser) {
+          yPos = addText(`Navegador: ${complaint.user_browser}`, margin, yPos + 5, 9);
+        }
+        if (complaint.user_ip) {
+          yPos = addText(`Endereço IP: ${complaint.user_ip}`, margin, yPos + 5, 9);
+        }
+        if (complaint.user_agent) {
+          yPos = addText(`User Agent: ${complaint.user_agent}`, margin, yPos + 5, 8);
+        }
+        
+        yPos += 10;
+        
+        // Adicionar timestamp de geração
+        doc.setTextColor(100, 100, 100);
+        yPos = addText(`Relatório gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}`, margin, yPos, 8);
+        doc.setTextColor(0, 0, 0);
       }
 
       // Rodapé em todas as páginas
