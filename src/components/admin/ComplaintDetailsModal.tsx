@@ -172,12 +172,61 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         doc.text(pageText, pageWidth - margin - textWidth, footerY + 3);
       };
 
+      // Função para adicionar marca d'água de segurança
+      const addWatermark = (pageNum: number, logoBase64: string | null) => {
+        // Salvar estado atual do documento
+        doc.saveGraphicsState();
+        
+        // Marca d'água de texto "CONFIDENCIAL"
+        doc.setGState({ opacity: 0.1 });
+        doc.setTextColor(128, 128, 128);
+        doc.setFontSize(50);
+        doc.setFont("helvetica", "bold");
+        
+        // Calcular posição central e rotacionar
+        const text = "CONFIDENCIAL";
+        const textWidth = doc.getTextWidth(text);
+        const centerX = pageWidth / 2;
+        const centerY = pageHeight / 2;
+        
+        // Rotacionar 45 graus
+        doc.text(text, centerX, centerY, {
+          angle: 45,
+          align: "center"
+        });
+        
+        doc.restoreGraphicsState();
+        
+        // Marca d'água com logo (se disponível)
+        if (logoBase64) {
+          doc.saveGraphicsState();
+          doc.setGState({ opacity: 0.06 });
+          
+          const watermarkSize = 100;
+          const logoX = (pageWidth - watermarkSize) / 2;
+          const logoY = (pageHeight - watermarkSize) / 2;
+          
+          try {
+            doc.addImage(logoBase64, "PNG", logoX, logoY, watermarkSize, watermarkSize);
+          } catch (error) {
+            console.error("Erro ao adicionar logo como marca d'água:", error);
+          }
+          
+          doc.restoreGraphicsState();
+        }
+        
+        // Restaurar cor do texto para o restante do conteúdo
+        doc.setTextColor(0, 0, 0);
+      };
+
       // Função auxiliar para verificar espaço e adicionar nova página se necessário
       const checkPageBreak = (spaceNeeded: number) => {
         if (yPos + spaceNeeded > pageHeight - 40) {
+          addWatermark(currentPageNumber, logoBase64);
           addFooter(currentPageNumber);
           doc.addPage();
           currentPageNumber++;
+          addWatermark(currentPageNumber, logoBase64);
           yPos = 20;
           return true;
         }
@@ -263,6 +312,9 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
 
       doc.setTextColor(0, 0, 0);
       yPos = 60;
+
+      // Adicionar marca d'água na primeira página
+      addWatermark(currentPageNumber, logoBase64);
 
       // Status e Data
       yPos = addText(`Status: ${getStatusText(complaint.status)}`, margin, yPos, 11, true);
@@ -471,7 +523,8 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         doc.setTextColor(0, 0, 0);
       }
 
-      // Adicionar rodapé na última página
+      // Adicionar marca d'água e rodapé na última página
+      addWatermark(currentPageNumber, logoBase64);
       addFooter(currentPageNumber);
 
       // Salvar PDF
