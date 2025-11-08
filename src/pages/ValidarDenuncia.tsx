@@ -15,13 +15,16 @@ import {
   MapPin, 
   FileText,
   ShieldCheck,
-  Camera
+  Camera,
+  Download
 } from "lucide-react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
+import QRCodeLib from "qrcode";
 
 interface ComplaintValidation {
   protocol_number: string;
@@ -126,6 +129,119 @@ const ValidarDenuncia = () => {
   const handleSearch = () => {
     if (protocolInput.trim()) {
       fetchComplaint(protocolInput.trim());
+    }
+  };
+
+  const generateValidationCertificate = async () => {
+    if (!complaint) return;
+
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      // Header com fundo
+      doc.setFillColor(41, 128, 185);
+      doc.rect(0, 0, pageWidth, 40, "F");
+
+      // Logo/Título
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(20);
+      doc.setFont("helvetica", "bold");
+      doc.text("CERTIFICADO DE VALIDAÇÃO", pageWidth / 2, 20, { align: "center" });
+      
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "normal");
+      doc.text("2º Batalhão da Polícia Militar do Estado de Goiás", pageWidth / 2, 30, { align: "center" });
+
+      // Selo de validação
+      doc.setDrawColor(34, 139, 34);
+      doc.setLineWidth(2);
+      doc.circle(pageWidth / 2, 70, 20);
+      doc.setTextColor(34, 139, 34);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("✓ VALIDADO", pageWidth / 2, 75, { align: "center" });
+
+      // Conteúdo
+      let yPos = 110;
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("INFORMAÇÕES DO PROTOCOLO", 20, yPos);
+      
+      yPos += 10;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Número do Protocolo: ${complaint.protocol_number || "N/A"}`, 20, yPos);
+      
+      yPos += 7;
+      doc.text(`Identificador: ${complaint.system_identifier}`, 20, yPos);
+      
+      yPos += 7;
+      doc.text(`Status: ${getStatusText(complaint.status)}`, 20, yPos);
+      
+      yPos += 7;
+      doc.text(`Data de Registro: ${format(new Date(complaint.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 20, yPos);
+
+      yPos += 15;
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("INFORMAÇÕES DA OCORRÊNCIA", 20, yPos);
+      
+      yPos += 10;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Tipo: ${complaint.occurrence_type}`, 20, yPos);
+      
+      if (complaint.occurrence_date) {
+        yPos += 7;
+        doc.text(`Data da Ocorrência: ${format(new Date(complaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}`, 20, yPos);
+      }
+      
+      yPos += 7;
+      const location = `${complaint.occurrence_neighborhood}${complaint.occurrence_city ? `, ${complaint.occurrence_city}` : ""}${complaint.occurrence_state ? `/${complaint.occurrence_state}` : ""}`;
+      doc.text(`Localização: ${location}`, 20, yPos);
+
+      // QR Code
+      yPos += 20;
+      const qrCodeUrl = `${window.location.origin}/validar/${complaint.protocol_number || complaint.system_identifier}`;
+      const qrCodeDataUrl = await QRCodeLib.toDataURL(qrCodeUrl, { width: 200, margin: 1 });
+      doc.addImage(qrCodeDataUrl, "PNG", pageWidth / 2 - 25, yPos, 50, 50);
+
+      yPos += 55;
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Escaneie o QR Code para validar este certificado", pageWidth / 2, yPos, { align: "center" });
+
+      // Rodapé
+      doc.setDrawColor(41, 128, 185);
+      doc.setLineWidth(0.5);
+      doc.line(20, pageHeight - 30, pageWidth - 20, pageHeight - 30);
+      
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Validado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}`, pageWidth / 2, pageHeight - 22, { align: "center" });
+      
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text("2º Batalhão da Polícia Militar do Estado de Goiás", pageWidth / 2, pageHeight - 15, { align: "center" });
+      doc.text("Contato: (64) 3620-0910 | E-mail: 2bpmrioverde@gmail.com", pageWidth / 2, pageHeight - 10, { align: "center" });
+
+      // Salvar PDF
+      doc.save(`Certificado_Validacao_${complaint.protocol_number || complaint.system_identifier}.pdf`);
+      
+      toast({
+        title: "Certificado gerado!",
+        description: "O certificado de validação foi baixado com sucesso.",
+      });
+    } catch (error) {
+      console.error("Erro ao gerar certificado:", error);
+      toast({
+        title: "Erro ao gerar certificado",
+        description: "Ocorreu um erro ao gerar o certificado. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -263,16 +379,27 @@ const ValidarDenuncia = () => {
         {complaint && !loading && (
           <Card className="border-2 border-green-500/20">
             <CardHeader className="bg-green-50 dark:bg-green-950/20">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-6 w-6 text-green-600" />
                   <CardTitle className="text-green-700 dark:text-green-400">
                     Denúncia Validada
                   </CardTitle>
                 </div>
-                <Badge className={getStatusColor(complaint.status)}>
-                  {getStatusText(complaint.status)}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge className={getStatusColor(complaint.status)}>
+                    {getStatusText(complaint.status)}
+                  </Badge>
+                  <Button
+                    onClick={generateValidationCertificate}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Baixar Certificado
+                  </Button>
+                </div>
               </div>
               <CardDescription>
                 Este protocolo é válido e está registrado em nosso sistema
