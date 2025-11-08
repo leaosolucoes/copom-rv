@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MediaModal } from "@/components/ui/media-modal";
+import { Button } from "@/components/ui/button";
 import { 
   Calendar, 
   Clock, 
@@ -14,11 +15,14 @@ import {
   Building,
   Image as ImageIcon,
   Video,
-  Eye
+  Eye,
+  Download
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
+import jsPDF from "jspdf";
+import { toast } from "@/hooks/use-toast";
 
 interface ComplaintDetails {
   id: string;
@@ -104,6 +108,177 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
     setMediaModalOpen(true);
   };
 
+  const generatePDF = () => {
+    try {
+      const doc = new jsPDF();
+      let yPos = 20;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 20;
+      const maxWidth = pageWidth - (margin * 2);
+
+      // Função auxiliar para adicionar texto com quebra de linha
+      const addText = (text: string, x: number, y: number, fontSize: number = 10, isBold: boolean = false) => {
+        doc.setFontSize(fontSize);
+        doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+        const lines = doc.splitTextToSize(text, maxWidth);
+        doc.text(lines, x, y);
+        return y + (lines.length * (fontSize * 0.5));
+      };
+
+      // Cabeçalho
+      doc.setFillColor(59, 130, 246);
+      doc.rect(0, 0, pageWidth, 40, 'F');
+      doc.setTextColor(255, 255, 255);
+      yPos = addText('RELATÓRIO DE DENÚNCIA', margin, 15, 18, true);
+      yPos = addText(`Protocolo #${complaint.protocol_number || complaint.system_identifier}`, margin, yPos + 5, 12);
+      
+      doc.setTextColor(0, 0, 0);
+      yPos = 50;
+
+      // Status e Data
+      yPos = addText(`Status: ${getStatusText(complaint.status)}`, margin, yPos, 11, true);
+      yPos = addText(`Data de Registro: ${format(new Date(complaint.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, margin, yPos + 5, 10);
+      yPos += 10;
+
+      // Linha separadora
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 10;
+
+      // Dados do Denunciante
+      yPos = addText('DADOS DO DENUNCIANTE', margin, yPos, 12, true);
+      yPos += 5;
+      yPos = addText(`Nome: ${complaint.complainant_name}`, margin, yPos);
+      yPos = addText(`Telefone: ${complaint.complainant_phone}`, margin, yPos + 5);
+      if (complaint.complainant_type) {
+        yPos = addText(`Tipo: ${complaint.complainant_type}`, margin, yPos + 5);
+      }
+      if (complaint.complainant_address) {
+        const address = `${complaint.complainant_address}${complaint.complainant_number ? `, ${complaint.complainant_number}` : ''}${complaint.complainant_complement ? ` - ${complaint.complainant_complement}` : ''}`;
+        yPos = addText(`Endereço: ${address}`, margin, yPos + 5);
+      }
+      if (complaint.complainant_neighborhood) {
+        yPos = addText(`Bairro: ${complaint.complainant_neighborhood}`, margin, yPos + 5);
+      }
+      if (complaint.complainant_city || complaint.complainant_state) {
+        yPos = addText(`Cidade/Estado: ${complaint.complainant_city || ''}${complaint.complainant_state ? `/${complaint.complainant_state}` : ''}`, margin, yPos + 5);
+      }
+      yPos += 10;
+
+      // Verificar se precisa de nova página
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      // Linha separadora
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 10;
+
+      // Dados da Ocorrência
+      yPos = addText('DADOS DA OCORRÊNCIA', margin, yPos, 12, true);
+      yPos += 5;
+      yPos = addText(`Tipo: ${complaint.occurrence_type}`, margin, yPos);
+      if (complaint.occurrence_date) {
+        yPos = addText(`Data da Ocorrência: ${format(new Date(complaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}`, margin, yPos + 5);
+      }
+      if (complaint.occurrence_time) {
+        yPos = addText(`Hora: ${complaint.occurrence_time}`, margin, yPos + 5);
+      }
+      const occAddress = `${complaint.occurrence_address}${complaint.occurrence_number ? `, ${complaint.occurrence_number}` : ''}${complaint.occurrence_complement ? ` - ${complaint.occurrence_complement}` : ''}`;
+      yPos = addText(`Endereço: ${occAddress}`, margin, yPos + 5);
+      yPos = addText(`Bairro: ${complaint.occurrence_neighborhood}`, margin, yPos + 5);
+      if (complaint.occurrence_city || complaint.occurrence_state) {
+        yPos = addText(`Cidade/Estado: ${complaint.occurrence_city || ''}${complaint.occurrence_state ? `/${complaint.occurrence_state}` : ''}`, margin, yPos + 5);
+      }
+      if (complaint.occurrence_reference) {
+        yPos = addText(`Referência: ${complaint.occurrence_reference}`, margin, yPos + 5);
+      }
+      if (complaint.classification) {
+        yPos = addText(`Classificação: ${complaint.classification}`, margin, yPos + 5);
+      }
+      yPos += 10;
+
+      // Verificar se precisa de nova página
+      if (yPos > 230) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      // Linha separadora
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 10;
+
+      // Descrição
+      yPos = addText('DESCRIÇÃO', margin, yPos, 12, true);
+      yPos += 5;
+      yPos = addText(complaint.description, margin, yPos);
+      yPos += 10;
+
+      // Localização GPS
+      if (complaint.user_location) {
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 10;
+        yPos = addText('LOCALIZAÇÃO GPS', margin, yPos, 12, true);
+        yPos += 5;
+        yPos = addText(`Latitude: ${complaint.user_location.latitude}`, margin, yPos);
+        yPos = addText(`Longitude: ${complaint.user_location.longitude}`, margin, yPos + 5);
+        yPos += 10;
+      }
+
+      // Mídias
+      if (photos.length > 0 || videos.length > 0) {
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 10;
+        yPos = addText('MÍDIAS ANEXADAS', margin, yPos, 12, true);
+        yPos += 5;
+        if (photos.length > 0) {
+          yPos = addText(`Fotos: ${photos.length} arquivo(s)`, margin, yPos);
+        }
+        if (videos.length > 0) {
+          yPos = addText(`Vídeos: ${videos.length} arquivo(s)`, margin, yPos + 5);
+        }
+      }
+
+      // Rodapé
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} - Página ${i} de ${pageCount}`,
+          pageWidth / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
+        );
+      }
+
+      // Salvar PDF
+      doc.save(`denuncia-${complaint.protocol_number || complaint.system_identifier}.pdf`);
+
+      toast({
+        title: "PDF gerado com sucesso!",
+        description: "O relatório foi baixado para seu dispositivo",
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro ao gerar PDF",
+        description: "Não foi possível criar o relatório",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'nova':
@@ -138,10 +313,21 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Hash className="h-5 w-5" />
-            Protocolo #{complaint.protocol_number || complaint.system_identifier}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <Hash className="h-5 w-5" />
+              Protocolo #{complaint.protocol_number || complaint.system_identifier}
+            </DialogTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={generatePDF}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Gerar PDF
+            </Button>
+          </div>
         </DialogHeader>
 
         <ScrollArea className="h-[calc(90vh-120px)] pr-4">
