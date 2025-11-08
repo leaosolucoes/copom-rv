@@ -153,9 +153,10 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         doc.setLineWidth(0.5);
         doc.line(margin, footerY - 8, pageWidth - margin, footerY - 8);
 
-        // Gerar QR Code com o número do protocolo
+        // Gerar QR Code com a URL de validação completa
         try {
-          const qrCodeDataUrl = await QRCode.toDataURL(protocolNumber, {
+          const validationUrl = `${window.location.origin}/validar/${protocolNumber}`;
+          const qrCodeDataUrl = await QRCode.toDataURL(validationUrl, {
             width: 50,
             margin: 1,
             color: {
@@ -183,7 +184,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         doc.setFontSize(8);
         doc.setTextColor(60, 60, 60);
         doc.setFont("helvetica", "bold");
-        doc.text("2º Batalhão da Polícia Militar do Estado de Goíás", centerX, footerY - 2, { align: 'center' });
+        doc.text("2º Batalhão da Polícia Militar do Estado de Goiás", centerX, footerY - 2, { align: 'center' });
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(7);

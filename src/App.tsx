@@ -10,6 +10,7 @@ import AtendenteDashboard from "./pages/AtendenteDashboard";
 import FiscalDashboard from "./pages/FiscalDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SystemDiagnostics from "./pages/SystemDiagnostics";
+import ValidarDenuncia from "./pages/ValidarDenuncia";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
@@ -72,6 +73,8 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
+            <Route path="/validar" element={<ValidarDenuncia />} />
+            <Route path="/validar/:protocolo" element={<ValidarDenuncia />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
