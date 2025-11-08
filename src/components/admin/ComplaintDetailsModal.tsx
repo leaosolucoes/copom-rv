@@ -4,19 +4,19 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MediaModal } from "@/components/ui/media-modal";
 import { Button } from "@/components/ui/button";
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  User, 
-  Phone, 
-  FileText, 
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  User,
+  Phone,
+  FileText,
   Hash,
   Building,
   Image as ImageIcon,
   Video,
   Eye,
-  Download
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -79,33 +79,33 @@ interface ComplaintDetailsModalProps {
 
 export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: ComplaintDetailsModalProps) => {
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
-  const [selectedMediaType, setSelectedMediaType] = useState<'photo' | 'video'>('photo');
+  const [selectedMediaType, setSelectedMediaType] = useState<"photo" | "video">("photo");
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
 
   if (!complaint) return null;
 
   // Processar fotos e vídeos
-  const photos = Array.isArray(complaint.photos) 
-    ? complaint.photos.map((p: any) => typeof p === 'string' ? p : p?.url || p?.path)
-    : complaint.photos 
-      ? [typeof complaint.photos === 'string' ? complaint.photos : complaint.photos?.url || complaint.photos?.path]
+  const photos = Array.isArray(complaint.photos)
+    ? complaint.photos.map((p: any) => (typeof p === "string" ? p : p?.url || p?.path))
+    : complaint.photos
+      ? [typeof complaint.photos === "string" ? complaint.photos : complaint.photos?.url || complaint.photos?.path]
       : [];
-  
+
   const videos = Array.isArray(complaint.videos)
-    ? complaint.videos.map((v: any) => typeof v === 'string' ? v : v?.url || v?.path)
+    ? complaint.videos.map((v: any) => (typeof v === "string" ? v : v?.url || v?.path))
     : complaint.videos
-      ? [typeof complaint.videos === 'string' ? complaint.videos : complaint.videos?.url || complaint.videos?.path]
+      ? [typeof complaint.videos === "string" ? complaint.videos : complaint.videos?.url || complaint.videos?.path]
       : [];
 
   const handlePhotoClick = (index: number) => {
     setSelectedMediaIndex(index);
-    setSelectedMediaType('photo');
+    setSelectedMediaType("photo");
     setMediaModalOpen(true);
   };
 
   const handleVideoClick = (index: number) => {
     setSelectedMediaIndex(index);
-    setSelectedMediaType('video');
+    setSelectedMediaType("video");
     setMediaModalOpen(true);
   };
 
@@ -121,12 +121,12 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       const margin = 20;
-      const maxWidth = pageWidth - (margin * 2);
+      const maxWidth = pageWidth - margin * 2;
 
       // Carregar logo da instituição
       const loadLogo = async (): Promise<string | null> => {
         try {
-          const response = await fetch('/src/assets/logo-2bpm.png');
+          const response = await fetch("/src/assets/logo-2bpm.png");
           const blob = await response.blob();
           return new Promise((resolve) => {
             const reader = new FileReader();
@@ -135,7 +135,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
             reader.readAsDataURL(blob);
           });
         } catch (error) {
-          console.error('Erro ao carregar logo:', error);
+          console.error("Erro ao carregar logo:", error);
           return null;
         }
       };
@@ -146,25 +146,25 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       let currentPageNumber = 1;
       const addFooter = (pageNum: number) => {
         const footerY = pageHeight - 20;
-        
+
         // Linha decorativa superior do rodapé
         doc.setDrawColor(41, 128, 185);
         doc.setLineWidth(0.5);
         doc.line(margin, footerY - 8, pageWidth - margin, footerY - 8);
-        
+
         // Informações da instituição
         doc.setFontSize(8);
         doc.setTextColor(60, 60, 60);
-        doc.setFont('helvetica', 'bold');
-        doc.text('2º Batalhão da Polícia Militar', margin, footerY - 2);
-        
-        doc.setFont('helvetica', 'normal');
+        doc.setFont("helvetica", "bold");
+        doc.text("2º Batalhão da Polícia Militar do Estado de Goíás", margin, footerY - 2);
+
+        doc.setFont("helvetica", "normal");
         doc.setFontSize(7);
         doc.setTextColor(80, 80, 80);
-        doc.text('Contato: (62) 3201-1190 | E-mail: ouvidoria@pm.go.gov.br', margin, footerY + 3);
-        
+        doc.text("Contato: (64) 3620-0910 | E-mail: 2bpmrioverde@gmail.com", margin, footerY + 3);
+
         // Número da página e data (alinhado à direita)
-        doc.setFont('helvetica', 'italic');
+        doc.setFont("helvetica", "italic");
         doc.setFontSize(7);
         doc.setTextColor(100, 100, 100);
         const pageText = `Página ${pageNum} | ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })}`;
@@ -187,10 +187,10 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       // Função auxiliar para adicionar texto com quebra de linha
       const addText = (text: string, x: number, y: number, fontSize: number = 10, isBold: boolean = false) => {
         doc.setFontSize(fontSize);
-        doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+        doc.setFont("helvetica", isBold ? "bold" : "normal");
         const lines = doc.splitTextToSize(text, maxWidth);
         doc.text(lines, x, y);
-        return y + (lines.length * (fontSize * 0.5));
+        return y + lines.length * (fontSize * 0.5);
       };
 
       // Função para converter imagem URL para base64
@@ -205,64 +205,73 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
             reader.readAsDataURL(blob);
           });
         } catch (error) {
-          console.error('Erro ao carregar imagem:', error);
+          console.error("Erro ao carregar imagem:", error);
           return null;
         }
       };
 
       // Cabeçalho personalizado com logo
       doc.setFillColor(41, 128, 185); // Azul institucional
-      doc.rect(0, 0, pageWidth, 50, 'F');
-      
+      doc.rect(0, 0, pageWidth, 50, "F");
+
       // Adicionar logo se carregado com sucesso
       if (logoBase64) {
         try {
           const logoWidth = 35;
           const logoHeight = 35;
-          doc.addImage(logoBase64, 'PNG', margin, 7, logoWidth, logoHeight);
-          
+          doc.addImage(logoBase64, "PNG", margin, 7, logoWidth, logoHeight);
+
           // Textos ao lado do logo
           doc.setTextColor(255, 255, 255);
           doc.setFontSize(20);
-          doc.setFont('helvetica', 'bold');
-          doc.text('RELATÓRIO DE DENÚNCIA', margin + logoWidth + 10, 18);
-          
+          doc.setFont("helvetica", "bold");
+          doc.text("RELATÓRIO DE DENÚNCIA", margin + logoWidth + 10, 18);
+
           doc.setFontSize(11);
-          doc.setFont('helvetica', 'normal');
-          doc.text('2º Batalhão da Polícia Militar', margin + logoWidth + 10, 26);
-          
+          doc.setFont("helvetica", "normal");
+          doc.text("2º Batalhão da Polícia Militar", margin + logoWidth + 10, 26);
+
           doc.setFontSize(9);
           doc.setTextColor(220, 220, 220);
-          doc.text(`Protocolo: ${complaint.protocol_number || complaint.system_identifier}`, margin + logoWidth + 10, 33);
+          doc.text(
+            `Protocolo: ${complaint.protocol_number || complaint.system_identifier}`,
+            margin + logoWidth + 10,
+            33,
+          );
         } catch (logoError) {
-          console.error('Erro ao adicionar logo ao PDF:', logoError);
+          console.error("Erro ao adicionar logo ao PDF:", logoError);
         }
       } else {
         // Fallback caso logo não carregue
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(20);
-        doc.setFont('helvetica', 'bold');
-        doc.text('RELATÓRIO DE DENÚNCIA', margin, 18);
-        
+        doc.setFont("helvetica", "bold");
+        doc.text("RELATÓRIO DE DENÚNCIA", margin, 18);
+
         doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
-        doc.text('2º Batalhão da Polícia Militar', margin, 28);
-        
+        doc.setFont("helvetica", "normal");
+        doc.text("2º Batalhão da Polícia Militar", margin, 28);
+
         doc.setFontSize(9);
         doc.text(`Protocolo: ${complaint.protocol_number || complaint.system_identifier}`, margin, 38);
       }
-      
+
       // Linha decorativa
       doc.setDrawColor(255, 255, 255);
       doc.setLineWidth(0.5);
       doc.line(margin, 45, pageWidth - margin, 45);
-      
+
       doc.setTextColor(0, 0, 0);
       yPos = 60;
 
       // Status e Data
       yPos = addText(`Status: ${getStatusText(complaint.status)}`, margin, yPos, 11, true);
-      yPos = addText(`Data de Registro: ${format(new Date(complaint.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, margin, yPos + 5, 10);
+      yPos = addText(
+        `Data de Registro: ${format(new Date(complaint.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`,
+        margin,
+        yPos + 5,
+        10,
+      );
       yPos += 10;
 
       // Linha separadora
@@ -271,7 +280,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       yPos += 10;
 
       // Dados do Denunciante
-      yPos = addText('DADOS DO DENUNCIANTE', margin, yPos, 12, true);
+      yPos = addText("DADOS DO DENUNCIANTE", margin, yPos, 12, true);
       yPos += 5;
       yPos = addText(`Nome: ${complaint.complainant_name}`, margin, yPos);
       yPos = addText(`Telefone: ${complaint.complainant_phone}`, margin, yPos + 5);
@@ -279,14 +288,18 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         yPos = addText(`Tipo: ${complaint.complainant_type}`, margin, yPos + 5);
       }
       if (complaint.complainant_address) {
-        const address = `${complaint.complainant_address}${complaint.complainant_number ? `, ${complaint.complainant_number}` : ''}${complaint.complainant_complement ? ` - ${complaint.complainant_complement}` : ''}`;
+        const address = `${complaint.complainant_address}${complaint.complainant_number ? `, ${complaint.complainant_number}` : ""}${complaint.complainant_complement ? ` - ${complaint.complainant_complement}` : ""}`;
         yPos = addText(`Endereço: ${address}`, margin, yPos + 5);
       }
       if (complaint.complainant_neighborhood) {
         yPos = addText(`Bairro: ${complaint.complainant_neighborhood}`, margin, yPos + 5);
       }
       if (complaint.complainant_city || complaint.complainant_state) {
-        yPos = addText(`Cidade/Estado: ${complaint.complainant_city || ''}${complaint.complainant_state ? `/${complaint.complainant_state}` : ''}`, margin, yPos + 5);
+        yPos = addText(
+          `Cidade/Estado: ${complaint.complainant_city || ""}${complaint.complainant_state ? `/${complaint.complainant_state}` : ""}`,
+          margin,
+          yPos + 5,
+        );
       }
       yPos += 10;
 
@@ -298,20 +311,28 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       yPos += 10;
 
       // Dados da Ocorrência
-      yPos = addText('DADOS DA OCORRÊNCIA', margin, yPos, 12, true);
+      yPos = addText("DADOS DA OCORRÊNCIA", margin, yPos, 12, true);
       yPos += 5;
       yPos = addText(`Tipo: ${complaint.occurrence_type}`, margin, yPos);
       if (complaint.occurrence_date) {
-        yPos = addText(`Data da Ocorrência: ${format(new Date(complaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}`, margin, yPos + 5);
+        yPos = addText(
+          `Data da Ocorrência: ${format(new Date(complaint.occurrence_date), "dd/MM/yyyy", { locale: ptBR })}`,
+          margin,
+          yPos + 5,
+        );
       }
       if (complaint.occurrence_time) {
         yPos = addText(`Hora: ${complaint.occurrence_time}`, margin, yPos + 5);
       }
-      const occAddress = `${complaint.occurrence_address}${complaint.occurrence_number ? `, ${complaint.occurrence_number}` : ''}${complaint.occurrence_complement ? ` - ${complaint.occurrence_complement}` : ''}`;
+      const occAddress = `${complaint.occurrence_address}${complaint.occurrence_number ? `, ${complaint.occurrence_number}` : ""}${complaint.occurrence_complement ? ` - ${complaint.occurrence_complement}` : ""}`;
       yPos = addText(`Endereço: ${occAddress}`, margin, yPos + 5);
       yPos = addText(`Bairro: ${complaint.occurrence_neighborhood}`, margin, yPos + 5);
       if (complaint.occurrence_city || complaint.occurrence_state) {
-        yPos = addText(`Cidade/Estado: ${complaint.occurrence_city || ''}${complaint.occurrence_state ? `/${complaint.occurrence_state}` : ''}`, margin, yPos + 5);
+        yPos = addText(
+          `Cidade/Estado: ${complaint.occurrence_city || ""}${complaint.occurrence_state ? `/${complaint.occurrence_state}` : ""}`,
+          margin,
+          yPos + 5,
+        );
       }
       if (complaint.occurrence_reference) {
         yPos = addText(`Referência: ${complaint.occurrence_reference}`, margin, yPos + 5);
@@ -329,7 +350,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
       yPos += 10;
 
       // Descrição
-      yPos = addText('DESCRIÇÃO', margin, yPos, 12, true);
+      yPos = addText("DESCRIÇÃO", margin, yPos, 12, true);
       yPos += 5;
       yPos = addText(complaint.description, margin, yPos);
       yPos += 10;
@@ -339,16 +360,16 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         checkPageBreak(60);
         doc.line(margin, yPos, pageWidth - margin, yPos);
         yPos += 10;
-        yPos = addText('LOCALIZAÇÃO GPS', margin, yPos, 12, true);
+        yPos = addText("LOCALIZAÇÃO GPS", margin, yPos, 12, true);
         yPos += 5;
         yPos = addText(`Latitude: ${complaint.user_location.latitude}`, margin, yPos);
         yPos = addText(`Longitude: ${complaint.user_location.longitude}`, margin, yPos + 5);
         yPos += 5;
-        
+
         // Link para Google Maps
         const mapsUrl = `https://www.google.com/maps?q=${complaint.user_location.latitude},${complaint.user_location.longitude}`;
         doc.setTextColor(59, 130, 246);
-        doc.textWithLink('Ver localização no Google Maps', margin, yPos + 5, { url: mapsUrl });
+        doc.textWithLink("Ver localização no Google Maps", margin, yPos + 5, { url: mapsUrl });
         doc.setTextColor(0, 0, 0);
         yPos += 15;
       }
@@ -358,7 +379,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         checkPageBreak(80);
         doc.line(margin, yPos, pageWidth - margin, yPos);
         yPos += 10;
-        yPos = addText('FOTOS ANEXADAS', margin, yPos, 12, true);
+        yPos = addText("FOTOS ANEXADAS", margin, yPos, 12, true);
         yPos += 5;
         yPos = addText(`Total de ${photos.length} foto(s)`, margin, yPos, 9);
         yPos += 10;
@@ -366,25 +387,25 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         // Adicionar cada foto
         for (let i = 0; i < Math.min(photos.length, 6); i++) {
           const photoUrl = photos[i];
-          
+
           try {
             const base64Image = await getImageBase64(photoUrl);
-            
+
             if (base64Image) {
               // Verificar se precisa de nova página (imagem + legenda precisa de ~85mm)
               checkPageBreak(90);
-              
+
               // Adicionar imagem (máximo 150x150)
               const imgWidth = 80;
               const imgHeight = 80;
-              
+
               try {
-                doc.addImage(base64Image, 'JPEG', margin, yPos, imgWidth, imgHeight);
+                doc.addImage(base64Image, "JPEG", margin, yPos, imgWidth, imgHeight);
                 yPos += imgHeight + 5;
                 yPos = addText(`Foto ${i + 1}`, margin, yPos, 8);
                 yPos += 10;
               } catch (imgError) {
-                console.error('Erro ao adicionar imagem ao PDF:', imgError);
+                console.error("Erro ao adicionar imagem ao PDF:", imgError);
                 yPos = addText(`Foto ${i + 1}: Erro ao carregar`, margin, yPos, 8);
                 yPos += 10;
               }
@@ -407,7 +428,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         checkPageBreak(40);
         doc.line(margin, yPos, pageWidth - margin, yPos);
         yPos += 10;
-        yPos = addText('VÍDEOS ANEXADOS', margin, yPos, 12, true);
+        yPos = addText("VÍDEOS ANEXADOS", margin, yPos, 12, true);
         yPos += 5;
         yPos = addText(`Total de ${videos.length} vídeo(s)`, margin, yPos, 9);
         yPos += 10;
@@ -418,9 +439,9 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         checkPageBreak(60);
         doc.line(margin, yPos, pageWidth - margin, yPos);
         yPos += 10;
-        yPos = addText('INFORMAÇÕES DO SISTEMA E DADOS TÉCNICOS', margin, yPos, 12, true);
+        yPos = addText("INFORMAÇÕES DO SISTEMA E DADOS TÉCNICOS", margin, yPos, 12, true);
         yPos += 5;
-        
+
         if (complaint.system_identifier) {
           yPos = addText(`Identificador do Sistema: ${complaint.system_identifier}`, margin, yPos, 9);
         }
@@ -436,12 +457,17 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         if (complaint.user_agent) {
           yPos = addText(`User Agent: ${complaint.user_agent}`, margin, yPos + 5, 8);
         }
-        
+
         yPos += 10;
-        
+
         // Adicionar timestamp de geração
         doc.setTextColor(100, 100, 100);
-        yPos = addText(`Relatório gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}`, margin, yPos, 8);
+        yPos = addText(
+          `Relatório gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}`,
+          margin,
+          yPos,
+          8,
+        );
         doc.setTextColor(0, 0, 0);
       }
 
@@ -456,40 +482,40 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
         description: "O relatório foi baixado para seu dispositivo",
       });
     } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
+      console.error("Erro ao gerar PDF:", error);
       toast({
         title: "Erro ao gerar PDF",
         description: "Não foi possível criar o relatório. Tente novamente.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'nova':
-        return 'bg-blue-500';
-      case 'em_andamento':
-        return 'bg-red-500';
-      case 'processada':
-        return 'bg-green-500';
-      case 'arquivada':
-        return 'bg-gray-500';
+      case "nova":
+        return "bg-blue-500";
+      case "em_andamento":
+        return "bg-red-500";
+      case "processada":
+        return "bg-green-500";
+      case "arquivada":
+        return "bg-gray-500";
       default:
-        return 'bg-purple-500';
+        return "bg-purple-500";
     }
   };
 
   const getStatusText = (status: string): string => {
     switch (status) {
-      case 'nova':
-        return 'Nova';
-      case 'em_andamento':
-        return 'Em Andamento';
-      case 'processada':
-        return 'Processada';
-      case 'arquivada':
-        return 'Arquivada';
+      case "nova":
+        return "Nova";
+      case "em_andamento":
+        return "Em Andamento";
+      case "processada":
+        return "Processada";
+      case "arquivada":
+        return "Arquivada";
       default:
         return status;
     }
@@ -504,12 +530,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
               <Hash className="h-5 w-5" />
               Protocolo #{complaint.protocol_number || complaint.system_identifier}
             </DialogTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={generatePDF}
-              className="gap-2"
-            >
+            <Button variant="outline" size="sm" onClick={generatePDF} className="gap-2">
               <Download className="h-4 w-4" />
               Gerar PDF
             </Button>
@@ -520,9 +541,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
           <div className="space-y-6">
             {/* Status e Data */}
             <div className="flex items-center justify-between">
-              <Badge className={getStatusColor(complaint.status)}>
-                {getStatusText(complaint.status)}
-              </Badge>
+              <Badge className={getStatusColor(complaint.status)}>{getStatusText(complaint.status)}</Badge>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 {format(new Date(complaint.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
@@ -572,7 +591,8 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
                   <div>
                     <span className="text-muted-foreground">Cidade/Estado:</span>
                     <p className="font-medium">
-                      {complaint.complainant_city}{complaint.complainant_state && `/${complaint.complainant_state}`}
+                      {complaint.complainant_city}
+                      {complaint.complainant_state && `/${complaint.complainant_state}`}
                     </p>
                   </div>
                 )}
@@ -637,7 +657,8 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
                   <div>
                     <span className="text-muted-foreground">Cidade/Estado:</span>
                     <p className="font-medium">
-                      {complaint.occurrence_city}{complaint.occurrence_state && `/${complaint.occurrence_state}`}
+                      {complaint.occurrence_city}
+                      {complaint.occurrence_state && `/${complaint.occurrence_state}`}
                     </p>
                   </div>
                 )}
@@ -734,7 +755,8 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
                               alt={`Foto ${index + 1}`}
                               className="w-full h-full object-cover"
                               onError={(e) => {
-                                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EImagem%3C/text%3E%3C/svg%3E';
+                                e.currentTarget.src =
+                                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EImagem%3C/text%3E%3C/svg%3E';
                               }}
                             />
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -760,11 +782,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
                             className="relative group cursor-pointer aspect-video rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-all bg-black"
                             onClick={() => handleVideoClick(index)}
                           >
-                            <video
-                              src={videoUrl}
-                              className="w-full h-full object-contain"
-                              preload="metadata"
-                            />
+                            <video src={videoUrl} className="w-full h-full object-contain" preload="metadata" />
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                               <Eye className="h-8 w-8 text-white" />
                             </div>
@@ -786,9 +804,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
               <>
                 <Separator />
                 <div>
-                  <h3 className="font-semibold mb-3 text-xs text-muted-foreground">
-                    Informações do Sistema
-                  </h3>
+                  <h3 className="font-semibold mb-3 text-xs text-muted-foreground">Informações do Sistema</h3>
                   <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
                     {complaint.user_device_type && (
                       <div>
@@ -829,7 +845,7 @@ export const ComplaintDetailsModal = ({ complaint, open, onOpenChange }: Complai
           onClose={() => {
             setMediaModalOpen(false);
           }}
-          media={selectedMediaType === 'photo' ? photos : videos}
+          media={selectedMediaType === "photo" ? photos : videos}
           initialIndex={selectedMediaIndex}
           type={selectedMediaType}
         />
