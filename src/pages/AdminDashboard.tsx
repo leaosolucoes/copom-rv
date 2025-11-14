@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { notificationService } from '@/services/notificationService';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +13,8 @@ import { ComplaintsListLazy } from '@/components/admin/ComplaintsListLazy';
 import { AttendanceTimeDashboard } from '@/components/admin/AttendanceTimeDashboard';
 import { AttendanceTimeAlertsBanner } from '@/components/admin/AttendanceTimeAlertsBanner';
 import { AttendanceTimeNotificationBadge } from '@/components/admin/AttendanceTimeNotificationBadge';
+import { NotificationBadge } from '@/components/admin/NotificationBadge';
+import { PushNotificationSettings } from '@/components/admin/PushNotificationSettings';
 import { ComplaintsMapDashboard } from '@/components/admin/ComplaintsMapDashboard';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
@@ -22,6 +26,7 @@ const AdminDashboard = () => {
   const { profile, signOut, isLoading } = useSupabaseAuth();
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
+  const notificationHook = usePushNotifications();
 
   console.log('📱 ADMIN: isLoading:', isLoading, 'profile:', !!profile, 'profile.full_name:', profile?.full_name);
 
@@ -71,10 +76,26 @@ const AdminDashboard = () => {
     fetchLogo();
   }, []);
 
+  // Inicializar serviço de notificações push
+  useEffect(() => {
+    if (profile) {
+      notificationService.initialize(notificationHook, {
+        userRole: profile.role,
+        complaintsTypes: [],
+        locations: [],
+      });
+    }
+
+    return () => {
+      notificationService.disconnect();
+    };
+  }, [profile, notificationHook]);
+
   // SEMPRE mostrar o dashboard - sem verificações que causam tela branca
   return (
     <div className="min-h-screen bg-background">
       <Header showLoginButton={false} logoUrl={logoUrl} />
+      <NotificationBadge />
       
       {/* User Info Bar */}
       <div className="bg-card border-b shadow-sm">
@@ -187,6 +208,7 @@ const AdminDashboard = () => {
 
           <TabsContent value="consultas" className="space-y-6">
             <div className="space-y-6">
+              <PushNotificationSettings />
               <CNPJLookup />
               <CPFLookup />
               <CEPLookup />
