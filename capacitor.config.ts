@@ -19,6 +19,11 @@ const config: CapacitorConfig = {
     },
     Network: {
       // Plugin de detecção de rede para modo offline
+    },
+    LocalNotifications: {
+      smallIcon: "ic_stat_notification",
+      iconColor: "#1e3a8a",
+      sound: "notification_sound.wav",
     }
   }
 };

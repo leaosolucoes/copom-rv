@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { notificationService } from "@/services/notificationService";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ComplaintsListLazy } from "@/components/admin/ComplaintsListLazy";
+import { NotificationBadge } from "@/components/admin/NotificationBadge";
 import { CNPJLookup } from "@/components/cnpj/CNPJLookup";
 import { CPFLookup } from "@/components/cpf/CPFLookup";
 import { CEPLookup } from "@/components/cep/CEPLookup";
@@ -19,6 +22,7 @@ export default function AtendenteDashboard() {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const notificationHook = usePushNotifications();
 
   useEffect(() => {
     if (!isLoading && !profile) {
@@ -49,6 +53,21 @@ export default function AtendenteDashboard() {
     fetchLogo();
   }, []);
 
+  // Inicializar serviço de notificações push
+  useEffect(() => {
+    if (profile) {
+      notificationService.initialize(notificationHook, {
+        userRole: profile.role,
+        complaintsTypes: [],
+        locations: [],
+      });
+    }
+
+    return () => {
+      notificationService.disconnect();
+    };
+  }, [profile, notificationHook]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -62,6 +81,7 @@ export default function AtendenteDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header showLoginButton={false} logoUrl={logoUrl} />
+      <NotificationBadge />
       
       <div className="container mx-auto p-4 lg:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
