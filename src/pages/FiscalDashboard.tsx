@@ -15,7 +15,7 @@ export default function FiscalDashboard() {
 
   useEffect(() => {
     if (!isLoading && !profile) {
-      navigate('/acesso');
+      navigate('/login');
       return;
     }
   }, [profile, navigate, isLoading]);
