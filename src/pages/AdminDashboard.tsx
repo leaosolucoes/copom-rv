@@ -33,10 +33,10 @@ const AdminDashboard = () => {
           console.log('📱 ADMIN: No profile found, redirecting...');
           // Mobile fallback redirection
           try {
-            navigate('/acesso');
+            navigate('/login');
           } catch (error) {
             console.error('📱 ADMIN: Navigate failed, using window.location');
-            window.location.href = '/acesso';
+            window.location.href = '/login';
           }
         } else {
           console.log('📱 ADMIN: Profile confirmed:', profile.full_name, 'role:', profile.role);

@@ -22,7 +22,7 @@ export default function AtendenteDashboard() {
 
   useEffect(() => {
     if (!isLoading && !profile) {
-      navigate('/acesso');
+      navigate('/login');
       return;
     }
   }, [profile, navigate, isLoading]);

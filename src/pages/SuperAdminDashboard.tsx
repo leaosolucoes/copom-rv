@@ -46,12 +46,12 @@ const SuperAdminDashboard = () => {
     const checkAuth = () => {
       if (!isLoading) {
         if (!profile) {
-          console.log('📱 SUPER_ADMIN: No profile, redirecting to /acesso');
+          console.log('📱 SUPER_ADMIN: No profile, redirecting to /login');
           try {
-            navigate('/acesso');
+            navigate('/login');
           } catch (error) {
             console.error('📱 SUPER_ADMIN: Navigate failed, using window.location');
-            window.location.href = '/acesso';
+            window.location.href = '/login';
           }
         } else {
           console.log('📱 SUPER_ADMIN: Profile confirmed:', profile.full_name, 'role:', profile.role);
