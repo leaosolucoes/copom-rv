@@ -15,6 +15,7 @@ import { AttendanceTimeAlertsBanner } from '@/components/admin/AttendanceTimeAle
 import { AttendanceTimeNotificationBadge } from '@/components/admin/AttendanceTimeNotificationBadge';
 import { NotificationBadge } from '@/components/admin/NotificationBadge';
 import { PushNotificationSettings } from '@/components/admin/PushNotificationSettings';
+import { NotificationStatsDashboard } from '@/components/admin/NotificationStatsDashboard';
 import { ComplaintsMapDashboard } from '@/components/admin/ComplaintsMapDashboard';
 import { CNPJLookup } from '@/components/cnpj/CNPJLookup';
 import { CPFLookup } from '@/components/cpf/CPFLookup';
@@ -208,6 +209,7 @@ const AdminDashboard = () => {
 
           <TabsContent value="consultas" className="space-y-6">
             <div className="space-y-6">
+              <NotificationStatsDashboard />
               <PushNotificationSettings />
               <CNPJLookup />
               <CPFLookup />

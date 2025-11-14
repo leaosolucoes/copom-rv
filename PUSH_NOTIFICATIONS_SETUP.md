@@ -14,6 +14,10 @@ O sistema de notificações push em tempo real foi implementado com sucesso usan
 - ✅ Som e vibração personalizáveis
 - ✅ Filtros por tipo de denúncia
 - ✅ Painel de configurações completo
+- ✅ **Dashboard de estatísticas com métricas de engajamento**
+- ✅ **Registro automático de envios e aberturas**
+- ✅ **Gráficos de envios por dia e por usuário**
+- ✅ **Análise de taxa de engajamento**
 - ✅ Throttling (5s) para evitar spam
 - ✅ Priorização automática (denúncias urgentes = alta prioridade)
 - ✅ Navegação direta ao clicar na notificação
@@ -41,11 +45,59 @@ Armazena preferências de notificação do usuário:
 - `filtered_types` - Tipos de denúncia filtrados
 
 ### **notification_history** (opcional)
-Histórico de notificações enviadas/abertas
+Histórico de notificações enviadas/abertas:
+- `user_id` - ID do usuário que recebeu
+- `complaint_id` - ID da denúncia relacionada
+- `title` - Título da notificação
+- `body` - Corpo da notificação
+- `sent_at` - Data/hora de envio
+- `opened_at` - Data/hora de abertura (null se não aberta)
+- `device_info` - Informações do dispositivo (JSON)
+
+**Usado para:**
+- Calcular estatísticas de engajamento
+- Gerar gráficos de envio/abertura
+- Análise de comportamento dos usuários
+
+## 📊 Dashboard de Estatísticas
+
+O novo painel de estatísticas fornece análise completa do engajamento:
+
+### **Métricas Principais**
+- 📊 **Total Enviadas**: Quantidade total de notificações enviadas
+- 👁️ **Total Abertas**: Quantas foram abertas pelos usuários
+- 📈 **Taxa de Engajamento**: Percentual de notificações abertas (abertas/enviadas × 100)
+
+### **Gráficos Disponíveis**
+
+#### 1. Envios e Aberturas por Dia
+Gráfico de linha mostrando evolução diária:
+- Linha azul: Notificações enviadas
+- Linha verde: Notificações abertas
+- Permite identificar padrões e tendências
+
+#### 2. Top 10 Usuários
+Gráfico de barras horizontais:
+- Usuários que mais receberam notificações
+- Comparativo entre enviadas e abertas
+- Identifica usuários mais engajados
+
+#### 3. Por Tipo de Denúncia
+Gráfico de pizza:
+- Distribuição de notificações por categoria
+- Visualização de quais tipos geram mais alertas
+- Percentuais de cada categoria
+
+### **Filtros**
+- Últimos 7 dias
+- Últimos 15 dias
+- Últimos 30 dias
+- Últimos 90 dias
+
+### **Localização**
+Admin Dashboard → Aba "Consultas" → Primeiro card
 
 ---
-
-## 🔨 Build e Configuração Android
 
 ### 1. **Exportar para GitHub**
 Exporte via botão "Export to Github" no Lovable.
@@ -136,24 +188,44 @@ adb install android/app/build/outputs/apk/debug/app-debug.apk
 3. ✅ Notificação deve aparecer automaticamente
 4. ✅ Badge deve mostrar contador
 5. ✅ Clicar na notificação deve abrir detalhes
+6. ✅ **Abertura deve ser registrada no histórico**
 
-### **Teste 4: App Minimizado**
+### **Teste 4: Dashboard de Estatísticas**
+1. Admin Dashboard → Aba "Consultas"
+2. Visualizar "Estatísticas de Notificações Push"
+3. ✅ Verificar cards com métricas (Total Enviadas, Abertas, Taxa)
+4. ✅ Verificar gráfico de linha (por dia)
+5. ✅ Verificar gráfico de barras (top usuários)
+6. ✅ Verificar gráfico de pizza (por tipo)
+7. Alterar período (7, 15, 30, 90 dias)
+8. ✅ Dados devem atualizar
+
+### **Teste 5: App Minimizado**
 1. Abrir app e minimizar (Home button)
 2. Criar nova denúncia
 3. ✅ Notificação deve aparecer na barra de status
 4. ✅ Clicar deve reabrir o app
+5. ✅ Abertura deve ser registrada
 
-### **Teste 5: Filtros**
+### **Teste 6: Filtros**
 1. Configurar filtro para apenas "Assalto" e "Roubo"
 2. Criar denúncia de "Trânsito" → ❌ Não deve notificar
 3. Criar denúncia de "Assalto" → ✅ Deve notificar
 
-### **Teste 6: Throttling**
+### **Teste 7: Throttling**
 1. Criar 5 denúncias rapidamente (< 5s)
 2. ✅ Apenas 1 ou 2 notificações devem aparecer
 3. Aguardar 5 segundos
 4. Criar outra denúncia
 5. ✅ Nova notificação deve aparecer
+
+### **Teste 8: Engajamento**
+1. Enviar várias notificações
+2. Abrir algumas (clicar nelas)
+3. Ignorar outras (não clicar)
+4. Ir ao Dashboard de Estatísticas
+5. ✅ Taxa de engajamento deve refletir corretamente
+6. ✅ Gráficos devem mostrar diferença entre enviadas e abertas
 
 ---
 
@@ -189,6 +261,7 @@ adb install android/app/build/outputs/apk/debug/app-debug.apk
 ### Componentes
 - `src/components/admin/NotificationBadge.tsx` - Badge visual
 - `src/components/admin/PushNotificationSettings.tsx` - Painel de configurações
+- `src/components/admin/NotificationStatsDashboard.tsx` - **Dashboard de estatísticas**
 
 ### Modificados
 - `src/pages/AdminDashboard.tsx` - Integração do sistema
@@ -264,9 +337,11 @@ Para notificações com app completamente fechado:
 
 ## 📈 Métricas Esperadas
 
+Com o sistema de notificações e analytics implementado:
 - ✅ Tempo de resposta: < 30 segundos
 - ✅ Taxa de notificações entregues: 99%
-- ✅ Engajamento: 80% clicam nas notificações
+- ✅ **Taxa de engajamento esperada: 70-80%**
+- ✅ **Notificações abertas em até 5 minutos: 60%**
 - ✅ Satisfação: 90% ativam notificações
 
 ---

@@ -85,21 +85,51 @@ class NotificationService {
     return true;
   }
 
-  private sendNotification(complaint: any) {
+  private async sendNotification(complaint: any) {
     if (!this.notificationHook) return;
 
     const priority = this.getPriority(complaint);
     const title = this.getNotificationTitle(complaint);
     const body = this.getNotificationBody(complaint);
 
-    this.notificationHook.sendNotification({
-      title,
-      body,
-      complaintId: complaint.id,
-      priority,
-      sound: true,
-      vibration: true,
-    });
+    try {
+      // Registrar no histórico antes de enviar
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: historyRecord, error } = await supabase
+          .from('notification_history')
+          .insert({
+            user_id: user.id,
+            complaint_id: complaint.id,
+            title,
+            body,
+            device_info: {
+              userAgent: navigator.userAgent,
+              platform: navigator.platform,
+            }
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Erro ao registrar histórico:', error);
+        }
+
+        // Enviar notificação com ID do histórico
+        this.notificationHook.sendNotification({
+          title,
+          body,
+          complaintId: complaint.id,
+          priority,
+          sound: true,
+          vibration: true,
+          notificationHistoryId: historyRecord?.id,
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao enviar notificação:', error);
+    }
   }
 
   private getPriority(complaint: any): 'high' | 'default' | 'low' {
