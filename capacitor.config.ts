@@ -24,6 +24,9 @@ const config: CapacitorConfig = {
       smallIcon: "ic_stat_notification",
       iconColor: "#1e3a8a",
       sound: "notification_sound.wav",
+    },
+    NativeBiometric: {
+      // Plugin de autenticação biométrica
     }
   }
 };

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/layout/Header';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { LogIn, AlertCircle } from 'lucide-react';
+import { BiometricSetupPrompt } from '@/components/auth/BiometricSetupPrompt';
+import { LogIn, AlertCircle, Fingerprint } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { CaptchaVerification, CaptchaVerificationRef } from '@/components/auth/CaptchaVerification';
 import { LoginAttemptsManager } from '@/utils/loginAttempts';
@@ -18,6 +20,7 @@ import { logLoginAttempt } from '@/utils/loginAttemptsLogger';
 const Login = () => {
   const navigate = useNavigate();
   const { signIn, isAuthenticated, profile, isLoading: authLoading } = useSupabaseAuth();
+  const biometric = useBiometricAuth();
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
@@ -29,6 +32,8 @@ const Login = () => {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const [lockTimeRemaining, setLockTimeRemaining] = useState(0);
+  const [showBiometricSetup, setShowBiometricSetup] = useState(false);
+  const [loginSuccessData, setLoginSuccessData] = useState<{email: string, userId: string, token: string} | null>(null);
   const captchaRef = useRef<CaptchaVerificationRef>(null);
 
   // Mobile-optimized authentication redirection
@@ -218,6 +223,18 @@ const Login = () => {
       if (storedProfile) {
         const profileData = JSON.parse(storedProfile);
         console.log('📱 Profile carregado:', profileData);
+        
+        // Verificar se deve mostrar prompt de biometria
+        const session = localStorage.getItem('custom_session');
+        if (session && biometric.isBiometricAvailable && !biometric.isBiometricEnabled) {
+          const sessionData = JSON.parse(session);
+          setLoginSuccessData({
+            email: email.toLowerCase().trim(),
+            userId: profileData.id,
+            token: sessionData.access_token,
+          });
+          setShowBiometricSetup(true);
+        }
       }
       
       setLoading(false);
@@ -339,6 +356,59 @@ const Login = () => {
                 )}
               </Button>
 
+              {/* Botão de Login Biométrico */}
+              {biometric.isBiometricAvailable && biometric.isBiometricEnabled && !isLocked && (
+                <>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Ou
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={loading}
+                    onClick={async () => {
+                      setLoading(true);
+                      setError('');
+                      try {
+                        const credentials = await biometric.authenticateAndGetCredentials();
+                        if (credentials) {
+                          // Usar credenciais salvas para fazer login
+                          const result = await signIn(credentials.email, credentials.sessionToken);
+                          if (!result?.error) {
+                            LoginAttemptsManager.reset();
+                            await logLoginAttempt({
+                              email: credentials.email,
+                              success: true,
+                              captchaRequired: false,
+                            });
+                          } else {
+                            setError('Sessão expirada. Use sua senha.');
+                            await biometric.disableBiometric();
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Erro no login biométrico:', error);
+                        setError('Erro ao fazer login com biometria');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                  >
+                    <Fingerprint className="mr-2 h-4 w-4" />
+                    {biometric.getBiometricTypeLabel()}
+                  </Button>
+                </>
+              )}
+
               {showCaptcha && (
                 <p className="text-xs text-center text-muted-foreground">
                   Após 3 tentativas falhadas, é necessário verificar que você não é um robô.
@@ -349,6 +419,20 @@ const Login = () => {
           </CardContent>
         </Card>
       </main>
+
+      {/* Prompt de Setup Biométrico */}
+      {showBiometricSetup && loginSuccessData && (
+        <BiometricSetupPrompt
+          open={showBiometricSetup}
+          onOpenChange={setShowBiometricSetup}
+          email={loginSuccessData.email}
+          userId={loginSuccessData.userId}
+          sessionToken={loginSuccessData.token}
+          onComplete={() => {
+            setLoginSuccessData(null);
+          }}
+        />
+      )}
     </div>
   );
 };
