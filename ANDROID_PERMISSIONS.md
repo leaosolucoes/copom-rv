@@ -6,6 +6,208 @@ Após executar `npx cap add android`, o arquivo estará em:
 android/app/src/main/AndroidManifest.xml
 ```
 
+---
+
+## 📋 SEU ARQUIVO ATUAL (ANTES)
+
+Este é o conteúdo atual do seu `AndroidManifest.xml`:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>
+```
+
+### ⚠️ Problemas Identificados:
+
+1. ❌ **Permissão INTERNET está no lugar errado**: Deve estar ANTES de `<application>`, não depois
+2. ❌ **Faltam 12 permissões adicionais** necessárias para câmera, localização e notificações
+
+---
+
+## ✅ ARQUIVO ATUALIZADO (DEPOIS)
+
+Este é como seu `AndroidManifest.xml` deve ficar após adicionar todas as permissões:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ========== PERMISSÕES DO COPOM RIO VERDE ========== -->
+    
+    <!-- Internet (essencial) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Localização GPS (denúncias) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
+    <!-- Câmera (evidências fotográficas) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+    <!-- Galeria e Mídia -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
+                     android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+                     android:maxSdkVersion="29" />
+
+    <!-- Notificações (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- ========== FIM DAS PERMISSÕES ========== -->
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+</manifest>
+```
+
+### 🔄 Mudanças Realizadas:
+
+| Ação | Descrição |
+|------|-----------|
+| ✅ **Movido** | Permissão `INTERNET` foi movida do final para o início (antes de `<application>`) |
+| ✅ **Adicionado** | 12 novas permissões e features para câmera, GPS e notificações |
+| ✅ **Removido** | Comentário `<!-- Permissions -->` duplicado ao final do arquivo |
+| ✅ **Mantido** | Todas as configurações existentes de `<application>`, `<activity>` e `<provider>` |
+
+---
+
+## 🔧 COMO ATUALIZAR MANUALMENTE
+
+### Passo 1: Localize o arquivo
+```bash
+android/app/src/main/AndroidManifest.xml
+```
+
+### Passo 2: Delete estas linhas do final do arquivo:
+```xml
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+```
+
+### Passo 3: Adicione APÓS `<manifest xmlns:android="http://schemas.android.com/apk/res/android">` e ANTES de `<application`:
+```xml
+    <!-- ========== PERMISSÕES DO COPOM RIO VERDE ========== -->
+    
+    <!-- Internet (essencial) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Localização GPS (denúncias) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
+    <!-- Câmera (evidências fotográficas) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+    <!-- Galeria e Mídia -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
+                     android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+                     android:maxSdkVersion="29" />
+
+    <!-- Notificações (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- ========== FIM DAS PERMISSÕES ========== -->
+```
+
+### Passo 4: Sincronizar
+```bash
+npx cap sync android
+```
+
+### Passo 5: Testar
+```bash
+npx cap open android
+```
+
+---
+
 ## Permissões Necessárias para o COPOM Rio Verde
 
 ### 1. Internet e Conectividade
