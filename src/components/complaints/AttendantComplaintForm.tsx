@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { offlineStorage } from "@/utils/offlineStorage";
 
 interface AttendantComplaintFormProps {
   onSuccess?: () => void;
@@ -55,6 +57,7 @@ interface SystemSettings {
 }
 
 export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProps) {
+  const { isOnline } = useNetworkStatus();
   const [formData, setFormData] = useState<FormData>({
     complainant_name: '',
     complainant_phone: '',
@@ -251,6 +254,57 @@ export function AttendantComplaintForm({ onSuccess }: AttendantComplaintFormProp
       };
 
       console.log('Complaint data to be sent:', complaintData);
+
+      // Verificar se está offline
+      if (!isOnline) {
+        console.log('📴 Sem conexão, salvando denúncia offline...');
+        
+        const offlineComplaint = {
+          id: crypto.randomUUID(),
+          timestamp: Date.now(),
+          data: complaintData,
+          photos: [],
+          videos: [],
+          retryCount: 0,
+          status: 'pending' as const
+        };
+        
+        await offlineStorage.saveComplaint(offlineComplaint);
+        
+        toast({
+          title: "✅ Denúncia salva localmente",
+          description: "Sem conexão! A denúncia será enviada automaticamente quando a internet voltar.",
+        });
+        
+        // Reset form
+        setFormData({
+          complainant_name: '',
+          complainant_phone: '',
+          complainant_type: '',
+          complainant_address: '',
+          complainant_number: '',
+          complainant_block: '',
+          complainant_lot: '',
+          complainant_neighborhood: '',
+          occurrence_type: '',
+          occurrence_address: '',
+          occurrence_number: '',
+          occurrence_block: '',
+          occurrence_lot: '',
+          occurrence_neighborhood: '',
+          occurrence_reference: '',
+          occurrence_date: '',
+          occurrence_time: '',
+          description: '',
+          narrative: '',
+          classification: '',
+          rural_zone: false,
+        });
+        
+        if (onSuccess) onSuccess();
+        setIsSubmitting(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('complaints')
