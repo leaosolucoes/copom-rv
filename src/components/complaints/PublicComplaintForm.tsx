@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Send, AlertTriangle, Upload, X, Image, Video } from "lucide-react";
+import { Send, AlertTriangle, Upload, X, Image, Video, AlertCircle } from "lucide-react";
 import { obterDataBrasilFormatada } from "@/utils/dataBrasil";
 
 interface FormData {
@@ -403,6 +404,16 @@ export const PublicComplaintForm = () => {
     console.log('Configuração dos campos:', fieldConfig);
     console.log('Dados do formulário:', formData);
     
+    // Verificar se tem localização disponível
+    if (!userInfo?.location) {
+      toast({
+        title: "Localização não disponível",
+        description: "Não foi possível obter sua localização. Verifique se a permissão está ativada.",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
     // Verificar se é zona rural para ajustar campos obrigatórios
     const isZonaRural = formData.complainant_type === 'Zona Rural';
     console.log('É Zona Rural?', isZonaRural);
@@ -744,11 +755,62 @@ export const PublicComplaintForm = () => {
     );
   };
 
+  const checkLocationPermission = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(false);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Permissão concedida e localização obtida
+          const location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy
+          };
+          setUserInfo(prev => ({
+            ...prev!,
+            location
+          }));
+          resolve(true);
+        },
+        (error) => {
+          // Permissão negada ou erro
+          console.warn('❌ Localização não disponível:', error);
+          resolve(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0 // Força nova leitura, sem cache
+        }
+      );
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('🚀 Formulário submetido!');
     console.log('📋 Estado atual do formData:', formData);
     console.log('⚙️ Configuração dos campos:', fieldConfig);
+    
+    // Verificar permissão de localização antes de tudo
+    const hasLocation = await checkLocationPermission();
+    
+    if (!hasLocation) {
+      toast({
+        title: "📍 Localização Obrigatória",
+        description: "Para enviar uma denúncia, é obrigatório compartilhar sua localização com o aplicativo. Por favor, ative a permissão de localização nas configurações do seu dispositivo.",
+        variant: "destructive",
+        duration: 8000,
+      });
+      console.log('❌ Envio bloqueado: Permissão de localização não concedida');
+      return;
+    }
+    
+    console.log('✅ Localização confirmada, prosseguindo com validação...');
     
     if (!validateForm()) {
       console.log('❌ Validação falhou, formulário não será enviado');
@@ -902,6 +964,15 @@ export const PublicComplaintForm = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Alerta de localização obrigatória */}
+      <Alert className="border-yellow-500 bg-yellow-50">
+        <AlertCircle className="h-4 w-4 text-yellow-600" />
+        <AlertDescription className="text-yellow-800">
+          <strong>Localização Obrigatória:</strong> Para enviar uma denúncia, é necessário 
+          compartilhar sua localização com o aplicativo.
+        </AlertDescription>
+      </Alert>
 
       {/* Skeleton loader enquanto carrega as configurações */}
       {isLoading ? (
