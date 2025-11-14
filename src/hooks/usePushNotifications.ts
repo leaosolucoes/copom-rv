@@ -1,5 +1,6 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NotificationOptions {
   title: string;
@@ -8,6 +9,7 @@ interface NotificationOptions {
   priority?: 'high' | 'default' | 'low';
   sound?: boolean;
   vibration?: boolean;
+  notificationHistoryId?: string;
 }
 
 export const usePushNotifications = () => {
@@ -44,8 +46,29 @@ export const usePushNotifications = () => {
       });
 
       // 3. Listener para clique na notificação
-      await LocalNotifications.addListener('localNotificationActionPerformed', (notification) => {
+      await LocalNotifications.addListener('localNotificationActionPerformed', async (notification) => {
         const complaintId = notification.notification.extra?.complaintId;
+        const notificationHistoryId = notification.notification.extra?.notificationHistoryId;
+        
+        // Registrar abertura no histórico
+        if (notificationHistoryId) {
+          try {
+            await supabase
+              .from('notification_history')
+              .update({ 
+                opened_at: new Date().toISOString(),
+                device_info: {
+                  userAgent: navigator.userAgent,
+                  platform: navigator.platform,
+                  timestamp: Date.now()
+                }
+              })
+              .eq('id', notificationHistoryId);
+          } catch (error) {
+            console.error('Erro ao registrar abertura:', error);
+          }
+        }
+        
         if (complaintId) {
           // Navegar para detalhes da denúncia
           window.location.href = `/admin?complaint=${complaintId}`;
@@ -82,6 +105,7 @@ export const usePushNotifications = () => {
             iconColor: '#1e3a8a',
             extra: {
               complaintId: options.complaintId,
+              notificationHistoryId: options.notificationHistoryId,
             },
             schedule: { at: new Date(Date.now() + 1000) },
             summaryText: `${newCount} denúncias pendentes`,
