@@ -1,6 +1,6 @@
 {
-  "appId": "app.lovable.668e639ddc0b4b7aab49c9f19cc751b2",
-  "appName": "Posturas Rio Verde",
+  "appId": "com.copom.rioverde",
+  "appName": "COPOM Rio Verde",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
