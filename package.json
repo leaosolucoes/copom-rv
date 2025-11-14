@@ -15,6 +15,7 @@
     "@capacitor/cli": "^7.4.2",
     "@capacitor/core": "^7.4.2",
     "@capacitor/ios": "^7.4.2",
+    "@capacitor/local-notifications": "^7.0.3",
     "@capacitor/network": "^7.0.2",
     "@hcaptcha/react-hcaptcha": "^1.14.0",
     "@hookform/resolvers": "^3.9.0",
