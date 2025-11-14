@@ -16,6 +16,9 @@ const config: CapacitorConfig = {
       splashFullScreen: true,
       splashImmersive: true,
       splashScreenDelay: 500
+    },
+    Network: {
+      // Plugin de detecção de rede para modo offline
     }
   }
 };

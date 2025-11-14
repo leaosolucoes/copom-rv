@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Send, AlertTriangle, Upload, X, Image, Video, AlertCircle } from "lucide-react";
 import { obterDataBrasilFormatada } from "@/utils/dataBrasil";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { offlineStorage } from "@/utils/offlineStorage";
 
 interface FormData {
   // Dados do reclamante
@@ -59,6 +61,7 @@ interface SystemSettings {
 
 export const PublicComplaintForm = () => {
   const { toast } = useToast();
+  const { isOnline } = useNetworkStatus();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Estado de carregamento
   const [logoUrl, setLogoUrl] = useState<string>('');
@@ -850,6 +853,62 @@ export const PublicComplaintForm = () => {
         user_browser: userInfo?.browser || null,
         user_agent: userInfo?.userAgent || null
       };
+
+      // Verificar se está offline
+      if (!isOnline) {
+        console.log('📴 Sem conexão, salvando denúncia offline...');
+        
+        const offlineComplaint = {
+          id: crypto.randomUUID(),
+          timestamp: Date.now(),
+          data: dataToInsert,
+          photos: uploadedPhotos.map(url => ({
+            name: url.split('/').pop() || 'photo',
+            data: url
+          })),
+          videos: uploadedVideos.map(url => ({
+            name: url.split('/').pop() || 'video',
+            data: url
+          })),
+          retryCount: 0,
+          status: 'pending' as const
+        };
+        
+        await offlineStorage.saveComplaint(offlineComplaint);
+        
+        toast({
+          title: "✅ Denúncia salva localmente",
+          description: "Sem conexão! Sua denúncia será enviada automaticamente quando a internet voltar.",
+          duration: 6000,
+        });
+        
+        // Limpar formulário e mídias
+        setFormData({
+          complainant_name: "",
+          complainant_phone: "",
+          complainant_type: "",
+          complainant_address: "",
+          complainant_number: "",
+          complainant_block: "",
+          complainant_lot: "",
+          complainant_neighborhood: "",
+          occurrence_type: "",
+          occurrence_address: "",
+          occurrence_number: "",
+          occurrence_block: "",
+          occurrence_lot: "",
+          occurrence_neighborhood: "",
+          occurrence_reference: "",
+          description: "",
+          occurrence_date: "",
+          occurrence_time: "",
+          classification: "",
+        });
+        setUploadedPhotos([]);
+        setUploadedVideos([]);
+        setIsSubmitting(false);
+        return;
+      }
       
       console.log('🔄 Dados que serão enviados:', dataToInsert);
       console.log('📡 Fazendo requisição para edge function...');

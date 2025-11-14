@@ -17,6 +17,9 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { SecurityProvider } from "./components/security/SecurityProvider";
 import { SecurityHeaders } from "./components/security/SecurityHeaders";
 import { useDevToolsProtection } from "./hooks/useDevToolsProtection";
+import { OfflineIndicator } from "./components/offline/OfflineIndicator";
+import { offlineStorage } from "./utils/offlineStorage";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +33,11 @@ const queryClient = new QueryClient({
 const AppContent = () => {
   // Hook de proteção DevTools
   useDevToolsProtection();
+
+  // Inicializar storage offline
+  useEffect(() => {
+    offlineStorage.init();
+  }, []);
 
   return (
     <BrowserRouter>
@@ -93,6 +101,7 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <OfflineIndicator />
             <AppContent />
           </TooltipProvider>
         </SecurityProvider>
