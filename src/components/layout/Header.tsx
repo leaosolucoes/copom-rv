@@ -27,7 +27,7 @@ export const Header = ({ showLoginButton = true, logoUrl }: HeaderProps) => {
     // Se chegou a 3 toques, redirecionar
     if (tapCountRef.current === 3) {
       tapCountRef.current = 0;
-      navigate('/acesso');
+      navigate('/login');
       return;
     }
     
@@ -65,7 +65,7 @@ export const Header = ({ showLoginButton = true, logoUrl }: HeaderProps) => {
               variant="outline"
               size="sm"
               className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-              onClick={() => (window.location.href = "/acesso")}
+              onClick={() => navigate('/login')}
             >
               <Users className="h-4 w-4 mr-2" />
               Acesso Interno
