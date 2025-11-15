@@ -21,8 +21,10 @@ import {
   CheckCircle,
   Settings,
   PlayCircle,
-  Loader2
+  Loader2,
+  BarChart3
 } from 'lucide-react';
+import { ApiAnalyticsDashboard } from './ApiAnalyticsDashboard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -917,6 +919,10 @@ export function ApiManagement() {
             <Activity className="h-4 w-4" />
             Logs
           </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Análises
+          </TabsTrigger>
           <TabsTrigger value="endpoints" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Endpoints
@@ -1069,6 +1075,10 @@ export function ApiManagement() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <ApiAnalyticsDashboard />
         </TabsContent>
 
         <TabsContent value="endpoints">
