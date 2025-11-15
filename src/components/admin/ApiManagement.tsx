@@ -247,17 +247,10 @@ export function ApiManagement() {
     try {
       logger.debug('🔄 Carregando logs da API...');
       
-      // Verificar permissões de admin
-      
-      // REMOVIDO: Log de verificação de super admin para logs por segurança
-      
       const { data, error } = await supabase
-        .from('api_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      // REMOVIDO: Log de resultado do carregamento de logs por segurança
+        .rpc('get_api_logs', {
+          limit_count: 100
+        });
 
       if (error) {
         logger.error('❌ Erro ao carregar logs:', error);

@@ -855,6 +855,21 @@ export type Database = {
             }
             Returns: Json
           }
+      get_api_logs: {
+        Args: { limit_count?: number }
+        Returns: {
+          created_at: string
+          endpoint: string
+          id: string
+          ip_address: string
+          method: string
+          request_body: Json
+          response_body: Json
+          status_code: number
+          token_id: string
+          user_agent: string
+        }[]
+      }
       get_login_attempts: {
         Args: { limit_count?: number; start_date?: string }
         Returns: {
