@@ -65,14 +65,11 @@ export const LoginAttemptsMonitor = () => {
           break;
       }
 
-      const query = supabase
-        .from('login_attempts')
-        .select('*')
-        .gte('created_at', startDate.toISOString())
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .rpc('get_login_attempts', {
+          start_date: startDate.toISOString(),
+          limit_count: 100
+        });
 
       if (error) throw error;
 

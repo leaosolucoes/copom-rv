@@ -855,6 +855,25 @@ export type Database = {
             }
             Returns: Json
           }
+      get_login_attempts: {
+        Args: { limit_count?: number; start_date?: string }
+        Returns: {
+          block_duration_seconds: number
+          blocked: boolean
+          captcha_completed: boolean
+          captcha_required: boolean
+          created_at: string
+          device_info: Json
+          email_attempted: string
+          failed_reason: string
+          geolocation: Json
+          id: string
+          ip_address: string
+          success: boolean
+          user_agent: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
