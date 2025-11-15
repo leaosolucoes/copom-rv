@@ -874,6 +874,21 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_performance_metrics: {
+        Args: { limit_count?: number; start_time?: string }
+        Returns: {
+          created_at: string
+          duration_ms: number
+          error_message: string
+          id: string
+          metadata: Json
+          metric_name: string
+          metric_timestamp: string
+          metric_type: string
+          success: boolean
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
