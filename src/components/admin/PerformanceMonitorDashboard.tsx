@@ -81,16 +81,21 @@ export const PerformanceMonitorDashboard = () => {
       twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
       const { data, error } = await supabase
-        .from('performance_metrics')
-        .select('*')
-        .gte('timestamp', twentyFourHoursAgo.toISOString())
-        .order('timestamp', { ascending: false })
-        .limit(100);
+        .rpc('get_performance_metrics', {
+          start_time: twentyFourHoursAgo.toISOString(),
+          limit_count: 100
+        });
 
       if (error) throw error;
 
-      setMetrics(data || []);
-      calculateStats(data || []);
+      // Mapear metric_timestamp de volta para timestamp
+      const mappedData = data?.map((metric: any) => ({
+        ...metric,
+        timestamp: metric.metric_timestamp
+      })) || [];
+
+      setMetrics(mappedData);
+      calculateStats(mappedData);
     } catch (error) {
       console.error('Erro ao buscar métricas:', error);
     } finally {
